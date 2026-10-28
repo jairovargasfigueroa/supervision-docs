@@ -1,0 +1,18 @@
+# Cada proyecto es su propio repositorio
+/infra/
+/services/
+/gateway/
+/frontend/
+/mobile/
+
+# Documentos de la materia (no van al repo)
+*.docx
+~$*
+/modelos/
+/Supervisión de Obras · Prototipo – Prototipo completo (ERP · App móvil · Portal).html
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
