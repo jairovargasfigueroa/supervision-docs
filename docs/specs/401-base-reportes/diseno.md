@@ -67,7 +67,7 @@ tests/
 | `IA_PUERTO` | `8085` |
 | `IA_REPORTES_DB_URL` | `postgresql+psycopg://ia:ia@localhost:5433/reportes_db` |
 | `IA_MONGO_URL` · `IA_MONGO_DB` | `mongodb://localhost:27017` · `ia_db` |
-| `IA_RABBITMQ_URL` | `amqp://guest:guest@localhost:5672/` |
+| `IA_RABBITMQ_URL` | `amqp://ia:<RABBITMQ_IA_CLAVE de infra/.env>@localhost:5672/` (usuario propio del servicio: `guest` solo entra desde dentro del contenedor) |
 | `IA_KEYCLOAK_ISSUER` | `http://localhost:8080/realms/supervision` |
 | `IA_AUDIENCIA` | `plataforma-api` |
 | `IA_ZONA_HORARIA` | `America/La_Paz` |
