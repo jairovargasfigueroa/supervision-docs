@@ -18,7 +18,7 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 - Todos con *healthcheck* y volúmenes con nombre (`datos-postgres`, `datos-mongo`, `datos-rabbitmq`).
 - Los scripts esperan a que cada servicio esté sano y a que los de una sola vez (`rabbitmq-usuarios`, `mongo-init`) terminen bien; no usan `docker compose up --wait`, que toma como fallo a los que terminan.
 - **Perfiles:** sin perfil se levantan RabbitMQ y Keycloak. `--profile bases` suma PostgreSQL y MongoDB (para quien no los tiene instalados). Las capas suman sus perfiles.
-- En la máquina de Jairo PostgreSQL (5433) y MongoDB (27017) ya están instalados: no usar el perfil `bases`. **MongoDB local debe configurarse como *replica set*** (tarea 1.3: `replication.replSetName: rs0` en `mongod.cfg` y `rs.initiate()`).
+- En la máquina de Jairo PostgreSQL (5433) y MongoDB (27017) ya están instalados: no usar el perfil `bases`. **MongoDB local debe configurarse como *replica set*** (tarea 1.3): una vez, en PowerShell como administrador, `infra/scripts/mongo-local-replica.ps1` (agrega `replication.replSetName: rs0` a `mongod.cfg`, reinicia el servicio y ejecuta `rs.initiate()`).
 - Contraseñas de desarrollo en `infra/.env` (copiado de `infra/.env.example`); nunca en el repo.
 
 ## Archivos en desarrollo: S3 real
