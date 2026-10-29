@@ -64,4 +64,4 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 | Portal (`.env`) | `VITE_KEYCLOAK_URL=http://localhost:8080`, `VITE_KEYCLOAK_REALM=supervision`, `VITE_KEYCLOAK_CLIENT_ID=portal`, `VITE_OBRAS_URL=http://localhost:8081` |
 | App (`app.json` → `extra`) | `keycloakUrl`, `realm`, `clientId: 'app-obra'`, `obrasUrl`, `materialesUrl` (en el celular, la IP de la computadora en la red local, no `localhost`) |
 
-Los secretos de desarrollo (contraseñas de bases y RabbitMQ, secreto del cliente `gateway`) se fijan una vez en `infra/.env` y se copian a los `.env` de cada proyecto. El realm de desarrollo trae el secreto del cliente `gateway` fijo **solo para desarrollo**.
+Los secretos de desarrollo (contraseñas de bases y RabbitMQ, secreto del cliente `gateway`) se fijan una vez en `infra/.env` y se copian a los `.env` de cada proyecto. El realm de desarrollo trae el secreto del cliente `gateway` fijo **solo para desarrollo**: `gateway-secreto-solo-desarrollo` (va en `KEYCLOAK_GATEWAY_CLIENT_SECRET` del gateway).
