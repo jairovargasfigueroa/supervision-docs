@@ -36,15 +36,15 @@ Ejemplos: `feat/002-registrar-obra`, `feat/1.2-docker-compose`, `fix/007-redonde
 
 ## Pull requests
 
-- **Los crea Jairo a mano desde GitHub** (el agente deja las ramas subidas y le pasa el título y la descripción listos para copiar).
-- Uno por repo y rama, hacia `develop` (o hacia `main` en `release/*` y `hotfix/*`).
+- **Los crea y fusiona el agente** con GitHub CLI (`gh pr create` y `gh pr merge --squash --delete-branch`), uno por repo y rama, hacia `develop`, cuando la rama cumple la definición de terminado (todas las pruebas pasan). Jairo no tiene que hacer nada en GitHub; revisa el resultado probando en el navegador.
+- Hacia `main` (ramas `release/*` y `hotfix/*`) **solo cuando Jairo lo pide** («haz el release de la fase 1»).
 - Título = commit que quedará al fusionar: `feat(obras): registra obra con contrato y presupuesto (002)`.
 - Descripción con la plantilla `.github/pull_request_template.md` (cada repo la tiene): qué cambia, funcionalidad, tareas, PR relacionados en otros repos, cómo probar y la lista de terminado.
 - **Forma de fusionar:**
   - `feat/*`, `fix/*` y demás → `develop`: ***squash and merge*** (un commit limpio por rama).
   - `release/*` y `hotfix/*` → `main`: ***merge commit*** (conserva el historial de `develop`); después se fusiona `main` en `develop`.
 - Orden de fusión cuando una funcionalidad toca varios repos: **servicios → gateway → frontends → app**.
-- Mientras trabaje una sola persona no se exige aprobación de otra; cuando se sumen colaboradores se sube a 1 aprobación (cambiando `scripts/configurar-repos.ps1`).
+- Mientras trabaje una sola persona no se exige aprobación; cuando se sumen colaboradores se sube a 1 aprobación (cambiando `scripts/configurar-repos.ps1`) y el agente deja los PR abiertos para revisión en vez de fusionarlos.
 
 ## Protección de ramas (en todos los repos)
 

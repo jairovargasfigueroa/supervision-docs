@@ -59,6 +59,21 @@ Cada proyecto tiene además su `CLAUDE.md` y su `docs/` (con `estructura.md`, ob
 6. **Si una decisión cambia, actualiza la documentación** en el mismo trabajo.
 7. **Usa nombres del dominio en español** (obra, partida, planilla, cobro) en código, tablas y endpoints.
 
+## Cómo pide trabajo el usuario
+
+El usuario no da instrucciones paso a paso. Interpreta así sus pedidos:
+
+| Pedido | Qué haces |
+|---|---|
+| «Sigue» / «sigue con lo siguiente» | Tomas lo siguiente `pendiente` del plan cuyas dependencias estén `hecho` y lo haces completo |
+| «Haz la fase 1» / «haz la tarea 1.4» | Las tareas técnicas de la fase 1 indicadas, una rama `feat/1.N-...` por tarea en cada repo que toque |
+| «Haz la 002» / «implementa registrar obra» | La funcionalidad completa de punta a punta: todas sus tareas en todos sus proyectos, con la rama `feat/002-registrar-obra` en cada repo |
+| «Haz de la 002 a la 004» | Varias funcionalidades en orden, una tras otra, cada una con sus ramas y PR |
+| «Falla X» / «corrige X» | Rama `fix/NNN-...` desde `develop`, prueba que reproduce el error, corrección, PR y fusión |
+| «Haz el release de la fase N» | `release/x.y.0` desde `develop`, PR a `main` con *merge commit*, etiqueta `vx.y.0` y `main` de vuelta a `develop` |
+
+Si algo de lo pedido no está especificado o es ambiguo, pregunta antes de programar (con las posibles lecturas).
+
 ## Cómo trabajar en cada chat
 
 Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; las de las capas (101–602) están en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
@@ -68,7 +83,7 @@ Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) 
 3. Antes de programar: en cada repo que toca, crea la rama `feat/NNN-nombre` desde `develop` actualizado. Nunca trabajes ni hagas *push* en `main` ni en `develop`.
 4. Implementa **tarea por tarea**, en el orden de los proyectos que indica el diseño (servicios → gateway → frontends → app). Cada tarea cumple la **definición de terminado** de `docs/flujo-trabajo.md` (pruebas, lint, tipos, docs).
 5. Al terminar cada tarea: marca `- [x]` en su `tareas.md`, haz **un commit** en la rama (Conventional Commits en español) y `git push`.
-6. Al terminar la funcionalidad: actualiza `docs/plan.md` en una rama de `supervision-docs`, sube todas las ramas y entrega al usuario, por cada repo, el **título y la descripción del PR** (plantilla completa, enlaces entre repos, orden de fusión) y qué debe probar a mano (sección «Pruebas» del diseño). **El usuario crea y fusiona los PR desde GitHub**; el agente no los crea ni los fusiona.
+6. Al terminar la funcionalidad (todas sus tareas, todas las pruebas pasando): **crea los PR** hacia `develop` con `gh pr create` (plantilla completa, enlaces entre repos) y **fusiónalos** con `gh pr merge --squash --delete-branch` en el orden servicios → gateway → frontends → app. Luego marca la funcionalidad `hecho` en `docs/plan.md` con su propia rama y PR en `supervision-docs`, deja cada repo local en `develop` actualizado y dile al usuario **qué probar en el navegador o el celular** (sección «Pruebas» del diseño) y cómo levantar lo necesario. Nunca fusiones hacia `main` salvo que el usuario pida un *release*.
 7. Si algo de la especificación es imposible o contradictorio, no lo inventes: detente, explícalo y propone el cambio; si el usuario lo aprueba, actualiza la spec y los contratos en el mismo trabajo.
 
 Un chat avanza una funcionalidad (o varias tareas de la fase 1). Cuando el chat se hace largo, el usuario abre otro y este vuelve a empezar por el paso 1: el estado vive en `docs/plan.md` y en las casillas de los `tareas.md`.
