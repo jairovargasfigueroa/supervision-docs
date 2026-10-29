@@ -119,4 +119,4 @@ Se crean en las capas 1 y 4; sus librerías están en `docs/specs/101-registro-s
 
 ## infra
 
-Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`).
+Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo.
