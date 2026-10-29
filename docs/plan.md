@@ -54,7 +54,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | N.º | Funcionalidad | Proyectos | Depende de | Estado |
 |---|---|---|---|---|
 | 001 | Iniciar sesión y paso entre aplicaciones | Keycloak, frontends | fase 1 | hecho |
-| 002 | Registrar obra (datos, contrato, presupuesto) | obras, finanzas, gateway, mf-obras | 001 | pendiente |
+| 002 | Registrar obra (datos, contrato, presupuesto) | obras, finanzas, gateway, mf-obras | 001 | hecho |
 | 003 | Gestionar materiales (catálogo y stock mínimo) | materiales, gateway, mf-materiales | 001 | pendiente |
 | 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | pendiente |
 | 005 | Registrar foto de avance | obras, app-obra | 002 | pendiente |
@@ -62,7 +62,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | pendiente |
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, portal | 007 | pendiente |
 | 009 | Consultar tablero | gateway, mf-supervision | 006 | pendiente |
-| 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pendiente |
+| 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pospuesta (decisión de Jairo, 29/10/2026: se hace después de la 011) |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | pendiente |
 
 ## Fases 3 a 8. Capas (especificaciones en borrador)

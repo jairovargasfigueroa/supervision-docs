@@ -129,7 +129,8 @@ Lo que todos los proyectos hacen igual.
 - `tipo` en PascalCase: los eventos en pasado (`ObraRegistrada`), los comandos en infinitivo (`ReservarSaldo`).
 - Se publican con el patrón **outbox**: el mensaje se guarda en la misma transacción que el dato y un proceso aparte lo publica (cada segundo).
 - Cada consumidor guarda los `id` de mensajes procesados (patrón inbox) y descarta los repetidos.
-- Mensajes que fallan 3 veces van a la cola `plataforma.fallidos` para revisión.
+- Mensajes que fallan 3 veces van a la cola `plataforma.fallidos` para revisión. Cada reintento se vuelve a publicar en la misma cola por el exchange por defecto con el cuerpo original sin tocar y estos encabezados (iguales en todos los servicios): `x-intentos` (intentos ya hechos), `x-error` (texto del error, sin datos sensibles), `x-cola-origen` (cola de donde salió) y `x-clave-origen` (clave de enrutamiento original, que se pierde al pasar por el exchange por defecto).
+- Van directo a `plataforma.fallidos`, sin reintentos: un cuerpo que no es JSON, un sobre con `version` distinta de 1, datos incompletos y un `tipo` que la cola recibe pero el servicio todavía no procesa (así no se pierde y se puede reenviar cuando exista su consumidor).
 - Librerías: Spring AMQP (Obras), `amqplib` / `@nestjs/microservices` (Materiales), `php-amqplib` 3 (Finanzas).
 
 ## Seguridad
