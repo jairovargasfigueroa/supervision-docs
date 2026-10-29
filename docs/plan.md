@@ -29,12 +29,19 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 | 1.2 | Docker Compose: RabbitMQ (con panel), Keycloak 26.8; PostgreSQL 17 y MongoDB 8.0 como perfil opcional; scripts de `infra/scripts/` (todo según `docs/entorno-local.md`) | infra | pendiente |
 | 1.3 | MongoDB como *replica set* de un nodo (lo necesitan las transacciones del outbox de Materiales), en el contenedor y en la instalación local | infra | pendiente |
 | 1.4 | Realm `supervision` exportado en JSON e importado al iniciar: roles, clientes `erp`, `portal`, `app-obra`, mapper de audiencia `plataforma-api`, cliente `gateway` con *service account*, usuarios de prueba de la 001 (con `demo1`), política de contraseñas, protección contra fuerza bruta, idioma español y tema `supervision` (`docs/convenciones.md`, «Seguridad») | infra | pendiente |
-| 1.5 | Bases `obras_db` y `finanzas_db` en PostgreSQL; bucket S3 de desarrollo en AWS (lo crea Jairo en la consola siguiendo `docs/entorno-local.md`: bucket privado, CORS, expiración de `temporal/`, usuario IAM limitado a ese bucket) y sus variables en cada `.env`; definiciones de RabbitMQ con el exchange `plataforma` y todas las colas (incluidas `ia` y `notificaciones`) | infra | pendiente |
+| 1.5 | Bases `obras_db` y `finanzas_db` en PostgreSQL; definiciones de RabbitMQ con el exchange `plataforma` y todas las colas (incluidas `ia` y `notificaciones`) | infra | pendiente |
 | 1.6 | `GET /salud` en Obras, Materiales y Finanzas, y validación del token de Keycloak en los tres (rechaza sin token, acepta con token válido) | services/* | pendiente |
 | 1.7 | Gateway: validación del token, reenvío del token y de `X-Request-Id`, tiempo máximo de 3 s | gateway | pendiente |
 | 1.8 | Shell: login con keycloak-angular, `window.plataforma.sesion`, menú y rutas `/obras`, `/materiales`, `/supervision` cargando cada microfrontend (Angular por `loadRemoteModule`; React como Web Component) con aviso si uno no carga | erp-shell, mf-* | pendiente |
 | 1.9 | Tema visual y librerías base en shell, microfrontends, portal y app según `docs/diseno-visual.md` y el `docs/estructura.md` de cada uno (tema, fuentes, estados vacío y error, `formato.ts`) | frontends, app-obra | pendiente |
 | 1.10 | Esqueleto que camina: login en el ERP → consulta GraphQL → Obras devuelve una lista (vacía) de obras → se muestra en mf-obras | todos los del ERP | pendiente |
+
+**Preparativos que hace Jairo más adelante (no bloquean la fase 1):**
+
+- **Bucket S3 de desarrollo** (antes de la 005): bucket privado, CORS, expiración de `temporal/` y usuario IAM limitado, según `docs/entorno-local.md`. Hasta entonces las variables `*_S3_*` quedan vacías.
+- **Proyecto de Firebase** (antes de la 010): según la sección «Configuración de Firebase» de `docs/specs/010-notificaciones/diseno.md`.
+
+Si una funcionalidad necesita uno de estos preparativos y todavía no está, el agente avisa y espera; no lo inventa ni lo salta.
 
 La fase 1 es técnica: no necesita `requisitos.md` por funcionalidad, pero cada tarea se hace con sus pruebas y su commit.
 
