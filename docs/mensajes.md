@@ -201,6 +201,18 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 
 Textos exactos de los requisitos y diseños (marcadores entre llaves donde la spec usa un valor de ejemplo). Los que la spec menciona sin texto quedan definidos aquí («catálogo»).
 
+### Consultar obra (006)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Ninguna obra coincide con la búsqueda.» (con «Quitar filtros») | ERP · Obras · lista | Los filtros no dejan ninguna obra | 006 · catálogo |
+| «No hay material previsto ni usado en este periodo.» | ERP · detalle · Material | El periodo no tiene previsto ni consumos | 006 · catálogo |
+| «Aún no hay fotos de avance.» · «Cargar más fotos» | ERP · detalle · Fotos | Sin fotos · hay más páginas | 006 · catálogo |
+| «Aún no hay planillas.» | ERP · detalle · Planillas | La obra no tiene planillas | 006 · catálogo |
+| «Aún no hay cobros.» | ERP · detalle · Cobros | La obra no tiene cobros | 006 · catálogo |
+| «Saldo y total cobrado: No disponible por el momento.» | ERP · detalle · Contrato | Finanzas no respondió | 006 · catálogo |
+| Etiquetas de estado: «Borrador», «Presentada», «En aprobación», «Aprobada», «Observada», «Pendiente», «Vencido», «Excedido», «En riesgo» | ERP (chips) | Estados de planilla, cobro, consumo y obra | 006 · catálogo |
+
 ### Materiales y fotos (003, 005)
 
 | Texto | Dónde | Cuándo | Origen |

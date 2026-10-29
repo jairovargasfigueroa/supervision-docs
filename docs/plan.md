@@ -57,8 +57,8 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 002 | Registrar obra (datos, contrato, presupuesto) | obras, finanzas, gateway, mf-obras | 001 | hecho |
 | 003 | Gestionar materiales (catálogo y stock mínimo) | materiales, gateway, mf-materiales | 001 | hecho |
 | 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | hecho (falta probar la app en el celular) |
-| 005 | Registrar foto de avance | obras, app-obra | 002 | en curso (Obras y app hechos; la galería del ERP va con la 006; la subida real espera el bucket S3) |
-| 006 | Consultar obra (avance vs plazo, material usado vs previsto) | obras, materiales, finanzas, gateway, mf-obras | 002, 003, 004, 005 | pendiente |
+| 005 | Registrar foto de avance | obras, app-obra | 002 | hecho (la subida real a S3 y el celular quedan para cuando exista el bucket) |
+| 006 | Consultar obra (avance vs plazo, material usado vs previsto) | obras, materiales, finanzas, gateway, mf-obras | 002, 003, 004, 005 | hecho |
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | pendiente |
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, portal | 007 | pendiente |
 | 009 | Consultar tablero | gateway, mf-supervision | 006 | pendiente |
