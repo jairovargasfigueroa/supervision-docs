@@ -40,7 +40,7 @@
 - **Shell** (`erp-shell`, puerto 4200): host dinámico; lee la lista de remotos de `public/federation.manifest.json`.
 - **mf-obras** (Angular, 4201): remoto con el adaptador oficial de Angular; comparte Angular con el shell.
 - **mf-materiales** (React, 4202) y **mf-supervision** (React, 4203): remotos con el adaptador esbuild de Native Federation y su preset oficial de React. Cada uno se publica como **Web Component** (`<mf-materiales>`, `<mf-supervision>`) con Shadow DOM, así el shell los muestra sin depender de React y sus estilos no se mezclan.
-- Pendiente para la fase 1 («esqueleto que camina»): que el shell cargue cada remoto en su ruta y le pase la sesión.
+- El shell carga `mf-obras` como rutas (`./Routes`) en `/obras` y los React como Web Components (`./Bootstrap`) en `/materiales` y `/supervision`; la sesión les llega por `window.plataforma` (fase 1, 1.8). Si un remoto no carga, su espacio muestra el aviso con «Reintentar».
 - Vue queda como tercer framework **opcional**; no se usa salvo que el equipo decida agregarlo.
 
 ## Versiones
