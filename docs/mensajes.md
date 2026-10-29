@@ -201,6 +201,17 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 
 Textos exactos de los requisitos y diseños (marcadores entre llaves donde la spec usa un valor de ejemplo). Los que la spec menciona sin texto quedan definidos aquí («catálogo»).
 
+### Materiales y fotos (003, 005)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Aún no hay materiales.» | ERP · Materiales · Catálogo | El catálogo está vacío | 003 · catálogo |
+| «Elige una obra para ver su stock.» | ERP · Materiales · Stock | Todavía no se eligió una obra | 003 · catálogo |
+| «Esta obra todavía no tiene materiales con movimientos ni mínimo definido.» | ERP · Materiales · Stock | La obra no tiene filas de stock | 003 · catálogo |
+| «Foto enviada.» | App · Foto de avance | La foto se subió y quedó registrada (también si el registro ya existía) | 005 · catálogo |
+| «Para tomar la foto, permite el uso de la cámara en los ajustes del celular.» | App · Foto de avance | El usuario negó el permiso de la cámara | 005 · catálogo |
+| «Esta obra no tiene partidas.» | App · Foto de avance | La obra no tiene partidas para elegir | 005 · catálogo |
+
 ### Sesión y acceso (001)
 
 | Texto | Dónde | Cuándo | Origen |
