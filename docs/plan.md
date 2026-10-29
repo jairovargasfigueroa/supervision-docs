@@ -59,9 +59,9 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | hecho (falta probar la app en el celular) |
 | 005 | Registrar foto de avance | obras, app-obra | 002 | hecho (la subida real a S3 y el celular quedan para cuando exista el bucket) |
 | 006 | Consultar obra (avance vs plazo, material usado vs previsto) | obras, materiales, finanzas, gateway, mf-obras | 002, 003, 004, 005 | hecho |
-| 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | pendiente |
+| 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | hecho (la galería de fotos necesita el bucket S3) |
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, portal | 007 | pendiente |
-| 009 | Consultar tablero | gateway, mf-supervision | 006 | pendiente |
+| 009 | Consultar tablero | materiales, finanzas, gateway, mf-supervision | 006 | hecho |
 | 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pospuesta (decisión de Jairo, 29/10/2026: se hace después de la 011) |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | pendiente |
 
