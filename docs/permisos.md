@@ -33,7 +33,7 @@ Un usuario sin un rol permitido en esa aplicación ve «No tienes acceso a esta 
 
 | Rol o permiso | Lo tiene | Para qué | Origen |
 |---|---|---|---|
-| `view-users` (rol del cliente `realm-management`) | *Service account* del cliente confidencial `gateway` | Listar usuarios por rol para los formularios de asignación y resolver nombres | convenciones, 002, 006 |
+| `view-users` y `view-realm` (roles del cliente `realm-management`, solo lectura) | *Service account* del cliente confidencial `gateway` | Listar usuarios por rol para los formularios de asignación (`view-realm` lo exige Keycloak para `GET /roles/{rol}/users`) y resolver nombres | convenciones, 002, 006 |
 | `automatizacion` (rol de realm) | *Service account* del cliente confidencial `n8n` | Solo las rutas de Finanzas que llama n8n (órdenes de compra y cuentas por pagar) | 201 |
 | `agente_ia` (rol de realm) | *Service account* del cliente confidencial `ia-agentes` | Solo `POST /mcp` (herramientas de solo lectura); ve todas las obras como `gerente`; ningún endpoint REST lo acepta | 501 |
 

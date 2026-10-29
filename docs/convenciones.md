@@ -38,7 +38,7 @@ Lo que todos los proyectos hacen igual.
 - Roles del realm: `admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`.
 - Roles técnicos (se crean con su capa; ninguna persona los tiene): `automatizacion` (201, *service account* del cliente confidencial `n8n`; solo en las rutas de Finanzas que llama n8n) y `agente_ia` (501, *service account* del cliente confidencial `ia-agentes`; solo en `POST /mcp`, donde ve todas las obras como `gerente`; ningún endpoint REST lo acepta).
 - Clientes públicos con PKCE: `erp` (shell y microfrontends), `portal`, `app-obra`.
-- Cliente confidencial `gateway` con *service account* y el rol `view-users` de `realm-management`: el gateway lo usa para listar usuarios por rol (formularios de asignación). Ningún otro proyecto llama a la API de administración de Keycloak.
+- Cliente confidencial `gateway` con *service account* y los roles `view-users` y `view-realm` de `realm-management`: el gateway los usa para listar usuarios por rol (formularios de asignación) y resolver nombres. `view-realm` hace falta porque Keycloak 26 exige ver los roles del realm para responder `GET /roles/{rol}/users`; es de solo lectura. Ningún otro proyecto llama a la API de administración de Keycloak.
 - Capa 5: cliente confidencial `ia-agentes` con *service account* para que el servicio de IA llame a las herramientas MCP.
 - Todos los tokens llevan la audiencia `plataforma-api` (mapper de audiencia en Keycloak).
 - Cada servicio valida firma (JWKS del realm), vencimiento, emisor y audiencia `plataforma-api`.
