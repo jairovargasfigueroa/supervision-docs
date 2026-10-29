@@ -205,8 +205,7 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
-| «No tienes acceso a esta aplicación» (con el nombre del usuario y el botón «Cerrar sesión») | ERP, portal | El usuario no tiene un rol permitido en esa aplicación | 001 (criterio 3) · texto de la spec |
-| «No tienes acceso» | App | Sin rol `maestro` ni `almacenero` | 001 (diseño) · texto de la spec |
+| «No tienes acceso a esta aplicación» (con el nombre del usuario y el botón «Cerrar sesión») | ERP, portal, app | El usuario no tiene un rol permitido en esa aplicación (app: sin `maestro` ni `almacenero`) | 001 (criterio 3) · texto de la spec |
 | «Abre esta pantalla desde el ERP» | Microfrontends | Microfrontend abierto solo, sin el shell | 001 (diseño) · texto de la spec |
 | «Esta sección no está disponible por el momento. Intenta recargar la página.» | ERP · shell (espacio del microfrontend) | Un microfrontend no carga | fase 1 (tarea 1.8), 104 · catálogo |
 | «Aplicaciones» con «Portal del cliente» | ERP · shell | Solo si el usuario tiene también el rol `cliente` | 001 (criterio 10) · texto de la spec |
