@@ -80,4 +80,4 @@ No cambia ningún contrato REST, GraphQL ni de eventos, ni ninguna tabla. Para i
 - `docs/convenciones.md`: en «Puertos» o en una sección nueva, la variable `SEMILLA_PERMITIDA` y la regla «los datos de prueba solo se cargan en desarrollo».
 - `docs/specs/001-iniciar-sesion/diseno.md`: los usuarios de prueba tienen `id` fijo y nombres según `docs/datos-prueba.md`, y se agrega `demo1` (roles `residente` y `cliente`) para la prueba manual del SSO entre ERP y portal.
 - `docs/stack.md` y `docs/entorno-local.md`: en infra, la imagen `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para la semilla.
-- `docs/specs/503-reportes-voz/tareas-infra.md` y `docs/specs/502-agentes-erp/tareas-infra.md`: partir de los datos de prueba de la 011 y su ampliación por la 401.
+- `infra/docs/specs/503-reportes-voz/tareas.md` y `infra/docs/specs/502-agentes-erp/tareas.md`: partir de los datos de prueba de la 011 y su ampliación por la 401.
