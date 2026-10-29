@@ -56,7 +56,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 001 | Iniciar sesión y paso entre aplicaciones | Keycloak, frontends | fase 1 | hecho |
 | 002 | Registrar obra (datos, contrato, presupuesto) | obras, finanzas, gateway, mf-obras | 001 | hecho |
 | 003 | Gestionar materiales (catálogo y stock mínimo) | materiales, gateway, mf-materiales | 001 | hecho |
-| 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | pendiente |
+| 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | hecho (falta probar la app en el celular) |
 | 005 | Registrar foto de avance | obras, app-obra | 002 | en curso (Obras y app hechos; la galería del ERP va con la 006; la subida real espera el bucket S3) |
 | 006 | Consultar obra (avance vs plazo, material usado vs previsto) | obras, materiales, finanzas, gateway, mf-obras | 002, 003, 004, 005 | pendiente |
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | pendiente |
