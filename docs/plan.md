@@ -24,7 +24,7 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 
 | N.º | Tarea | Proyecto | Estado |
 |---|---|---|---|
-| 1.0 | Configurar los repos según `docs/flujo-trabajo.md` con `scripts/configurar-repos.ps1`: crear `develop` y dejarla por defecto, proteger `main` y `develop`, *squash* y *merge commit*, borrar ramas al fusionar (plantilla de PR ya copiada en cada repo) | todos | pendiente |
+| 1.0 | Configurar los repos según `docs/flujo-trabajo.md` con `scripts/configurar-repos.ps1`: crear `develop` y dejarla por defecto, proteger `main` y `develop`, solo *merge commit*, borrar ramas al fusionar (plantilla de PR ya copiada en cada repo) | todos | pendiente |
 | 1.1 | Crear el repo `infra` (carpeta `infra/`, GitHub `supervision-infra`) con su `CLAUDE.md` | infra | pendiente |
 | 1.2 | Docker Compose: RabbitMQ (con panel), Keycloak 26.8; PostgreSQL 17 y MongoDB 8.0 como perfil opcional; scripts de `infra/scripts/` (todo según `docs/entorno-local.md`) | infra | pendiente |
 | 1.3 | MongoDB como *replica set* de un nodo (lo necesitan las transacciones del outbox de Materiales), en el contenedor y en la instalación local | infra | pendiente |

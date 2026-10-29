@@ -70,7 +70,7 @@ El usuario no da instrucciones paso a paso. Interpreta así sus pedidos:
 | «Haz la 002» / «implementa registrar obra» | La funcionalidad completa de punta a punta: todas sus tareas en todos sus proyectos, con la rama `feat/002-registrar-obra` en cada repo |
 | «Haz de la 002 a la 004» | Varias funcionalidades en orden, una tras otra, cada una con sus ramas y PR |
 | «Falla X» / «corrige X» | Rama `fix/NNN-...` desde `develop`, prueba que reproduce el error, corrección, PR y fusión |
-| «Haz el release de la fase N» | `release/x.y.0` desde `develop`, PR a `main` con *merge commit*, etiqueta `vx.y.0` y `main` de vuelta a `develop` |
+| «Haz el release de la fase N» | `release/x.y.0` desde `develop`, PR a `main`, etiqueta `vx.y.0` y `main` de vuelta a `develop` |
 
 Si algo de lo pedido no está especificado o es ambiguo, pregunta antes de programar (con las posibles lecturas).
 
@@ -83,7 +83,7 @@ Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) 
 3. Antes de programar: en cada repo que toca, crea la rama `feat/NNN-nombre` desde `develop` actualizado. Nunca trabajes ni hagas *push* en `main` ni en `develop`.
 4. Implementa **tarea por tarea**, en el orden de los proyectos que indica el diseño (servicios → gateway → frontends → app). Cada tarea cumple la **definición de terminado** de `docs/flujo-trabajo.md` (pruebas, lint, tipos, docs).
 5. Al terminar cada tarea: marca `- [x]` en su `tareas.md`, haz **un commit** en la rama (Conventional Commits en español) y `git push`.
-6. Al terminar la funcionalidad (todas sus tareas, todas las pruebas pasando): **crea los PR** hacia `develop` con `gh pr create` (plantilla completa, enlaces entre repos) y **fusiónalos** con `gh pr merge --squash --delete-branch` en el orden servicios → gateway → frontends → app. Luego marca la funcionalidad `hecho` en `docs/plan.md` con su propia rama y PR en `supervision-docs`, deja cada repo local en `develop` actualizado y dile al usuario **qué probar en el navegador o el celular** (sección «Pruebas» del diseño) y cómo levantar lo necesario. Nunca fusiones hacia `main` salvo que el usuario pida un *release*.
+6. Al terminar la funcionalidad (todas sus tareas, todas las pruebas pasando): **crea los PR** hacia `develop` con `gh pr create` (plantilla completa, enlaces entre repos) y **fusiónalos** con `gh pr merge --merge --delete-branch` (PR normal, sin *squash*) en el orden servicios → gateway → frontends → app. Luego marca la funcionalidad `hecho` en `docs/plan.md` con su propia rama y PR en `supervision-docs`, deja cada repo local en `develop` actualizado y dile al usuario **qué probar en el navegador o el celular** (sección «Pruebas» del diseño) y cómo levantar lo necesario. Nunca fusiones hacia `main` salvo que el usuario pida un *release*.
 7. Si algo de la especificación es imposible o contradictorio, no lo inventes: detente, explícalo y propone el cambio; si el usuario lo aprueba, actualiza la spec y los contratos en el mismo trabajo.
 
 Un chat avanza una funcionalidad (o varias tareas de la fase 1). Cuando el chat se hace largo, el usuario abre otro y este vuelve a empezar por el paso 1: el estado vive en `docs/plan.md` y en las casillas de los `tareas.md`.

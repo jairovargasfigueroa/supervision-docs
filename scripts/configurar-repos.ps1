@@ -1,6 +1,6 @@
 # Configura cada repo de GitHub según docs/flujo-trabajo.md (Git Flow):
 #   crea develop desde main y la deja como rama por defecto,
-#   permite solo "squash" y "merge commit", borra la rama al fusionar,
+#   permite solo "merge commit" (PR normal, sin squash ni rebase), borra la rama al fusionar,
 #   y protege main y develop (todo por PR, también el dueño; sin push directo, force push ni borrado).
 # Aprobaciones requeridas: 0 mientras trabaje una sola persona. Cuando haya colaboradores, cambiar $Aprobaciones a 1.
 # Requiere GitHub CLI con sesión del dueño de los repos. Se puede ejecutar varias veces (tarea 1.0).
@@ -23,7 +23,7 @@ foreach ($nombre in $nombres) {
         & $gh api -X POST "repos/$repo/git/refs" -f ref='refs/heads/develop' -f sha=$shaMain | Out-Null
     }
 
-    & $gh repo edit $repo --default-branch develop --enable-squash-merge --enable-merge-commit --enable-rebase-merge=false --delete-branch-on-merge
+    & $gh repo edit $repo --default-branch develop --enable-merge-commit --enable-squash-merge=false --enable-rebase-merge=false --delete-branch-on-merge
 
     $proteccion = @{
         required_status_checks           = $null
