@@ -32,9 +32,9 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 | 1.5 | Bases `obras_db` y `finanzas_db` en PostgreSQL; definiciones de RabbitMQ con el exchange `plataforma` y todas las colas (incluidas `ia` y `notificaciones`) | infra | hecho |
 | 1.6 | `GET /salud` en Obras, Materiales y Finanzas, y validación del token de Keycloak en los tres (rechaza sin token, acepta con token válido) | services/* | hecho |
 | 1.7 | Gateway: validación del token, reenvío del token y de `X-Request-Id`, tiempo máximo de 3 s | gateway | hecho |
-| 1.8 | Shell: login con keycloak-angular, `window.plataforma.sesion`, menú y rutas `/obras`, `/materiales`, `/supervision` cargando cada microfrontend (Angular por `loadRemoteModule`; React como Web Component) con aviso si uno no carga | erp-shell, mf-* | pendiente |
-| 1.9 | Tema visual y librerías base en shell, microfrontends, portal y app según `docs/diseno-visual.md` y el `docs/estructura.md` de cada uno (tema, fuentes, estados vacío y error, `formato.ts`) | frontends, app-obra | pendiente |
-| 1.10 | Esqueleto que camina: login en el ERP → consulta GraphQL → Obras devuelve una lista (vacía) de obras → se muestra en mf-obras | todos los del ERP | pendiente |
+| 1.8 | Shell: login con keycloak-angular, `window.plataforma.sesion`, menú y rutas `/obras`, `/materiales`, `/supervision` cargando cada microfrontend (Angular por `loadRemoteModule`; React como Web Component) con aviso si uno no carga | erp-shell, mf-* | hecho |
+| 1.9 | Tema visual y librerías base en shell, microfrontends, portal y app según `docs/diseno-visual.md` y el `docs/estructura.md` de cada uno (tema, fuentes, estados vacío y error, `formato.ts`) | frontends, app-obra | hecho |
+| 1.10 | Esqueleto que camina: login en el ERP → consulta GraphQL → Obras devuelve una lista (vacía) de obras → se muestra en mf-obras | todos los del ERP | hecho |
 
 **Preparativos que hace Jairo más adelante (no bloquean la fase 1):**
 
