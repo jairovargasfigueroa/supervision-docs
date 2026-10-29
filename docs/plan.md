@@ -53,7 +53,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 
 | N.º | Funcionalidad | Proyectos | Depende de | Estado |
 |---|---|---|---|---|
-| 001 | Iniciar sesión y paso entre aplicaciones | Keycloak, frontends | fase 1 | pendiente |
+| 001 | Iniciar sesión y paso entre aplicaciones | Keycloak, frontends | fase 1 | hecho |
 | 002 | Registrar obra (datos, contrato, presupuesto) | obras, finanzas, gateway, mf-obras | 001 | pendiente |
 | 003 | Gestionar materiales (catálogo y stock mínimo) | materiales, gateway, mf-materiales | 001 | pendiente |
 | 004 | Registrar ingreso y salida de material | materiales, app-obra | 002, 003 | pendiente |

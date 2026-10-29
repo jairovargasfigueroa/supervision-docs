@@ -49,7 +49,7 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 2. Servicios (cada uno en su terminal): Obras `./mvnw spring-boot:run` → Materiales `npm run start:dev` → Finanzas `php artisan serve --port=8083` y `php artisan mensajeria:consumir` → (capas: Sincronización, IA, Notificaciones).
 3. Gateway: `npm run start:dev`.
 4. Frontends: mf-obras `npm start`, mf-materiales `npm start`, mf-supervision `npm start`, shell `npm start`; portal `npm run dev`.
-5. App: `npx expo start`.
+5. App: celular Android con depuración USB (o inalámbrica) → `infra/scripts/celular.ps1` (hace `adb reverse` de 8080, 8081, 8082 y 8090) → en `mobile/app-obra`, `npm start` (Metro en el **8090**, porque el 8081 es de Obras) y abrir en Expo Go.
 
 ## Variables de entorno por proyecto (`.env.example` de cada repo)
 
@@ -62,6 +62,6 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 | Shell y mf-obras | `src/environments/environment.ts` (no secretos): `keycloakUrl`, `realm`, `clientId: 'erp'`, `gatewayUrl: 'http://localhost:4000/graphql'`, `portalUrl: 'http://localhost:4300'` |
 | mf-materiales y mf-supervision | `src/nucleo/configuracion.ts`: `gatewayUrl` (se lee de `window.plataforma.configuracion` que publica el shell, con valor por defecto para desarrollo) |
 | Portal (`.env`) | `VITE_KEYCLOAK_URL=http://localhost:8080`, `VITE_KEYCLOAK_REALM=supervision`, `VITE_KEYCLOAK_CLIENT_ID=portal`, `VITE_OBRAS_URL=http://localhost:8081` |
-| App (`app.json` → `extra`) | `keycloakUrl`, `realm`, `clientId: 'app-obra'`, `obrasUrl`, `materialesUrl` (en el celular, la IP de la computadora en la red local, no `localhost`) |
+| App (`app.json` → `extra`) | `keycloakUrl`, `realm`, `clientId: 'app-obra'`, `obrasUrl`, `materialesUrl`: todas con `localhost` (`http://localhost:8080`, `:8081`, `:8082`). El celular llega a la computadora con `adb reverse` (`infra/scripts/celular.ps1`), así el token sale con el mismo emisor `http://localhost:8080/realms/supervision` que validan los servicios; con la IP de la red local, Keycloak pondría otro emisor y los servicios rechazarían el token. |
 
 Los secretos de desarrollo (contraseñas de bases y RabbitMQ, secreto del cliente `gateway`) se fijan una vez en `infra/.env` y se copian a los `.env` de cada proyecto. El realm de desarrollo trae el secreto del cliente `gateway` fijo **solo para desarrollo**: `gateway-secreto-solo-desarrollo` (va en `KEYCLOAK_GATEWAY_CLIENT_SECRET` del gateway).

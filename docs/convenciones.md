@@ -27,6 +27,7 @@ Lo que todos los proyectos hacen igual.
 | Notificaciones (010) | 8086 |
 | ERP: shell · mf-obras · mf-materiales · mf-supervision | 4200 · 4201 · 4202 · 4203 |
 | Portal | 4300 |
+| Metro de Expo (app en desarrollo; el 8081 es de Obras) | 8090 |
 | PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
@@ -45,7 +46,7 @@ Lo que todos los proyectos hacen igual.
 - Los roles van en el token (`realm_access.roles`); el id del usuario es el `sub` del token.
 - Las reglas finas (qué obras puede ver el usuario) las valida cada servicio. Obras es dueño de las asignaciones; Materiales guarda una copia (`obra_acceso`) que recibe con el evento `ObraRegistrada`.
 - Visibilidad de obras: `admin` y `gerente` ven todas; `residente`, `maestro` y `almacenero` ven las que tienen asignadas; `cliente` ve las suyas.
-- **Usuario con varios roles** (por ejemplo `demo1`, residente y cliente): cada servicio aplica solo los roles de la aplicación desde la que se inició sesión, que viene en el campo `azp` del token. Con `azp = portal` cuentan solo las reglas de `cliente`; con `azp = erp` o `app-obra`, solo las de los roles internos. Las llamadas de servicio a servicio usan el `azp` de su propio cliente (`gateway`, `ia-agentes`, `n8n`).
+- **Usuario con varios roles** (por ejemplo `demo1`, residente y cliente): cada servicio aplica solo los roles de la aplicación desde la que se inició sesión, que viene en el campo `azp` del token. Con `azp = portal` cuentan solo las reglas de `cliente`; con `azp = erp` o `app-obra`, solo las de los roles internos. Las llamadas de servicio a servicio usan el `azp` de su propio cliente (`gateway`, `ia-agentes`, `n8n`). Un `azp` que no es `portal`, `erp` ni `app-obra` (clientes de servicio, o un token sin `azp`) usa los roles del token tal cual. Cada servicio lo aplica con una función pura de «roles efectivos» y toda regla por rol (incluida la visibilidad de obras) la usa. Excepción: el menú «Aplicaciones» del ERP mira los roles del token completo, para ofrecer el portal a quien tiene `cliente`.
 - Respuestas de permiso:
   - `401 NO_AUTENTICADO`: no hay token válido.
   - `403 SIN_PERMISO`: el rol del usuario no permite esa acción (no figura en los roles del endpoint, o figura con una condición que no cumple, por ejemplo `residente` en una acción solo de `admin`). Se comprueba primero, en el guardia de cada endpoint.
