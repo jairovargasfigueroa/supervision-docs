@@ -12,7 +12,7 @@
 
 ## Gateway
 
-- Consultas: `materiales(busqueda: String, soloActivos: Boolean): [Material!]!`, `stockObra(obraId: ID!): [StockMaterial!]!`.
+- Consultas: `materiales(busqueda: String, soloActivos: Boolean, pagina: Int = 1, tamano: Int = 20): MaterialesPagina!` (paginada, como dice `docs/contratos/graphql-erp.md`), `stockObra(obraId: ID!): [StockMaterial!]!`.
 - Mutaciones: `crearMaterial`, `actualizarMaterial`, `definirStockMinimo`.
 - `obras` (de la 006) alimenta el selector de obra; si la 006 no está, usa `obras` básico de la 002.
 
