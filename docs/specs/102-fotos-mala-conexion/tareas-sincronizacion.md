@@ -11,4 +11,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [ ] `POST /subidas/{idSubida}/completar`: partes faltantes, reinicio si falta un objeto, verificación SHA-256, URL firmada del dueño (Obras o Materiales), `PUT` final, borrado de temporales, idempotencia
 - [ ] Tipos `FOTO_AVANCE` y `FOTO_NOTA_REMISION` en `POST /lotes`
 - [ ] Actualizar `docs/datos.md` y `docs/contratos.md` del proyecto
-- [ ] Pruebas de la spec (DynamoDB Local y RustFS o S3 simulado, servicios dueños simulados)
+- [ ] Pruebas de la spec (DynamoDB Local y un doble de S3, servicios dueños simulados)

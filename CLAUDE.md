@@ -20,12 +20,12 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 | `frontend/mf-supervision` | React 19 · Native Federation (adaptador esbuild) | Tablero, agentes y voz | Base (tablero) y capa 5 |
 | `frontend/portal` | React 19 · Vite 8 | Portal del cliente | Base |
 | `mobile/app-obra` | Expo SDK 58 · React Native 0.88 | App de obra (maestro de obra y almacenero) | Base y capa 1 |
-| `infra` | Docker Compose · realm de Keycloak | Entorno de desarrollo (RabbitMQ, Keycloak, almacén S3, bases) y pruebas de punta a punta | Fase 1 (todavía no existe) |
+| `infra` | Docker Compose · realm de Keycloak | Entorno de desarrollo (RabbitMQ, Keycloak, bases) y pruebas de punta a punta | Fase 1 (todavía no existe) |
 | `services/notificaciones` | NestJS · MongoDB · Firebase | Notificaciones *push* y bandeja | Funcionalidad 010 (todavía no existe) |
 | `services/sincronizacion` | NestJS · DynamoDB | Recibe lo del celular sin duplicar | Capa 1 (todavía no existe) |
 | `services/ia` | Python · FastAPI | Agentes, ML, reportes por voz, base de reportes | Capas 3 a 5 (todavía no existe) |
 
-Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal` y `app-obra` (y `infra`, `ms-sincronizacion`, `ms-ia` y `ms-notificaciones` cuando se creen), más `supervision-docs` para esta carpeta. Rama principal `main`, protegida: todo entra por *pull request* (`docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
+Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal` y `app-obra` (y `infra`, `ms-sincronizacion`, `ms-ia` y `ms-notificaciones` cuando se creen), más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
 
 Herramientas: **Node 24 LTS** para todos los proyectos JavaScript (activar con `nvm use 24`), Java 21, PHP 8.5 de Herd (ejecutar Laravel desde PowerShell; el PHP 8.2 de XAMPP no sirve). Las versiones elegidas y el porqué están en `docs/arquitectura.md` («Versiones»).
 
@@ -65,15 +65,15 @@ Las especificaciones están escritas y aprobadas (sistema base y capas). No hay 
 
 1. Lee `docs/plan.md` y toma la **siguiente tarea `pendiente`** (fase 1) o la **siguiente funcionalidad `pendiente`** (fases 2 en adelante).
 2. Para una funcionalidad, lee su `docs/specs/NNN-nombre/requisitos.md` y `diseno.md`, los contratos y datos de cada proyecto afectado, y sus `tareas.md` (`<proyecto>/docs/specs/NNN-nombre/tareas.md`; las de proyectos que todavía no existen están en `docs/specs/NNN-nombre/tareas-<proyecto>.md`).
-3. Antes de programar: en cada repo que toca, crea la rama `feat/NNN-nombre` desde `main` actualizado y abre un *pull request* en borrador (`gh pr create --draft`). Nunca trabajes ni hagas *push* en `main`.
+3. Antes de programar: en cada repo que toca, crea la rama `feat/NNN-nombre` desde `develop` actualizado. Nunca trabajes ni hagas *push* en `main` ni en `develop`.
 4. Implementa **tarea por tarea**, en el orden de los proyectos que indica el diseño (servicios → gateway → frontends → app). Cada tarea cumple la **definición de terminado** de `docs/flujo-trabajo.md` (pruebas, lint, tipos, docs).
 5. Al terminar cada tarea: marca `- [x]` en su `tareas.md`, haz **un commit** en la rama (Conventional Commits en español) y `git push`.
-6. Al terminar la funcionalidad: marca los PR como listos para revisión, con la plantilla completa y los enlaces entre repos; actualiza `docs/plan.md` en una rama y PR de `supervision-docs`, y avisa al usuario qué debe probar a mano (sección «Pruebas» del diseño). **No fusiones los PR**: lo hace una persona tras la revisión.
+6. Al terminar la funcionalidad: actualiza `docs/plan.md` en una rama de `supervision-docs`, sube todas las ramas y entrega al usuario, por cada repo, el **título y la descripción del PR** (plantilla completa, enlaces entre repos, orden de fusión) y qué debe probar a mano (sección «Pruebas» del diseño). **El usuario crea y fusiona los PR desde GitHub**; el agente no los crea ni los fusiona.
 7. Si algo de la especificación es imposible o contradictorio, no lo inventes: detente, explícalo y propone el cambio; si el usuario lo aprueba, actualiza la spec y los contratos en el mismo trabajo.
 
 Un chat avanza una funcionalidad (o varias tareas de la fase 1). Cuando el chat se hace largo, el usuario abre otro y este vuelve a empezar por el paso 1: el estado vive en `docs/plan.md` y en las casillas de los `tareas.md`.
 
-GitHub CLI está en `C:\Program Files\GitHub CLI\gh.exe` (con sesión iniciada); úsalo para crear los repos nuevos como públicos (`supervision-infra`, `supervision-ms-sincronizacion`, `supervision-ms-ia`, `supervision-ms-notificaciones`), agregarlos a `scripts/repos.ps1`, configurarlos con `scripts/configurar-repos.ps1` y abrir los PR.
+GitHub CLI está en `C:\Program Files\GitHub CLI\gh.exe` (con sesión iniciada); úsalo para crear los repos nuevos como públicos (`supervision-infra`, `supervision-ms-sincronizacion`, `supervision-ms-ia`, `supervision-ms-notificaciones`), agregarlos a `scripts/repos.ps1`, y configurarlos con `scripts/configurar-repos.ps1`.
 
 En las capas, cada `diseno.md` termina con «Cambios a contratos y datos»: aplícalos como primera tarea de esa funcionalidad, antes de programar.
 

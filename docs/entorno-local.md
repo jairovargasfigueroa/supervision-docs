@@ -10,15 +10,26 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 | `mongo` | `mongo:8.0` | 27017 | Arranca como *replica set* de un nodo (`--replSet rs0`) y un servicio `mongo-init` ejecuta `rs.initiate()`. Bases `materiales_db` (y `notificaciones_db`, `ia_db` en sus funcionalidades). **Perfil `bases`** (opcional). |
 | `rabbitmq` | `rabbitmq:4.4-management` | 5672, 15672 (panel) | Importa `infra/rabbitmq/definiciones.json`: exchange `plataforma` (topic), colas `obras`, `materiales`, `finanzas`, `notificaciones`, `ia`, `plataforma.fallidos` y sus enlaces. Usuario por servicio. Las colas `ia` (con sus 6 enlaces de la 401) y `notificaciones` (010) se declaran desde la fase 1, aunque esos servicios todavía no existan, para que ningún evento se pierda. |
 | `keycloak` | `quay.io/keycloak/keycloak:26.8.1` | 8080 | `start-dev --import-realm` con `infra/keycloak/realm-supervision.json` y el tema `infra/keycloak/temas/supervision`. Usa su propia base H2 en desarrollo. |
-| `almacen` (S3) | `rustfs/rustfs:1.0.4` | 9000 (API S3), 9001 (consola) | Reemplaza a MinIO, que dejó de publicar imágenes. Un servicio `almacen-init` crea el bucket `supervision` y su regla CORS. |
 | `mailpit` | `axllent/mailpit:v1.32` | 1025 (SMTP), 8025 (web) | Solo desde la 201. Perfil `automatizacion`. |
 | `dynamodb` | `amazon/dynamodb-local:3.3.2` | 8000 | Solo desde la 101. Perfil `sin-senal`. |
 | `n8n` | según la spec 201 | 5678 | Solo desde la 201. Perfil `automatizacion`. |
 
-- Todos con *healthcheck* y volúmenes con nombre (`datos-postgres`, `datos-mongo`, `datos-rabbitmq`, `datos-almacen`).
-- **Perfiles:** sin perfil se levantan RabbitMQ, Keycloak y el almacén S3. `--profile bases` suma PostgreSQL y MongoDB (para quien no los tiene instalados). Las capas suman sus perfiles.
+- Todos con *healthcheck* y volúmenes con nombre (`datos-postgres`, `datos-mongo`, `datos-rabbitmq`).
+- **Perfiles:** sin perfil se levantan RabbitMQ y Keycloak. `--profile bases` suma PostgreSQL y MongoDB (para quien no los tiene instalados). Las capas suman sus perfiles.
 - En la máquina de Jairo PostgreSQL (5433) y MongoDB (27017) ya están instalados: no usar el perfil `bases`. **MongoDB local debe configurarse como *replica set*** (tarea 1.3: `replication.replSetName: rs0` en `mongod.cfg` y `rs.initiate()`).
 - Contraseñas de desarrollo en `infra/.env` (copiado de `infra/.env.example`); nunca en el repo.
+
+## Archivos en desarrollo: S3 real
+
+Las fotos y notas de remisión van a **Amazon S3 también en desarrollo** (no hay imitador en Docker). Lo crea Jairo una vez en la consola de AWS (tarea 1.5):
+
+1. Bucket privado `supervision-dev-<sufijo>` en `sa-east-1` (São Paulo), con «Bloquear todo el acceso público» activado.
+2. Regla CORS del bucket: métodos `GET` y `PUT`, orígenes `http://localhost:4200`, `http://localhost:4201` y `http://localhost:4300`, encabezados `*`.
+3. Regla de ciclo de vida: borrar los objetos del prefijo `temporal/` a los 7 días (lo usa la 102).
+4. Usuario IAM `supervision-dev` con una política que solo permite `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` y `s3:ListBucket` sobre ese bucket; sus claves van en los `.env` (nunca en el repo).
+5. Alerta de presupuesto de AWS (por ejemplo 5 USD) para enterarse de cualquier gasto.
+
+Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o créditos): revísalo en la consola. Las **pruebas automáticas no usan S3**: usan un doble del almacenamiento en memoria. La app en el celular sube a S3 por internet con la URL firmada, así que no necesita estar en la misma red que la computadora para las fotos.
 
 ## Scripts (`infra/scripts/`, en PowerShell y Bash)
 
@@ -42,7 +53,7 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 
 | Proyecto | Variables |
 |---|---|
-| Obras (`.env.properties`) | `OBRAS_PORT=8081`, `OBRAS_DB_HOST=localhost`, `OBRAS_DB_PORT=5433`, `OBRAS_DB_NAME=obras_db`, `OBRAS_DB_USER`, `OBRAS_DB_PASSWORD`, `OBRAS_KEYCLOAK_ISSUER=http://localhost:8080/realms/supervision`, `OBRAS_RABBITMQ_HOST=localhost`, `OBRAS_RABBITMQ_PORT=5672`, `OBRAS_RABBITMQ_USER`, `OBRAS_RABBITMQ_PASSWORD`, `OBRAS_S3_ENDPOINT=http://localhost:9000`, `OBRAS_S3_ACCESS_KEY`, `OBRAS_S3_SECRET_KEY`, `OBRAS_S3_BUCKET=supervision`, `OBRAS_CORS_ORIGENES=http://localhost:4300` |
+| Obras (`.env.properties`) | `OBRAS_PORT=8081`, `OBRAS_DB_HOST=localhost`, `OBRAS_DB_PORT=5433`, `OBRAS_DB_NAME=obras_db`, `OBRAS_DB_USER`, `OBRAS_DB_PASSWORD`, `OBRAS_KEYCLOAK_ISSUER=http://localhost:8080/realms/supervision`, `OBRAS_RABBITMQ_HOST=localhost`, `OBRAS_RABBITMQ_PORT=5672`, `OBRAS_RABBITMQ_USER`, `OBRAS_RABBITMQ_PASSWORD`, `OBRAS_S3_REGION=sa-east-1`, `OBRAS_S3_ACCESS_KEY`, `OBRAS_S3_SECRET_KEY`, `OBRAS_S3_BUCKET=supervision-dev-<sufijo>`, `OBRAS_CORS_ORIGENES=http://localhost:4300` |
 | Materiales (`.env`) | `PORT=8082`, `MONGODB_URI=mongodb://localhost:27017/materiales_db?replicaSet=rs0`, `KEYCLOAK_URL=http://localhost:8080`, `KEYCLOAK_REALM=supervision`, `AUDIENCIA=plataforma-api`, `RABBITMQ_URL=amqp://usuario:clave@localhost:5672`, `MATERIALES_S3_*` (desde la 102), `CORS_ORIGENES=` (vacío: solo la llaman servicios y la app) |
 | Finanzas (`.env`) | Las de Laravel con `DB_CONNECTION=pgsql`, `DB_HOST=localhost`, `DB_PORT=5433`, `DB_DATABASE=finanzas_db`, `DB_USERNAME`, `DB_PASSWORD`, `APP_TIMEZONE=America/La_Paz`, `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`, `KEYCLOAK_ISSUER=http://localhost:8080/realms/supervision`, `KEYCLOAK_AUDIENCIA=plataforma-api` |
 | Gateway (`.env`) | `PORT=4000`, `OBRAS_URL=http://localhost:8081`, `MATERIALES_URL=http://localhost:8082`, `FINANZAS_URL=http://localhost:8083`, `IA_URL=http://localhost:8085` (capa 4), `NOTIFICACIONES_URL=http://localhost:8086` (010), `KEYCLOAK_URL=http://localhost:8080`, `KEYCLOAK_REALM=supervision`, `KEYCLOAK_GATEWAY_CLIENT_ID=gateway`, `KEYCLOAK_GATEWAY_CLIENT_SECRET`, `CORS_ORIGENES=http://localhost:4200,http://localhost:4201,http://localhost:4202,http://localhost:4203` |

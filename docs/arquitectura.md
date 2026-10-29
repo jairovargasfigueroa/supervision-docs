@@ -16,7 +16,7 @@
 | IA | Microservicio (capas 3 a 5) | FastAPI + Ollama | MongoDB (agentes) y PostgreSQL de lectura (reportes) |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
-| Almacenamiento de objetos | Fotos y notas de remisión | S3 (RustFS en desarrollo) | — |
+| Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
 
 ## Conexiones
 
@@ -84,4 +84,4 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Google Cloud | IA + Ollama (máquina virtual), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje necesita memoria |
 | Azure | Gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n, apps web, PostgreSQL de Obras y Finanzas | Obras y Finanzas comparten la saga |
 
-En desarrollo todo corre con Docker Compose (DynamoDB Local y RustFS en lugar de AWS).
+En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo.

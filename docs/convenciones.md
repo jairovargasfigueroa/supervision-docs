@@ -27,10 +27,10 @@ Lo que todos los proyectos hacen igual.
 | Notificaciones (010) | 8086 |
 | ERP: shell · mf-obras · mf-materiales · mf-supervision | 4200 · 4201 · 4202 · 4203 |
 | Portal | 4300 |
-| PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) · RustFS (API / panel) | 5433 · 27017 · 5672 / 15672 · 9000 / 9001 |
+| PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
-- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y RustFS. Quien no los tenga instalados levanta también los contenedores de las bases.
+- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ y Keycloak. Quien no los tenga instalados levanta también los contenedores de las bases.
 
 ## Autenticación y permisos (Keycloak)
 
@@ -149,7 +149,8 @@ Lo que todos los proyectos hacen igual.
 
 ## Archivos (fotos y notas de remisión)
 
-- Se guardan en almacenamiento de objetos compatible con S3 (RustFS en desarrollo, S3 en la capa 6), bucket `supervision`.
+- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción, el bucket de la capa 6. El código es el mismo; solo cambian las variables.
+- Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
 

@@ -12,7 +12,7 @@ Los datos están en `docs/datos-prueba.md` (fuente única).
 
 ### Carga
 
-1. CUANDO se corre `infra/semilla/semilla.ps1` (o `semilla.sh`) con las bases vacías y las migraciones aplicadas, ENTONCES termina sin errores y muestra un resumen con la fecha de carga D y la cantidad de registros por servicio: Obras 3 obras, 21 partidas, 5 planillas, 10 fotos; Finanzas 3 contratos, 3 reservas, 3 cobros; Materiales 15 materiales, 3 `obra_acceso`, 14 filas de stock, 67 movimientos, 3 cierres; almacén S3 10 imágenes.
+1. CUANDO se corre `infra/semilla/semilla.ps1` (o `semilla.sh`) con las bases vacías y las migraciones aplicadas, ENTONCES termina sin errores y muestra un resumen con la fecha de carga D y la cantidad de registros por servicio: Obras 3 obras, 21 partidas, 5 planillas, 10 fotos; Finanzas 3 contratos, 3 reservas, 3 cobros; Materiales 15 materiales, 3 `obra_acceso`, 14 filas de stock, 67 movimientos, 3 cierres; bucket S3 de desarrollo 10 imágenes.
 2. CUANDO se corre `semilla` una segunda vez, ENTONCES no se duplica nada (mismos conteos) y no falla.
 3. CUANDO se modifica algo en una demostración (por ejemplo, se aprueba la planilla 3 de la obra 1) y se corre `recargar`, ENTONCES, después de confirmar, todo vuelve al estado del documento con la fecha del día.
 4. La carga no publica eventos ni comandos: después de cargar, las tablas o colecciones `outbox_evento` de los tres servicios están vacías y el panel de RabbitMQ no muestra mensajes nuevos en el exchange `plataforma`.

@@ -24,7 +24,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Mapeo entre dominio, JPA y DTO | MapStruct | 1.6.3 (estable; no usar la 1.7 beta) |
 | DTO y objetos de valor | `record` de Java (sin Lombok) | — |
 | OpenAPI y Swagger UI | `springdoc-openapi-starter-webmvc-ui` | 3.2 |
-| Fotos en S3/RustFS | AWS SDK for Java v2 (`s3`) | 2.x |
+| Fotos en S3 | AWS SDK for Java v2 (`s3`) | 2.x |
 | Pruebas | JUnit 5 + AssertJ (del starter de test), Testcontainers 2 (PostgreSQL, RabbitMQ) | versiones del BOM de Spring Boot |
 | Reglas de arquitectura hexagonal | ArchUnit (`archunit-junit5`) | 1.5 |
 

@@ -10,7 +10,7 @@ Residente pulsa «Presentar» (mf-obras)
       → canvas: dibujar la foto, difuminar cada caja (+ margen 30 %)
   → vista previa (marcar zonas a mano, quitar fotos) → «Confirmar y presentar»
   → por cada foto: mutation prepararSubidaFotoCliente(obraId, fotoId) → { url, claveArchivoCliente }
-      → canvas.toBlob("image/jpeg", 0.8) → PUT url (RustFS/S3)
+      → canvas.toBlob("image/jpeg", 0.8) → PUT url (S3)
       → mutation registrarFotoCliente(obraId, fotoId, claveArchivoCliente, rostrosDifuminados)
   → mutation presentarPlanilla(id, version) (007)
 Portal → GET /obras/{id}/fotos (cliente) → urlDescarga firmada de clave_archivo_cliente
@@ -35,7 +35,7 @@ Portal → GET /obras/{id}/fotos (cliente) → urlDescarga firmada de clave_arch
   - `difuminar.ts`: difuminado sobre un canvas.
   - `preparar-fotos-cliente.service.ts`: orquesta descarga, detección, difuminado, subida y registro; reintento por foto.
   - `vista-previa-fotos-cliente.component.ts`: diálogo con las versiones, contador de rostros, herramienta de rectángulo, «Volver a preparar», «Quitar de la planilla» (guarda la planilla sin esa foto con `guardarPlanilla`) y «Confirmar y presentar».
-- La descarga del original usa `fetch` sobre `urlDescarga` (URL firmada, 30 min); necesita CORS en RustFS/S3 (ver infra). Si la URL venció, se vuelve a pedir la lista de fotos.
+- La descarga del original usa `fetch` sobre `urlDescarga` (URL firmada, 30 min); necesita la regla CORS del bucket S3 (ver infra). Si la URL venció, se vuelve a pedir la lista de fotos.
 
 ## Obras
 
@@ -67,7 +67,7 @@ extend type Mutation {
 
 ## Infra
 
-- RustFS: permitir CORS para `GET` y `PUT` desde `http://localhost:4200` y `http://localhost:4201` (se configura en la regla CORS del bucket que aplica `almacen-init` con `PutBucketCors`; hay que dejarlo explícito en el `docker-compose.yml`). En S3 (capa 6) se configura la regla CORS del bucket.
+- Bucket S3 de desarrollo: regla CORS que permita `GET` y `PUT` desde `http://localhost:4200` y `http://localhost:4201` (se configura en la consola de AWS; en producción, con los dominios reales, 602).
 
 ## Métricas mínimas (decisión del equipo)
 
@@ -130,7 +130,7 @@ Consume (Obras): agregar `POST /obras/{id}/fotos/{fotoId}/url-subida-cliente` y 
 
 ### `frontend/mf-obras/docs/contratos.md`
 
-- Consume: mutaciones `prepararSubidaFotoCliente` y `registrarFotoCliente`; `Foto.urlDescargaCliente`; subida directa (PUT) a RustFS/S3 con URL firmada; archivos de MediaPipe servidos desde `public/modelos/mediapipe/`.
+- Consume: mutaciones `prepararSubidaFotoCliente` y `registrarFotoCliente`; `Foto.urlDescargaCliente`; subida directa (PUT) a S3 con URL firmada; archivos de MediaPipe servidos desde `public/modelos/mediapipe/`.
 
 ### `frontend/portal/docs/contratos.md`
 
@@ -138,7 +138,7 @@ Consume (Obras): agregar `POST /obras/{id}/fotos/{fotoId}/url-subida-cliente` y 
 
 ### Infra (`docker-compose.yml`)
 
-- Regla CORS del bucket `supervision` explícita para los orígenes del ERP.
+- Regla CORS del bucket S3 (de desarrollo y de producción) explícita para los orígenes del ERP.
 
 ### Eventos
 
