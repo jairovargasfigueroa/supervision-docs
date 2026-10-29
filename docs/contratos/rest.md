@@ -91,7 +91,7 @@ Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`.
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 
 ### GET /planillas/{id} · 007, 008
-Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
+Roles: los que pueden ver la obra. `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
 ```json
 {
   "id": "uuid", "obraId": "uuid", "numero": 3, "periodo": "2027-03", "estado": "BORRADOR", "version": 2,
@@ -169,6 +169,7 @@ Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO
 
 ### GET /stock/resumen?obraIds=a,b,c · 009
 Roles: `admin`, `residente`, `gerente`. `[{ "obraId", "materialesBajos": 2 }]` (solo obras visibles).
+`obraIds` obligatorio, de 1 a 100 ids separados por coma (sin ellos o con más de 100: `400 DATOS_INVALIDOS`). Una fila por obra visible, en el orden pedido; una obra visible sin stock devuelve `0`; las que el usuario no ve se omiten sin error. `materialesBajos` = materiales en estado `BAJO` (calculado al leer). El gateway pide en lotes de 100.
 
 ## Finanzas (puerto 8083)
 
@@ -190,6 +191,7 @@ Roles: `admin`, `gerente`. Mismo objeto que en la lista. (El gateway lo usa para
 ### GET /cobros/resumen · 009
 Roles: `admin`, `gerente`.
 `{ "vencidos": { "cantidad": 1, "monto": 41881.80 }, "porVencer30Dias": { "cantidad": 2, "monto": 90000.00 } }`
+Vencidos: estado `VENCIDO` y también `PENDIENTE` con vencimiento anterior a hoy (hora de La Paz), por si todavía no se marcó. Por vencer: `PENDIENTE` con vencimiento entre hoy y hoy + 30, ambos incluidos. Cada cobro cuenta en un solo grupo.
 
 ### Capa 2
 

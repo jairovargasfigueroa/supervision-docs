@@ -64,6 +64,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 | `SUPERA_CANTIDAD_CONTRATADA` | 422 | Acumulado anterior + cantidad del periodo > cantidad contratada (`errores[]` por partida) | En cada fila: «Supera lo contratado (saldo: {saldo})». Arriba: «Hay filas que superan lo contratado. Corrígelas para guardar.» | Bajar la cantidad de las filas marcadas | ERP · Obras | 007 (criterio 5) · texto de la spec (fila); catálogo (arriba) |
 | `FOTO_FUERA_DEL_PERIODO` | 422 | Se adjuntó una foto registrada fuera del periodo de la planilla | «Una de las fotos adjuntas no es de este periodo. Quítala para guardar.» | Quitar la foto | ERP · Obras | 007 · catálogo |
 | `SUBTOTAL_CERO` | 422 | Se intenta presentar una planilla con subtotal 0 | «No se puede presentar una planilla con subtotal 0. Indica las cantidades ejecutadas del periodo.» | Cargar cantidades y guardar | ERP · Obras | 007 (criterio 8) · catálogo |
+| `PLANILLA_NO_ENCONTRADA` | 404 | La planilla no existe, es de una obra que el usuario no ve o es un `BORRADOR` y la pide el cliente | «Planilla no encontrada» | Volver a la obra | ERP · Obras, portal | 007, 008 · catálogo |
 | `FOTO_SIN_VERSION_CLIENTE` | 422 | Al presentar, alguna foto adjunta no tiene versión con rostros difuminados (`errores[]` por `fotoId`) | Por foto: «Falta la versión para el cliente». Arriba: «Prepara la versión para el cliente de todas las fotos antes de presentar.» | Preparar las fotos que faltan o quitarlas | ERP · Obras | 303 (diseño) · texto de la spec (por foto); catálogo (arriba) |
 | `FOTO_NO_ENCONTRADA` | 404 | La foto no existe o no es de esa obra (303) | «No encontramos la foto. Puede que ya no esté adjunta a la planilla.» | Recargar la planilla | ERP · Obras | 303 · catálogo |
 | `ARCHIVO_NO_SUBIDO` | 422 | Se registra la versión para el cliente pero el archivo no está en el almacenamiento | «La versión para el cliente no terminó de subirse. Intenta de nuevo.» | Reintentar la foto | ERP · Obras | 303 · catálogo |
@@ -212,6 +213,16 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Aún no hay cobros.» | ERP · detalle · Cobros | La obra no tiene cobros | 006 · catálogo |
 | «Saldo y total cobrado: No disponible por el momento.» | ERP · detalle · Contrato | Finanzas no respondió | 006 · catálogo |
 | Etiquetas de estado: «Borrador», «Presentada», «En aprobación», «Aprobada», «Observada», «Pendiente», «Vencido», «Excedido», «En riesgo» | ERP (chips) | Estados de planilla, cobro, consumo y obra | 006 · catálogo |
+
+### Tablero (009)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Tablero de obras» | ERP · Supervisión · título | Siempre | 009 · catálogo |
+| «Obras en ejecución» · «Obras en riesgo» · «Materiales bajos» · «Cobros vencidos» | ERP · Supervisión · tarjetas | Siempre (la de cobros solo para `admin` y `gerente`) | 009 · catálogo |
+| «Aún no hay obras en ejecución.» | ERP · Supervisión · tabla | No hay obras en ejecución visibles | 009 · catálogo |
+| «Sin planillas» | ERP · Supervisión · tabla, columna última planilla | La obra todavía no tiene planillas | 009 · catálogo |
+| «—» con «Datos de {servicio} no disponibles» | ERP · Supervisión · tarjeta o celda | Ese servicio no respondió (respuesta parcial) | 009 |
 
 ### Materiales y fotos (003, 005)
 
