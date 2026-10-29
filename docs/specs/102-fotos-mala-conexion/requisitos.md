@@ -1,6 +1,6 @@
 # 102 · Fotos sin señal y envío con mala conexión
 
-**Estado:** borrador (por aprobar) · **Capa:** 1 · **Puntos del ingeniero:** 7 y 9 · **Proyectos:** services/sincronizacion, services/materiales, app-obra, infra (RustFS) · **Depende de:** 101
+**Estado:** borrador (por aprobar) · **Capa:** 1 · **Puntos del ingeniero:** 7 y 9 · **Proyectos:** services/sincronizacion, services/materiales, app-obra, AWS S3 (bucket de desarrollo) · **Depende de:** 101
 
 ## Historia
 

@@ -133,7 +133,7 @@ jobs:
 | Gateway | Node 24: `npm ci`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build` | `az containerapp update` (app `gateway`) |
 | Materiales | Node 24 y MongoDB de servicio en modo *replica set* para las pruebas de outbox | Artifact Registry + `google-github-actions/deploy-cloudrun@v3` (servicio `materiales`) |
 | IA | `astral-sh/setup-uv` (o `pip install uv`) con Python 3.12: `uv sync --frozen`, `uv run ruff check`, `uv run pytest` con PostgreSQL de servicio (proyecciones de la 401) e incluidas las pruebas de seguridad de la 504 | Artifact Registry + `gcloud compute ssh vm-ia --tunnel-through-iap --command "cd /opt/supervision && sudo docker compose pull ia-api ia-worker && sudo docker compose up -d ia-api ia-worker"` |
-| Sincronización | Node 24 con DynamoDB Local y RustFS de servicio (101 y 102) | ECR + `aws lambda update-function-code --function-name sincronizacion --image-uri <ecr>/supervision-ms-sincronizacion:sha-…` y espera a `LastUpdateStatus = Successful` |
+| Sincronización | Node 24 con DynamoDB Local de servicio y un doble de S3 (101 y 102) | ECR + `aws lambda update-function-code --function-name sincronizacion --image-uri <ecr>/supervision-ms-sincronizacion:sha-…` y espera a `LastUpdateStatus = Successful` |
 | erp-shell, mf-obras | `npm ci`, `npm test`, `npm run build` con la configuración de producción; el shell genera `federation.manifest.json` | `Azure/static-web-apps-deploy@v1` con `skip_app_build: true` y la carpeta `dist/…/browser`; la imagen nginx se publica en GHCR |
 | mf-materiales, mf-supervision | `npm ci`, `npm run typecheck`, pruebas, `npm run build` | igual (carpeta `dist/`) |
 | portal | `npm ci`, `npm run lint`, `npm run build` | igual (carpeta `dist/`) |

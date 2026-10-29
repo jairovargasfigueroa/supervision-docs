@@ -204,7 +204,7 @@ Reemplazar la tabla «Despliegue (propuesta, capa 6)» por el «Mapa del desplie
 
 - «Autenticación y permisos»: emisor público de producción `https://<host-azure>/auth/realms/supervision`.
 - «Eventos y comandos»: en producción, AMQPS en 5671 y un usuario de RabbitMQ por servicio (incluidos `ia` y `n8n`).
-- «Archivos»: en producción, bucket S3 `supervision-<sufijo>` en `sa-east-1`, privado, con los prefijos `fotos/`, `fotos-cliente/`, `notas-remision/` y `temporal/subidas/` (7 días) y CORS para el shell; RustFS solo en desarrollo.
+- «Archivos»: en producción, bucket S3 `supervision-<sufijo>` en `sa-east-1`, privado, con los prefijos `fotos/`, `fotos-cliente/`, `notas-remision/` y `temporal/subidas/` (7 días) y CORS para el shell; en desarrollo se usa el bucket `supervision-dev-<sufijo>` (`docs/entorno-local.md`).
 - Nueva sección «Secretos en producción»: tabla de gestores por nube de este diseño.
 
 ### `docs/reglas-negocio.md` («Compras automáticas (capa 2)»)

@@ -1,6 +1,6 @@
 # 005 · Registrar foto de avance
 
-**Estado:** aprobado · **Proyectos:** services/obras, app-obra, infra (RustFS)
+**Estado:** aprobado · **Proyectos:** services/obras, app-obra, AWS S3 (bucket de desarrollo)
 
 ## Historia
 
