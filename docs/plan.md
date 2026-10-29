@@ -22,6 +22,8 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 
 ## Fase 1. Entorno y esqueleto que camina
 
+**Cerrada el 29/10/2026 con el release `v0.1.0`** (etiqueta en `main` de cada repo).
+
 | N.º | Tarea | Proyecto | Estado |
 |---|---|---|---|
 | 1.0 | Configurar los repos según `docs/flujo-trabajo.md` con `scripts/configurar-repos.ps1`: crear `develop` y dejarla por defecto, proteger `main` y `develop`, solo *merge commit*, borrar ramas al fusionar (plantilla de PR ya copiada en cada repo) | todos | hecho |
