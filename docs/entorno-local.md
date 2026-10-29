@@ -1,6 +1,6 @@
 # Entorno local
 
-Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de octubre de 2026 en Docker Hub y Quay). Vive en el repo `supervision-infra` (se crea en la tarea 1.1).
+Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de octubre de 2026 en Docker Hub y Quay). Vive en el repo `supervision-infra` (carpeta `infra/`).
 
 ## Servicios de Docker Compose (`infra/docker-compose.yml`)
 

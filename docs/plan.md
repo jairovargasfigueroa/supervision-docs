@@ -25,7 +25,7 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 | N.º | Tarea | Proyecto | Estado |
 |---|---|---|---|
 | 1.0 | Configurar los repos según `docs/flujo-trabajo.md` con `scripts/configurar-repos.ps1`: crear `develop` y dejarla por defecto, proteger `main` y `develop`, solo *merge commit*, borrar ramas al fusionar (plantilla de PR ya copiada en cada repo) | todos | hecho |
-| 1.1 | Crear el repo `infra` (carpeta `infra/`, GitHub `supervision-infra`) con su `CLAUDE.md` | infra | pendiente |
+| 1.1 | Crear el repo `infra` (carpeta `infra/`, GitHub `supervision-infra`) con su `CLAUDE.md` | infra | hecho |
 | 1.2 | Docker Compose: RabbitMQ (con panel), Keycloak 26.8; PostgreSQL 17 y MongoDB 8.0 como perfil opcional; scripts de `infra/scripts/` (todo según `docs/entorno-local.md`) | infra | pendiente |
 | 1.3 | MongoDB como *replica set* de un nodo (lo necesitan las transacciones del outbox de Materiales), en el contenedor y en la instalación local | infra | pendiente |
 | 1.4 | Realm `supervision` exportado en JSON e importado al iniciar: roles, clientes `erp`, `portal`, `app-obra`, mapper de audiencia `plataforma-api`, cliente `gateway` con *service account*, usuarios de prueba de la 001 (con `demo1`), política de contraseñas, protección contra fuerza bruta, idioma español y tema `supervision` (`docs/convenciones.md`, «Seguridad») | infra | pendiente |
@@ -47,7 +47,7 @@ La fase 1 es técnica: no necesita `requisitos.md` por funcionalidad, pero cada 
 
 ## Fase 2. Sistema base (una especificación por funcionalidad)
 
-Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan con «Cambios a contratos y datos»: aplícalos como primera tarea): `docs/specs/NNN-nombre/requisitos.md` y `diseno.md` en la carpeta general, y `docs/specs/NNN-nombre/tareas.md` en cada proyecto afectado (las de `infra` en `docs/specs/NNN-nombre/tareas-infra.md`). Se implementan en este orden; una funcionalidad está `hecho` cuando todas sus tareas, en todos sus proyectos, están marcadas.
+Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan con «Cambios a contratos y datos»: aplícalos como primera tarea): `docs/specs/NNN-nombre/requisitos.md` y `diseno.md` en la carpeta general, y `docs/specs/NNN-nombre/tareas.md` en cada proyecto afectado (las de `infra` en `infra/docs/specs/NNN-nombre/tareas.md`). Se implementan en este orden; una funcionalidad está `hecho` cuando todas sus tareas, en todos sus proyectos, están marcadas.
 
 | N.º | Funcionalidad | Proyectos | Depende de | Estado |
 |---|---|---|---|---|
