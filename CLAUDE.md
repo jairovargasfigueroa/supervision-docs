@@ -27,7 +27,7 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 
 Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal` y `app-obra` (y `infra`, `ms-sincronizacion`, `ms-ia` y `ms-notificaciones` cuando se creen), más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
 
-Herramientas: **Node 24 LTS** para todos los proyectos JavaScript (activar con `nvm use 24`), Java 21, PHP 8.5 de Herd (ejecutar Laravel desde PowerShell; el PHP 8.2 de XAMPP no sirve). Las versiones elegidas y el porqué están en `docs/arquitectura.md` («Versiones»).
+Herramientas: **Node 24 LTS** para todos los proyectos JavaScript (activar con `nvm use 24`; en la terminal Bash de esta máquina aparece primero un Node 20 viejo de `~/.nvm`: antepón `export PATH="/c/nvm4w/nodejs:$PATH"` o usa PowerShell, y comprueba con `node -v`), Java 21, PHP 8.5 de Herd (ejecutar Laravel desde PowerShell; el PHP 8.2 de XAMPP no sirve). Las versiones elegidas y el porqué están en `docs/arquitectura.md` («Versiones»).
 
 ## Documentos transversales (`docs/`)
 
@@ -61,7 +61,7 @@ Cada proyecto tiene además su `CLAUDE.md` y su `docs/` (con `estructura.md`, ob
 
 ## Cómo trabajar en cada chat
 
-Las especificaciones están escritas y aprobadas (sistema base y capas). No hay que volver a planificar: se implementa.
+Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; las de las capas (101–602) están en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
 
 1. Lee `docs/plan.md` y toma la **siguiente tarea `pendiente`** (fase 1) o la **siguiente funcionalidad `pendiente`** (fases 2 en adelante).
 2. Para una funcionalidad, lee su `docs/specs/NNN-nombre/requisitos.md` y `diseno.md`, los contratos y datos de cada proyecto afectado, y sus `tareas.md` (`<proyecto>/docs/specs/NNN-nombre/tareas.md`; las de proyectos que todavía no existen están en `docs/specs/NNN-nombre/tareas-<proyecto>.md`).

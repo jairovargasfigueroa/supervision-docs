@@ -56,7 +56,9 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pendiente |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | pendiente |
 
-## Fases 3 a 8. Capas (especificaciones escritas y aprobadas)
+## Fases 3 a 8. Capas (especificaciones en borrador)
+
+Las specs de las capas están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
 
 Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado.
 
