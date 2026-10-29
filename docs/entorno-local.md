@@ -8,13 +8,15 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 |---|---|---|---|
 | `postgres` | `postgres:17` | 5433 → 5432 | Bases `obras_db`, `finanzas_db` (y `reportes_db` en la capa 4), creadas por `infra/postgres/init.sql`. **Perfil `bases`** (opcional). |
 | `mongo` | `mongo:8.0` | 27017 | Arranca como *replica set* de un nodo (`--replSet rs0`) y un servicio `mongo-init` ejecuta `rs.initiate()`. Bases `materiales_db` (y `notificaciones_db`, `ia_db` en sus funcionalidades). **Perfil `bases`** (opcional). |
-| `rabbitmq` | `rabbitmq:4.4-management` | 5672, 15672 (panel) | Importa `infra/rabbitmq/definiciones.json`: exchange `plataforma` (topic), colas `obras`, `materiales`, `finanzas`, `notificaciones`, `ia`, `plataforma.fallidos` y sus enlaces. Usuario por servicio. Las colas `ia` (con sus 6 enlaces de la 401) y `notificaciones` (010) se declaran desde la fase 1, aunque esos servicios todavía no existan, para que ningún evento se pierda. |
-| `keycloak` | `quay.io/keycloak/keycloak:26.8.1` | 8080 | `start-dev --import-realm` con `infra/keycloak/realm-supervision.json` y el tema `infra/keycloak/temas/supervision`. Usa su propia base H2 en desarrollo. |
+| `rabbitmq` | `rabbitmq:4.4-management` | 5672, 15672 (panel) | Importa `infra/rabbitmq/definiciones.json`: exchange `plataforma` (topic), colas `obras`, `materiales`, `finanzas`, `notificaciones`, `ia`, `plataforma.fallidos` y sus enlaces. Usuario por servicio (los crea `rabbitmq-usuarios`). Las colas `ia` (con sus 6 enlaces de la 401) y `notificaciones` (010) se declaran desde la fase 1, aunque esos servicios todavía no existan, para que ningún evento se pierda. |
+| `keycloak` | `quay.io/keycloak/keycloak:26.8.1` | 8080 | `start-dev --import-realm` con `infra/keycloak/realm-supervision.json` y el tema `infra/keycloak/temas/supervision`. Usa su propia base H2 en desarrollo. Sin volumen: al recrear el contenedor el realm se vuelve a importar. |
+| `rabbitmq-usuarios` | `curlimages/curl:8.17.0` | — | Corre una vez al levantar: crea un usuario por servicio (`obras`, `materiales`, `finanzas`, `ia`, `notificaciones`) con las contraseñas de `infra/.env`, por la API del panel, y termina. |
 | `mailpit` | `axllent/mailpit:v1.32` | 1025 (SMTP), 8025 (web) | Solo desde la 201. Perfil `automatizacion`. |
 | `dynamodb` | `amazon/dynamodb-local:3.3.2` | 8000 | Solo desde la 101. Perfil `sin-senal`. |
 | `n8n` | según la spec 201 | 5678 | Solo desde la 201. Perfil `automatizacion`. |
 
 - Todos con *healthcheck* y volúmenes con nombre (`datos-postgres`, `datos-mongo`, `datos-rabbitmq`).
+- Los scripts esperan a que cada servicio esté sano y a que los de una sola vez (`rabbitmq-usuarios`, `mongo-init`) terminen bien; no usan `docker compose up --wait`, que toma como fallo a los que terminan.
 - **Perfiles:** sin perfil se levantan RabbitMQ y Keycloak. `--profile bases` suma PostgreSQL y MongoDB (para quien no los tiene instalados). Las capas suman sus perfiles.
 - En la máquina de Jairo PostgreSQL (5433) y MongoDB (27017) ya están instalados: no usar el perfil `bases`. **MongoDB local debe configurarse como *replica set*** (tarea 1.3: `replication.replSetName: rs0` en `mongod.cfg` y `rs.initiate()`).
 - Contraseñas de desarrollo en `infra/.env` (copiado de `infra/.env.example`); nunca en el repo.
