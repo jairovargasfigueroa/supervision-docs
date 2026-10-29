@@ -256,6 +256,13 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Observar» con el contador «{n} / 500» (mínimo 10) | Portal | Al pulsar «Observar» | 008 (criterio 4; diseño) · catálogo |
 | «En aprobación…» | Portal | Planilla `APROBANDO` (consulta cada 2 s, hasta 4 minutos) | 008 (criterio 5) · texto de la spec |
 | «La aprobación está tardando más de lo normal; puedes cerrar esta pantalla, el resultado aparecerá aquí» | Portal | Pasan 90 s en `APROBANDO` sin resultado | 008 (criterio 5) · texto de la spec |
+| «Planilla aprobada» con «Número de cobro: {cobroNumero}» | Portal · planilla | Planilla `APROBADA` | 008 (criterio 6) · catálogo |
+| «Planilla observada» con el motivo debajo | Portal · planilla | Planilla `OBSERVADA` (por el cliente o por la saga) | 008 (criterio 6) · catálogo |
+| «Detalle de la planilla» · «Fotos de respaldo» · «Fotos de la obra» · «Volver a mis obras» | Portal | Títulos y enlace de las pantallas | 008 · catálogo |
+| «Esta planilla no tiene fotos de respaldo.» | Portal · planilla | La planilla no tiene fotos adjuntas | 008 · catálogo |
+| «Aprobando…» · «Enviando…» | Portal | Botón mientras se envía la aprobación o la observación | 008 · catálogo |
+| «Actualizar» | Portal · planilla | Pasaron 4 minutos en `APROBANDO` y se dejó de consultar | 008 (criterio 5) · catálogo |
+| «Cobro {numero}» y columna «Cobro» («—» sin cobro) | ERP · Obras (editor y pestaña «Planillas») | Planilla `APROBADA` | 008 (criterio 14) · catálogo |
 | «Los rostros se difuminan para proteger la privacidad del personal» | Portal | Bajo la galería de la obra y de la planilla | 303 (criterio 11) · texto de la spec |
 
 ### Materiales y compras (003, 004, 201)

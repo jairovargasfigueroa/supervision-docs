@@ -60,10 +60,18 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 005 | Registrar foto de avance | obras, app-obra | 002 | hecho (la subida real a S3 y el celular quedan para cuando exista el bucket) |
 | 006 | Consultar obra (avance vs plazo, material usado vs previsto) | obras, materiales, finanzas, gateway, mf-obras | 002, 003, 004, 005 | hecho |
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | hecho (la galería de fotos necesita el bucket S3) |
-| 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, portal | 007 | pendiente |
+| 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, gateway, mf-obras, portal, infra | 007 | hecho |
 | 009 | Consultar tablero | materiales, finanzas, gateway, mf-supervision | 006 | hecho |
 | 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pospuesta (decisión de Jairo, 29/10/2026: se hace después de la 011) |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | pendiente |
+
+### Pendientes conocidos del sistema base
+
+- **Manuales (Jairo):** crear el bucket S3 y poner sus claves en `services/obras/.env.properties` (subida de fotos de la 005, galería de la 007 y fotos del portal de la 008); probar la app en el celular (001, 004, 005); Firebase cuando se haga la 010.
+- **Con el bucket:** Obras debe comprobar con `HEAD` que la foto no supere 5 MB al registrarla (la URL firmada de subida no lo limita).
+- **Carrera rara en Materiales (004 y 008):** un movimiento registrado en el mismo instante en que `CerrarConsumos` cierra su periodo puede quedar con `cerrado = false`. Se corrige haciendo que el registro del movimiento escriba también en `cierre_periodo` dentro de su transacción.
+- **Respuesta tardía entre dos sagas de la misma planilla (008):** un `ConsumosCerrados` tardío de una saga ya compensada envía `ReabrirConsumos` con el mismo `planillaId` y podría reabrir el cierre de una segunda saga en curso. Muy improbable (exige vencimiento, corrección y nueva aprobación dentro de esa ventana).
+- **Límite de 120 peticiones por minuto:** lo aplica el gateway; Obras no lo aplica en los endpoints que el portal llama directo.
 
 ## Fases 3 a 8. Capas (especificaciones en borrador)
 

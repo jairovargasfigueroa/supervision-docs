@@ -46,7 +46,7 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 ## Orden para levantar todo
 
 1. `infra`: `./scripts/levantar.ps1`
-2. Servicios (cada uno en su terminal): Obras `./mvnw spring-boot:run` → Materiales `npm run start:dev` → Finanzas `php artisan serve --port=8083` y `php artisan mensajeria:consumir` → (capas: Sincronización, IA, Notificaciones).
+2. Servicios (cada uno en su terminal): Obras `./mvnw spring-boot:run` → Materiales `npm run start:dev` → Finanzas `php artisan serve --port=8083`, `php artisan mensajeria:consumir` y `php artisan mensajeria:publicar` (sin este último sus eventos y respuestas de la saga no salen; `php artisan schedule:work` para la tarea diaria de cobros vencidos) → (capas: Sincronización, IA, Notificaciones).
 3. Gateway: `npm run start:dev`.
 4. Frontends: mf-obras `npm start`, mf-materiales `npm start`, mf-supervision `npm start`, shell `npm start`; portal `npm run dev`.
 5. App: celular Android con depuración USB (o inalámbrica) → `infra/scripts/celular.ps1` (hace `adb reverse` de 8080, 8081, 8082 y 8090) → en `mobile/app-obra`, `npm start` (Metro en el **8090**, porque el 8081 es de Obras) y abrir en Expo Go.
