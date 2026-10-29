@@ -38,7 +38,7 @@ Expresiones mal formadas o días fuera de 2–27 → error al cargar (no se adiv
 ## services/finanzas
 
 - `database/seeders/DatosPruebaSeeder.php` con los datos en `database/seeders/datos/finanzas.json`: contratos, reservas y cobros. Si existe `ProveedorSeeder` (201), lo llama primero.
-- Calcula: `saldo_disponible` = monto − cobros − reservas `RESERVADA`; `numero` del cobro por año de `emitido_en` en orden de emisión; `estado` = `VENCIDO` si `vence_en` < D. Deja el mecanismo de correlativo de la 008 en el último número usado.
+- Calcula: `numero` del cobro por año de `emitido_en` en orden de emisión; `estado` = `VENCIDO` si `vence_en` < D. El saldo disponible no se guarda (Finanzas lo calcula al leer: monto − cobros − reservas `RESERVADA`) y el correlativo de la 008 sigue solo, porque toma el mayor número del año.
 - Inserta con `insertOrIgnore` (o `upsert` sin columnas a actualizar) dentro de `DB::transaction`.
 - Comando `php artisan datos-prueba:vaciar`: vacía todas las tablas del negocio (no `migrations`).
 - Guarda: se niega con `APP_ENV=production` o si `DB_HOST` no es local.

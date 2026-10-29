@@ -24,7 +24,7 @@ mf-obras: consulta la obra cada 2 s (máx. 30 s) mientras esté SIN_CONTRATO sin
 
 ## Finanzas
 
-- Consume `ObraRegistrada`: valida los datos del contrato; si son válidos crea `contrato` con `saldo_disponible = monto` y publica `ContratoRegistrado`; si no, publica `ContratoRechazado` con el motivo, uno de estos textos (si fallan varias reglas, se unen con «; »): «El monto del contrato debe ser mayor a 0», «El plazo del contrato debe ser mayor a 0 días», «El anticipo y la retención deben estar entre 0 % y 100 %», «El anticipo más la retención deben sumar menos de 100 %». Administración lo ve en el detalle de la obra (criterio 9) y en el aviso «Contrato rechazado» (010). Idempotente por `id` del mensaje y por `contrato.obra_id` único.
+- Consume `ObraRegistrada`: valida los datos del contrato; si son válidos crea `contrato` (el saldo disponible no se guarda: se calcula al leer, 008) y publica `ContratoRegistrado`; si no, publica `ContratoRechazado` con el motivo, uno de estos textos (si fallan varias reglas, se unen con «; »): «El monto del contrato debe ser mayor a 0», «El plazo del contrato debe ser mayor a 0 días», «El anticipo y la retención deben estar entre 0 % y 100 %», «El anticipo más la retención deben sumar menos de 100 %». Administración lo ve en el detalle de la obra (criterio 9) y en el aviso «Contrato rechazado» (010). Idempotente por `id` del mensaje y por `contrato.obra_id` único.
 - Consumidor: comando de Artisan `php artisan mensajeria:consumir` (proceso largo) y publicador del outbox `php artisan mensajeria:publicar` (cada segundo).
 
 ## Materiales
