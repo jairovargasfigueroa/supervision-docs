@@ -16,7 +16,7 @@ App --PUT /subidas/{fotoId}/partes/{n} (application/octet-stream)--> Sincronizac
 App --POST /subidas/{fotoId}/completar--> Sincronización
     arma el archivo, verifica SHA-256
     --POST /obras/{obraId}/fotos/url-subida { fotoId }--> Obras (token del usuario) → URL firmada
-    --PUT archivo--> RustFS/S3 (fotos/{obraId}/{fotoId}.jpg)
+    --PUT archivo--> S3 (fotos/{obraId}/{fotoId}.jpg)
     borra temporal/subidas/{fotoId}/*
     → 200 { claveArchivo }
 App: datos.claveArchivo = claveArchivo; estado_archivo SUBIDO → la operación pasa a liviana lista
@@ -63,7 +63,7 @@ Se respeta la convención de archivos: el servicio dueño entrega la URL firmada
 ### Almacenamiento
 
 - Cliente S3 (`@aws-sdk/client-s3`) con *path-style access*: `SINC_S3_ENDPOINT`, `SINC_S3_ACCESS_KEY`, `SINC_S3_SECRET_KEY`, `SINC_S3_BUCKET=supervision`.
-- Solo escribe, lee y borra en el prefijo `temporal/subidas/`. En RustFS tiene un usuario propio con permiso únicamente sobre `supervision/temporal/*` (infra).
+- Solo escribe, lee y borra en el prefijo `temporal/subidas/`. En producción su rol de IAM solo permite ese prefijo (602); en desarrollo usa el usuario IAM de desarrollo.
 - La URL firmada que devuelven Obras y Materiales usa el *endpoint* configurado en esos servicios; Sincronización debe poder llegar a ese host (en Docker Compose, el mismo nombre de red).
 
 ### POST /subidas · 102
@@ -126,7 +126,7 @@ En `FOTO_AVANCE`, `idOperacion` = `datos.id`. En `FOTO_NOTA_REMISION`, `idOperac
 
 ## Materiales
 
-- Cliente S3 del AWS SDK v3 (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) apuntando a RustFS en desarrollo: `MATERIALES_S3_ENDPOINT`, `MATERIALES_S3_ACCESS_KEY`, `MATERIALES_S3_SECRET_KEY`, `MATERIALES_S3_BUCKET=supervision`, *path-style access*.
+- Cliente S3 del AWS SDK v3 (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) configurado por variables (en desarrollo, el bucket S3 de desarrollo): `MATERIALES_S3_ENDPOINT`, `MATERIALES_S3_ACCESS_KEY`, `MATERIALES_S3_SECRET_KEY`, `MATERIALES_S3_BUCKET=supervision`, *path-style access*.
 
 ### POST /obras/{obraId}/notas-remision/url-subida · 102
 
@@ -208,12 +208,12 @@ Lo llama el enviador de la 101 cuando ya no quedan operaciones livianas listas:
 
 ## Infra
 
-- Usuario de RustFS `sincronizacion` con una política que solo permite leer, escribir y borrar en `supervision/temporal/*`.
-- Regla de expiración del bucket (ILM de RustFS) que borra los objetos del prefijo `temporal/` a los 7 días.
+- Desarrollo: el usuario IAM de desarrollo ya tiene acceso al bucket; en producción, el rol de Sincronización solo puede leer, escribir y borrar en `temporal/*` (602).
+- Regla de ciclo de vida del bucket S3 que borra los objetos del prefijo `temporal/` a los 7 días (en desarrollo se crea en la consola de AWS junto con el bucket).
 
 ## Pruebas
 
-- Sincronización (con DynamoDB Local y RustFS, o un S3 simulado):
+- Sincronización (con DynamoDB Local y un doble de S3):
   - crear subida dos veces con los mismos datos → `200` con el mismo estado; con otra huella → `409 SUBIDA_DISTINTA`; de otro usuario → `403`;
   - parte fuera de rango o de tamaño incorrecto → `400`; repetir una parte no la cuenta dos veces;
   - completar con partes faltantes → `409` con la lista; con huella distinta → `422` y partes borradas; con un objeto temporal ausente → `409 SUBIDA_REINICIADA`;

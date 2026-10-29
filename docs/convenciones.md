@@ -27,10 +27,10 @@ Lo que todos los proyectos hacen igual.
 | Notificaciones (010) | 8086 |
 | ERP: shell · mf-obras · mf-materiales · mf-supervision | 4200 · 4201 · 4202 · 4203 |
 | Portal | 4300 |
-| PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) · RustFS (API / panel) | 5433 · 27017 · 5672 / 15672 · 9000 / 9001 |
+| PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
-- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y RustFS. Quien no los tenga instalados levanta también los contenedores de las bases.
+- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ y Keycloak. Quien no los tenga instalados levanta también los contenedores de las bases.
 
 ## Autenticación y permisos (Keycloak)
 
@@ -38,10 +38,10 @@ Lo que todos los proyectos hacen igual.
 - Roles del realm: `admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`.
 - Roles técnicos (se crean con su capa; ninguna persona los tiene): `automatizacion` (201, *service account* del cliente confidencial `n8n`; solo en las rutas de Finanzas que llama n8n) y `agente_ia` (501, *service account* del cliente confidencial `ia-agentes`; solo en `POST /mcp`, donde ve todas las obras como `gerente`; ningún endpoint REST lo acepta).
 - Clientes públicos con PKCE: `erp` (shell y microfrontends), `portal`, `app-obra`.
-- Cliente confidencial `gateway` con *service account* y el rol `view-users` de `realm-management`: el gateway lo usa para listar usuarios por rol (formularios de asignación). Ningún otro proyecto llama a la API de administración de Keycloak.
+- Cliente confidencial `gateway` con *service account* y los roles `view-users` y `view-realm` de `realm-management`: el gateway los usa para listar usuarios por rol (formularios de asignación) y resolver nombres. `view-realm` hace falta porque Keycloak 26 exige ver los roles del realm para responder `GET /roles/{rol}/users`; es de solo lectura. Ningún otro proyecto llama a la API de administración de Keycloak.
 - Capa 5: cliente confidencial `ia-agentes` con *service account* para que el servicio de IA llame a las herramientas MCP.
 - Todos los tokens llevan la audiencia `plataforma-api` (mapper de audiencia en Keycloak).
-- Cada servicio valida firma (JWKS del realm), vencimiento, emisor y audiencia `plataforma-api`.
+- Cada servicio valida firma (JWKS del realm), vencimiento, emisor y audiencia `plataforma-api`. Si Keycloak no responde al pedir el JWKS, se responde `503 SERVICIO_NO_DISPONIBLE` (en el gateway, `extensions.servicio = "keycloak"`), no `401`: un `401` haría que la aplicación cierre la sesión del usuario por una falla del servidor.
 - Los roles van en el token (`realm_access.roles`); el id del usuario es el `sub` del token.
 - Las reglas finas (qué obras puede ver el usuario) las valida cada servicio. Obras es dueño de las asignaciones; Materiales guarda una copia (`obra_acceso`) que recibe con el evento `ObraRegistrada`.
 - Visibilidad de obras: `admin` y `gerente` ven todas; `residente`, `maestro` y `almacenero` ven las que tienen asignadas; `cliente` ve las suyas.
@@ -91,7 +91,7 @@ Lo que todos los proyectos hacen igual.
 - `codigo`: identificador estable en `MAYUSCULAS_CON_GUION_BAJO`; el frontend decide qué mostrar según este campo.
 - `errores`: en errores de validación (`400` o `422`). Si un mismo `codigo` puede deberse a reglas distintas (por ejemplo `COMENTARIO_INVALIDO`), `errores[]` trae el `campo` y un `mensaje` con la regla concreta; el frontend muestra el mensaje del catálogo y, junto al campo, ese `mensaje`.
 - Estados: `400` datos mal formados · `401` sin token · `403` sin permiso · `404` no existe o no lo puede ver · `409` conflicto de estado o versión · `413` cuerpo demasiado grande · `422` regla del negocio incumplida · `429` demasiadas peticiones · `500` error interno · `503` servicio no disponible (se puede reintentar) · `504` tiempo agotado.
-- Todo error lleva `codigo`. Si no hay uno propio, se usa el genérico de su estado: `400 DATOS_INVALIDOS`, `401 NO_AUTENTICADO`, `403 SIN_PERMISO`, `413 ARCHIVO_DEMASIADO_GRANDE`, `429 DEMASIADAS_PETICIONES`, `500 ERROR_INTERNO`, `503 SERVICIO_NO_DISPONIBLE`. En los contratos, un estado escrito sin código (por ejemplo «`400`» o «`403`») significa ese genérico. `404`, `409` y `422` siempre llevan un código propio.
+- Todo error lleva `codigo`. Si no hay uno propio, se usa el genérico de su estado: `400 DATOS_INVALIDOS`, `401 NO_AUTENTICADO`, `403 SIN_PERMISO`, `413 ARCHIVO_DEMASIADO_GRANDE`, `429 DEMASIADAS_PETICIONES`, `500 ERROR_INTERNO`, `503 SERVICIO_NO_DISPONIBLE`; una ruta que no existe responde `404 RUTA_NO_ENCONTRADA` (solo con token válido: sin token, `401`). En los contratos, un estado escrito sin código (por ejemplo «`400`» o «`403`») significa ese genérico. `404`, `409` y `422` siempre llevan un código propio.
 - `504 TIEMPO_AGOTADO`: el servicio llamó a otro servicio (o a un componente externo, como Ollama) y no recibió respuesta en su tiempo máximo. Es el mismo código y estado en todos los servicios. El error de una ejecución de agente por pasar su límite de tiempo es otro: `EJECUCION_TIEMPO_AGOTADO` (502).
 - El texto que ve el usuario por cada `codigo` está en `docs/mensajes.md`; un código que el frontend no conoce se muestra con el mensaje genérico de su estado HTTP.
 
@@ -135,7 +135,7 @@ Lo que todos los proyectos hacen igual.
 
 - **CORS:** cada servicio acepta solo los orígenes de su variable `CORS_ORIGENES` (ver `docs/entorno-local.md`): el gateway, los del ERP; Obras, el portal; Materiales, Finanzas e IA, ninguno (los llama el gateway o la app, que no usa CORS). Nunca `*` con credenciales.
 - **Tamaños máximos:** cuerpo JSON 1 MB; fotos 5 MB (la app las comprime antes, ver «Archivos»); las URL firmadas de subida aceptan solo `image/jpeg` y hasta 5 MB.
-- **GraphQL:** profundidad máxima 8 y complejidad máxima 1000 por consulta; introspección y Apollo Sandbox solo en desarrollo.
+- **GraphQL:** profundidad máxima 8 y complejidad máxima 1000 por consulta (complejidad = cantidad de campos pedidos, contando fragmentos); si se pasa, `DATOS_INVALIDOS`. Introspección y Apollo Sandbox solo en desarrollo.
 - **Límite de peticiones:** 120 por minuto por usuario en el gateway y en los endpoints del portal en Obras; 10 por minuto en la consulta por voz (503). Al superar: `429 DEMASIADAS_PETICIONES` con `Retry-After`.
 - **Encabezados:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` y, en producción, HSTS.
 - **Keycloak:** política de contraseñas «mínimo 8 caracteres, 1 mayúscula, 1 número, distinta del usuario»; protección contra fuerza bruta activada (bloqueo temporal tras 5 intentos); idioma por defecto **español** y único habilitado; tema propio `supervision` (colores y logo de `docs/diseno-visual.md`) para la pantalla de inicio de sesión, en `infra/keycloak/temas/supervision` (extiende el tema `keycloak.v2`).
@@ -149,7 +149,8 @@ Lo que todos los proyectos hacen igual.
 
 ## Archivos (fotos y notas de remisión)
 
-- Se guardan en almacenamiento de objetos compatible con S3 (RustFS en desarrollo, S3 en la capa 6), bucket `supervision`.
+- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción, el bucket de la capa 6. El código es el mismo; solo cambian las variables.
+- Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
 

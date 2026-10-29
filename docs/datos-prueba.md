@@ -419,7 +419,7 @@ Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.
 | 1 · `M-1` · P-05 muro (400 m2) | `LAD-6H` | 12.000 piezas | 12.100 piezas | 100,8 % | normal |
 | 2 · `M-1` · P-04 columnas (40 m3) | `CEM-IP30` | 300 bolsas | 310 bolsas | 103,3 % | normal |
 
-## 10. Fotos de avance (Obras y almacén S3)
+## 10. Fotos de avance (Obras y bucket S3)
 
 Dos por partida en ejecución, todas registradas por maestro1 a las 11:00 de La Paz. `clave_archivo = fotos/{obraId}/{fotoId}.jpg`. Las adjuntas a una planilla presentada están publicadas para el cliente (`publicada_cliente = true`); las demás son internas. Los campos de la capa 3 (`clave_archivo_cliente`, `personas_detectadas`, `sin_casco`) quedan en `null`.
 
@@ -476,7 +476,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 | Obras | `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,semilla` (en Windows `mvnw.cmd`) | Perfil `semilla`: arranca sin servidor web, sin consumidores de RabbitMQ y sin publicador del outbox, carga y termina. Opción `--semilla.modo=recargar` para vaciar antes. |
 | Finanzas | `php artisan db:seed --class=DatosPruebaSeeder` | Contratos, reservas y cobros (y los proveedores de la 201 cuando exista). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
 | Materiales | `npm run semilla` | Script que crea un contexto de NestJS solo con Mongoose (sin HTTP ni RabbitMQ). Vaciar: `npm run semilla:vaciar`. |
-| Almacén S3 (RustFS, servicio `almacen`) | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`, con `--endpoint-url http://almacen:9000`) | `aws s3 sync` de `infra/semilla/fotos/` al bucket `supervision` bajo `fotos/`. |
+| Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. |
 
 - Cada servicio guarda su parte en un archivo de datos propio con la notación de fechas de la sección 1 (por ejemplo `"fechaInicio": "D-120"`, `"registradoEn": "M-1/09 10:00"`) y un pequeño resolvedor de fechas con pruebas. Valores y cálculos derivados (stock, saldo, número de cobro, estado del cobro) los calcula la semilla, no se copian.
 - **Idempotencia:** cada registro se inserta solo si su `id` no existe (`INSERT … ON CONFLICT (id) DO NOTHING` en PostgreSQL; *upsert* con `$setOnInsert` en MongoDB; el almacén S3 sobrescribe la misma clave y `aws s3 sync` no vuelve a subir lo que ya está igual). Correr la carga dos veces no duplica nada. La carga **no pisa** lo que ya existe: si en una demostración se aprobó una planilla, cargar de nuevo no la devuelve a `PRESENTADA`; para eso está `recargar`.
@@ -485,11 +485,11 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 ### Scripts de `infra`
 
 - `semilla/semilla.ps1` (Windows) y `semilla/semilla.sh` (Linux y macOS) hacen lo mismo, en este orden:
-  1. **Guardas** (abajo) y comprobación de que PostgreSQL, MongoDB, Keycloak y el almacén S3 responden.
+  1. **Guardas** (abajo) y comprobación de que PostgreSQL, MongoDB, Keycloak y el bucket S3 de desarrollo responden.
   2. Calcula D y exporta `SEMILLA_FECHA`.
   3. Keycloak: comprueba con la API de administración (credenciales de administrador del `.env` de infra) que cada usuario existe con su `id`. Si no, se detiene y explica cómo reimportar el realm (`recargar` lo hace).
   4. Obras → Finanzas → Materiales (cada uno con su comando; las rutas de los proyectos salen de variables del `.env`, por defecto las carpetas hermanas `../services/…`).
-  5. Fotos al almacén S3.
+  5. Fotos al bucket S3 de desarrollo.
   6. Resumen: cuántos registros quedaron por servicio y la fecha D usada.
 - `semilla/recargar.ps1` y `semilla/recargar.sh` **vacían y vuelven a cargar**: piden confirmación («Esto borra todos los datos de desarrollo de obras_db, finanzas_db, materiales_db y del bucket supervision. ¿Continuar? (s/N)»; `-Si` / `--si` la omite), vacían cada servicio con su propio comando (todas las tablas o colecciones del negocio; nunca el historial de migraciones), vacían las colas de RabbitMQ de la plataforma (para que no lleguen mensajes viejos que apunten a datos borrados), borran los objetos del bucket, reimportan los usuarios del realm si sus `id` no coinciden y corren `semilla`. Se recomienda detener antes los servicios.
 

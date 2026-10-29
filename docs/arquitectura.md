@@ -16,7 +16,7 @@
 | IA | Microservicio (capas 3 a 5) | FastAPI + Ollama | MongoDB (agentes) y PostgreSQL de lectura (reportes) |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
-| Almacenamiento de objetos | Fotos y notas de remisión | S3 (RustFS en desarrollo) | — |
+| Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
 
 ## Conexiones
 
@@ -40,7 +40,7 @@
 - **Shell** (`erp-shell`, puerto 4200): host dinámico; lee la lista de remotos de `public/federation.manifest.json`.
 - **mf-obras** (Angular, 4201): remoto con el adaptador oficial de Angular; comparte Angular con el shell.
 - **mf-materiales** (React, 4202) y **mf-supervision** (React, 4203): remotos con el adaptador esbuild de Native Federation y su preset oficial de React. Cada uno se publica como **Web Component** (`<mf-materiales>`, `<mf-supervision>`) con Shadow DOM, así el shell los muestra sin depender de React y sus estilos no se mezclan.
-- Pendiente para la fase 1 («esqueleto que camina»): que el shell cargue cada remoto en su ruta y le pase la sesión.
+- El shell carga `mf-obras` como rutas (`./Routes`) en `/obras` y los React como Web Components (`./Bootstrap`) en `/materiales` y `/supervision`; la sesión les llega por `window.plataforma` (fase 1, 1.8). Si un remoto no carga, su espacio muestra el aviso con «Reintentar».
 - Vue queda como tercer framework **opcional**; no se usa salvo que el equipo decida agregarlo.
 
 ## Versiones
@@ -84,4 +84,4 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Google Cloud | IA + Ollama (máquina virtual), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje necesita memoria |
 | Azure | Gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n, apps web, PostgreSQL de Obras y Finanzas | Obras y Finanzas comparten la saga |
 
-En desarrollo todo corre con Docker Compose (DynamoDB Local y RustFS en lugar de AWS).
+En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo.
