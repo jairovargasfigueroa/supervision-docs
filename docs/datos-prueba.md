@@ -277,7 +277,7 @@ Una por planilla aprobada, en estado `CONSUMIDA` (la consumió el cobro): `c1000
 | `c2000000-…-000000000201` | obra 2 · N.º 1 | `COB-AAAA-0002` | 405.865,20 | D − 20 | D + 10 | `PENDIENTE` |
 | `c2000000-…-000000000102` | obra 1 · N.º 2 | `COB-AAAA-0003` | 365.764,40 | D − 12 | D + 18 | `PENDIENTE` |
 
-- **Número:** `AAAA` = año de `emitido_en`; el correlativo se asigna por orden de emisión dentro de cada año. Con D = 2026-10-28: `COB-2026-0001`, `-0002` y `-0003`. Si D cae a inicios de año y algún cobro queda en el año anterior, el correlativo empieza de nuevo en el año nuevo (regla del número de cobro). La semilla deja el mecanismo de correlativo de la 008 en el último número usado, para que el siguiente cobro emitido por la saga continúe la serie (con D = 2026-10-28, `COB-2026-0004`).
+- **Número:** `AAAA` = año de `emitido_en`; el correlativo se asigna por orden de emisión dentro de cada año. Con D = 2026-10-28: `COB-2026-0001`, `-0002` y `-0003`. Si D cae a inicios de año y algún cobro queda en el año anterior, el correlativo empieza de nuevo en el año nuevo (regla del número de cobro). La semilla no necesita dejar nada para el correlativo: la saga de la 008 toma el mayor número del año, así que el siguiente cobro continúa la serie (con D = 2026-10-28, `COB-2026-0004`).
 - **Estado:** `VENCIDO` si `vence_en` < D; si no, `PENDIENTE`.
 - **Resumen del tablero (`GET /cobros/resumen`):** vencidos 1 por 290.134,80; por vencer en 30 días 2 por 771.629,60.
 
@@ -474,7 +474,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 |---|---|---|
 | Keycloak | (al iniciar el contenedor) | El JSON del realm (fase 1, 1.4) trae los 9 usuarios (los 8 de la 001 y `demo1`) con su `id` fijo, nombres y contraseña. |
 | Obras | `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,semilla` (en Windows `mvnw.cmd`) | Perfil `semilla`: arranca sin servidor web, sin consumidores de RabbitMQ y sin publicador del outbox, carga y termina. Opción `--semilla.modo=recargar` para vaciar antes. |
-| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder` | Contratos, reservas y cobros (y los proveedores de la 201 cuando exista). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
+| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder --force` | Contratos, reservas y cobros (y los proveedores de la 201 cuando exista). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
 | Materiales | `npm run semilla` | Script que crea un contexto de NestJS solo con Mongoose (sin HTTP ni RabbitMQ). Vaciar: `npm run semilla:vaciar`. |
 | Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. |
 
