@@ -54,7 +54,7 @@ Los estados se muestran como *chip* (Angular `mat-chip`, MUI `Chip`, Paper `Chip
 
 ## Implementación del tema
 
-- **Angular Material 22** (Material 3): un tema propio en `src/styles/tema.scss` con `mat.theme(...)`, paleta primaria generada desde `#0E4D5C` y terciaria desde `#F08A24`; tipografía Inter; densidad `-2` en el ERP. Variables CSS `--sv-*` con los tokens de arriba para lo que no cubre Material.
+- **Angular Material 22** (Material 3): un tema propio en `src/styles/tema.scss` con `mat.theme(...)`, paleta primaria generada desde `#0E4D5C` y terciaria desde `#F08A24`; tipografía Inter; densidad `-2` en el ERP. Los campos (`mat-form-field`) usan la apariencia `outline` en el ERP: con la densidad `-2`, la apariencia `fill` oculta la etiqueta. Variables CSS `--sv-*` con los tokens de arriba para lo que no cubre Material.
 - **MUI 9**: `createTheme` en `src/tema.ts` con `palette.primary.main = #0E4D5C`, `secondary.main = #F08A24`, `success/warning/error` según la tabla, `background.default = #F2F5F6`, `shape.borderRadius = 10`, `typography.fontFamily = Inter`. El mismo archivo en mf-materiales, mf-supervision y el portal.
 - **Microfrontends React dentro del Shadow DOM**: `createCache({ key: 'mf', container: shadowRoot })` con `CacheProvider`; `ScopedCssBaseline` en la raíz; diálogos, menús, *tooltips* y *popovers* montados dentro del Shadow DOM (en el tema, `defaultProps.container` de `MuiPopover`, `MuiPopper`, `MuiModal` y `MuiDialog` apuntando al contenedor del microfrontend).
 - **React Native Paper 5**: `MD3LightTheme` extendido en `src/tema.ts` con los mismos colores.

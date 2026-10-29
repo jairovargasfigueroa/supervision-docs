@@ -10,7 +10,7 @@ Convenciones comunes (errores, token, idempotencia, paginación): `docs/convenci
 Sin token · `200 {"estado":"ok"}`
 
 ### POST /obras · 002
-Roles: `admin`
+Roles: `admin` (el `403` se comprueba antes que el formato del cuerpo). Montos, precios y porcentajes con hasta 2 decimales; cantidades con hasta 3. Los errores de validación traen `errores[]` por campo; se revisan en este orden: contrato, códigos de partida, insumos, presupuesto.
 ```json
 {
   "nombre": "Edificio Las Palmas",
