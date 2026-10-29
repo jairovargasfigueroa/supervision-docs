@@ -42,7 +42,7 @@ La carpeta queda igual que en todas las máquinas; el `CLAUDE.md` de la raíz y 
 ## 4. Antes de empezar a trabajar cada día
 
 ```powershell
-./scripts/actualizar-todo.ps1   # git pull en main de cada repo (no toca ramas con cambios)
+./scripts/actualizar-todo.ps1   # git pull en develop de cada repo (no toca ramas con cambios)
 ```
 
 Luego sigue `docs/flujo-trabajo.md`: toma una funcionalidad del plan, crea la rama y abre el PR en borrador.

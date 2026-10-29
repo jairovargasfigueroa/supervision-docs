@@ -1,4 +1,5 @@
-# Trae lo último de main en cada repo. No toca repos con cambios sin guardar ni que estén en otra rama.
+# Trae lo último de develop en cada repo (Git Flow: develop es la rama de integración).
+# No toca repos con cambios sin guardar ni que estén en otra rama.
 $raiz = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'repos.ps1')
 
@@ -8,7 +9,7 @@ foreach ($carpeta in $carpetas) {
     if (-not (Test-Path (Join-Path $ruta '.git'))) { continue }
     $rama = git -C $ruta branch --show-current
     $cambios = git -C $ruta status --porcelain
-    if ($rama -ne 'main') {
+    if ($rama -ne 'develop') {
         Write-Host "$carpeta : en la rama $rama, se omite"
     } elseif ($cambios) {
         Write-Host "$carpeta : tiene cambios sin guardar, se omite"
