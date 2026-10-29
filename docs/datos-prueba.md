@@ -410,7 +410,7 @@ Total: **1 `BAJO`**, 2 `JUSTO`, 11 `OK`.
 
 ### Usado frente a previsto
 
-Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.1). Todos los consumos quedan entre 98 % y 105 % de lo previsto, salvo uno:
+Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.1). Todos los consumos quedan entre 97 % y 105 % de lo previsto (el más bajo, `GRA-34` de la obra 1 en `M-2`, P-02: 47 frente a 48), salvo uno:
 
 | Obra · periodo · partida | Material | Previsto | Usado | % | Resultado |
 |---|---|---|---|---|---|
