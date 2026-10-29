@@ -42,7 +42,8 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 | `estado.ps1` / `.sh` | Muestra qué contenedor está sano y llama `GET /salud` de cada servicio que esté corriendo |
 | `bajar.ps1` / `.sh` | `docker compose down` (conserva datos) |
 | `reiniciar-datos.ps1` / `.sh` | Borra volúmenes y vuelve a levantar todo vacío (pide confirmación) |
-| `semilla.ps1` / `.sh` | Carga los datos de prueba (011) |
+
+Datos de prueba (011), en `infra/semilla/`: `semilla.ps1` / `.sh` cargan los datos de `docs/datos-prueba.md` sin duplicar y `recargar.ps1` / `.sh` (con `-Si` / `--si`) vacían bases, colas y fotos y vuelven a cargar. Detalle en el README de infra.
 
 ## Orden para levantar todo
 
