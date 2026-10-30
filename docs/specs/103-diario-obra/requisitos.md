@@ -1,6 +1,6 @@
 # 103 · Registrar entrada del diario de obra
 
-**Estado:** borrador (por aprobar) · **Capa:** 1 · **Puntos del ingeniero:** 7 (registro de campo sin señal); el diario lo usa el agente de Seguimiento de obras (punto 5, capa 5) · **Proyectos:** services/obras, services/sincronizacion, app-obra · **Depende de:** 101
+**Estado:** aprobado (30/10/2026) · **Capa:** 1 · **Puntos del ingeniero:** 7 (registro de campo sin señal); el diario lo usa el agente de Seguimiento de obras (punto 5, capa 5) · **Proyectos:** services/obras, services/sincronizacion, app-obra · **Depende de:** 101
 
 ## Historia
 

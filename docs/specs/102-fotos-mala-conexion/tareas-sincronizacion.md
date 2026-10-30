@@ -4,11 +4,6 @@ Requisitos y diseño: `docs/specs/102-fotos-mala-conexion/` de la carpeta que ag
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] Tabla `subida_archivo` (TTL 7 días) en la creación de tablas de desarrollo
-- [ ] Cliente S3 limitado al prefijo `temporal/subidas/` (`SINC_S3_*`, *path-style*)
-- [ ] `POST /subidas` y `GET /subidas/{idSubida}` (creación condicional, `SUBIDA_AJENA`, `SUBIDA_DISTINTA`)
-- [ ] `PUT /subidas/{idSubida}/partes/{n}` con cuerpo binario (límite 300 KB), validación de número y tamaño, `ADD partes_recibidas`
-- [ ] `POST /subidas/{idSubida}/completar`: partes faltantes, reinicio si falta un objeto, verificación SHA-256, URL firmada del dueño (Obras o Materiales), `PUT` final, borrado de temporales, idempotencia
-- [ ] Tipos `FOTO_AVANCE` y `FOTO_NOTA_REMISION` en `POST /lotes`
-- [ ] Actualizar `docs/datos.md` y `docs/contratos.md` del proyecto
-- [ ] Pruebas de la spec (DynamoDB Local y un doble de S3, servicios dueños simulados)
+- [ ] `POST /fotos/url-subida`: reenvío a Obras con el token del usuario, errores del dueño tal cual, `503` y `504`
+- [ ] Tipo `FOTO_AVANCE` en `POST /lotes` (Obras `POST /obras/{obraId}/fotos`)
+- [ ] Actualizar `docs/contratos.md` del proyecto y pruebas de la spec (servicios dueños simulados)

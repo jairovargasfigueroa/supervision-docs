@@ -75,16 +75,16 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 
 ## Fases 3 a 8. Capas (especificaciones en borrador)
 
-Las specs de las capas están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
+Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
 
 Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado.
 
 | N.º | Funcionalidad | Capa | Depende de | Estado |
 |---|---|---|---|---|
-| 101 | Registro de material sin señal y sincronización sin duplicados (crea `services/sincronizacion`) | 1 | 004 | pendiente |
-| 102 | Fotos sin señal y envío con mala conexión (incluye foto de la nota de remisión) | 1 | 005, 101 | pendiente |
-| 103 | Diario de obra | 1 | 101 | pendiente |
-| 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | pendiente |
+| 101 | Registro de material sin señal y sincronización sin duplicados (crea `services/sincronizacion`) | 1 | 004 | en curso (aprobada el 30/10/2026) |
+| 102 | Fotos sin señal y envío con mala conexión (simplificada: foto completa directo a S3, sin nota de remisión) | 1 | 005, 101 | en curso (aprobada el 30/10/2026) |
+| 103 | Diario de obra | 1 | 101 | en curso (aprobada el 30/10/2026) |
+| 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | en curso (aprobada el 30/10/2026) |
 | 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
 | 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; crea `services/ia` con el entrenamiento) | 3 | 005 | pendiente |
 | 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente |

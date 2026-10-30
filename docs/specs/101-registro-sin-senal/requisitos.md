@@ -1,6 +1,6 @@
 # 101 · Registrar material sin señal (sincronización sin duplicados)
 
-**Estado:** borrador (por aprobar) · **Capa:** 1 · **Puntos del ingeniero:** 7, 8 y 9 · **Proyectos:** services/sincronizacion (nuevo), app-obra, infra (DynamoDB Local)
+**Estado:** aprobado (30/10/2026, con los ajustes de la evaluación de la capa 1) · **Capa:** 1 · **Puntos del ingeniero:** 7, 8 y 9 · **Proyectos:** services/sincronizacion (nuevo), app-obra, infra (DynamoDB Local)
 
 ## Historia
 
@@ -20,6 +20,7 @@ Como **almacenero** quiero registrar los ingresos y salidas de material aunque e
 
 6. CUANDO la app se abre sin señal y el usuario ya inició sesión antes en ese celular, ENTONCES entra con el último usuario (nombre y rol guardados) aunque su token haya vencido; los envíos esperan a que el token se renueve.
 7. SI al volver la señal la sesión ya no se puede renovar, ENTONCES la app pide iniciar sesión de nuevo y no pierde los registros pendientes.
+7b. La sesión de la app dura hasta 30 días sin usarla (sesión «offline» de Keycloak; decisión del equipo), para que pueda enviar lo registrado aunque el celular pase días sin señal.
 
 ### Registro
 
@@ -33,7 +34,8 @@ Como **almacenero** quiero registrar los ingresos y salidas de material aunque e
 12. SI un envío falla por la red, por tiempo agotado o porque el servidor no está disponible, ENTONCES se reintenta con espera creciente (1 s, 2 s, 4 s… hasta un máximo de 5 minutos entre intentos).
 13. SI una misma operación llega más de una vez al servidor (reintento, respuesta perdida, doble toque), ENTONCES se procesa una sola vez y se devuelve la misma respuesta que la primera vez.
 14. SI el servicio dueño rechaza la operación por una regla del negocio (por ejemplo «El periodo 2026-11 ya está cerrado»), ENTONCES la operación queda «Rechazada» con ese motivo y no se reintenta.
-15. Solo se envían los pendientes del usuario que tiene la sesión abierta en el celular.
+14b. SI un movimiento se rechazó porque su periodo ya está cerrado, ENTONCES ofrece «Registrar con fecha de hoy», que crea un registro nuevo (otro UUID) con los mismos datos y la fecha y hora actuales, y descarta el rechazado.
+15. Solo se envían los pendientes del usuario que tiene la sesión abierta en el celular. SI en el celular hay pendientes de otro usuario, ENTONCES se muestra «Hay N registros de {nombre} sin enviar; se enviarán cuando esa persona vuelva a iniciar sesión».
 
 ### Pendientes de envío
 
