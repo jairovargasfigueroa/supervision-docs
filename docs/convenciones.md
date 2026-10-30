@@ -33,6 +33,11 @@ Lo que todos los proyectos hacen igual.
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
 - En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ y Keycloak. Quien no los tenga instalados levanta también los contenedores de las bases.
 
+## Datos de prueba (011)
+
+- Los datos de prueba (`docs/datos-prueba.md`) **solo se cargan en desarrollo**: `infra/semilla/semilla.ps1` (o `.sh`) y `recargar` se niegan a correr sin `SEMILLA_PERMITIDA=si` en el `.env` de infra, y cada servicio rechaza su propia semilla en producción (`prod`, `APP_ENV=production`, `NODE_ENV=production`) o con una base que no sea local.
+- La semilla no publica eventos ni comandos (no escribe `outbox_evento` ni `mensaje_procesado`) y todos los servicios usan la misma fecha D (`SEMILLA_FECHA`).
+
 ## Autenticación y permisos (Keycloak)
 
 - Realm `supervision`. Keycloak emite tokens JWT (OIDC).

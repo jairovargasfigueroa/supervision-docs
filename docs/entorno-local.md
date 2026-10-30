@@ -11,6 +11,7 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 | `rabbitmq` | `rabbitmq:4.4-management` | 5672, 15672 (panel) | `rabbitmq-init` le importa `infra/rabbitmq/definiciones.json`: exchange `plataforma` (topic), colas `obras`, `materiales`, `finanzas`, `notificaciones`, `ia`, `plataforma.fallidos` y sus enlaces. Usuario por servicio (los crea `rabbitmq-init`). Las colas `ia` (con sus 6 enlaces de la 401) y `notificaciones` (010) se declaran desde la fase 1, aunque esos servicios todavía no existan, para que ningún evento se pierda. |
 | `keycloak` | `quay.io/keycloak/keycloak:26.8.1` | 8080 | `start-dev --import-realm` con `infra/keycloak/realm-supervision.json` y el tema `infra/keycloak/temas/supervision`. Usa su propia base H2 en desarrollo. Sin volumen: al recrear el contenedor el realm se vuelve a importar. |
 | `rabbitmq-init` | `curlimages/curl:8.17.0` | — | Corre una vez al levantar, por la API del panel: importa `infra/rabbitmq/definiciones.json` y crea un usuario por servicio (`obras`, `materiales`, `finanzas`, `ia`, `notificaciones`) con las contraseñas de `infra/.env`; termina. (Si RabbitMQ cargara las definiciones al arrancar, no crearía el administrador de `.env`.) |
+| `s3-cli` | `amazon/aws-cli:2.38.0` | — | Solo para la semilla (011). Perfil `herramientas`: sube y borra las fotos de prueba en el bucket S3 de desarrollo (`S3_BUCKET`, que debe empezar con `supervision-dev-`) con las credenciales del usuario IAM de desarrollo de `infra/.env`. |
 | `mailpit` | `axllent/mailpit:v1.32` | 1025 (SMTP), 8025 (web) | Solo desde la 201. Perfil `automatizacion`. |
 | `dynamodb` | `amazon/dynamodb-local:3.3.2` | 8000 | Solo desde la 101. Perfil `sin-senal`. |
 | `n8n` | según la spec 201 | 5678 | Solo desde la 201. Perfil `automatizacion`. |
@@ -41,7 +42,8 @@ Con pocas fotos el costo es mínimo, pero depende de la cuenta (capa gratuita o 
 | `estado.ps1` / `.sh` | Muestra qué contenedor está sano y llama `GET /salud` de cada servicio que esté corriendo |
 | `bajar.ps1` / `.sh` | `docker compose down` (conserva datos) |
 | `reiniciar-datos.ps1` / `.sh` | Borra volúmenes y vuelve a levantar todo vacío (pide confirmación) |
-| `semilla.ps1` / `.sh` | Carga los datos de prueba (011) |
+
+Datos de prueba (011), en `infra/semilla/`: `semilla.ps1` / `.sh` cargan los datos de `docs/datos-prueba.md` sin duplicar y `recargar.ps1` / `.sh` (con `-Si` / `--si`) vacían bases, colas y fotos y vuelven a cargar. Detalle en el README de infra.
 
 ## Orden para levantar todo
 

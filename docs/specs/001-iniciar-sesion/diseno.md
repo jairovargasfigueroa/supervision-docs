@@ -3,7 +3,7 @@
 ## Keycloak (infra)
 
 - Realm `supervision` del archivo de importación de la fase 1. Se agrega:
-  - Usuarios de prueba (contraseña `Prueba123!`, solo desarrollo): `admin1` (admin), `residente1`, `residente2` (residente), `gerente1` (gerente), `maestro1` (maestro), `almacenero1` (almacenero), `cliente1`, `cliente2` (cliente) y `demo1` (residente y cliente, para demostrar el paso entre el ERP y el portal sin volver a escribir la contraseña; sus obras las asigna la 011). Nombre y apellido completos para mostrarlos.
+  - Usuarios de prueba (contraseña `Prueba123!`, solo desarrollo): `admin1` (admin), `residente1`, `residente2` (residente), `gerente1` (gerente), `maestro1` (maestro), `almacenero1` (almacenero), `cliente1`, `cliente2` (cliente) y `demo1` (residente y cliente, para demostrar el paso entre el ERP y el portal sin volver a escribir la contraseña; sus obras las asigna la 011). Nombre y apellido completos para mostrarlos. Cada usuario tiene `id` fijo (`a0000000-0000-4000-8000-0000000000NN`), nombre, apellido y correo según `docs/datos-prueba.md` (sección 3), para que las obras de los datos de prueba los referencien.
   - Clientes: `erp` (redirect `http://localhost:4200/*`), `portal` (redirect `http://localhost:4300/*`), `app-obra` (redirect `exp://*` y el esquema `appobra://*`). Los tres públicos, *Standard flow* con PKCE `S256`, sin *direct access grants*.
   - Duración del token de acceso: 5 minutos; sesión SSO: 10 horas.
 
