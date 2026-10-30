@@ -63,7 +63,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, gateway, mf-obras, portal, infra | 007 | hecho |
 | 009 | Consultar tablero | materiales, finanzas, gateway, mf-supervision | 006 | hecho |
 | 010 | Notificaciones (Firebase: *push* web y Android, bandeja en ERP, portal y app; crea `services/notificaciones`) | notificaciones, obras, finanzas, materiales, gateway, erp-shell, mf-materiales, portal, app-obra, infra | 001, 002, 003, 004, 007, 008 | pospuesta (decisión de Jairo, 29/10/2026: se hace después de la 011) |
-| 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | pendiente |
+| 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | en curso (código fusionado; falta cargar en desarrollo con `infra/semilla/recargar.ps1 -Si` y la prueba manual, tarea 6 de infra) |
 
 ### Pendientes conocidos del sistema base
 
