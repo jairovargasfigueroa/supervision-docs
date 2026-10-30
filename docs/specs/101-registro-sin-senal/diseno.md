@@ -187,6 +187,7 @@ Migraciones con `PRAGMA user_version`.
 CREATE TABLE operacion_pendiente (
   id_operacion        TEXT PRIMARY KEY,   -- UUID (expo-crypto randomUUID)
   usuario_id          TEXT NOT NULL,      -- sub del usuario que registró
+  usuario_nombre      TEXT NOT NULL,      -- para el aviso de pendientes de otro usuario
   tipo                TEXT NOT NULL,      -- MOVIMIENTO_MATERIAL, …
   obra_id             TEXT NOT NULL,
   datos               TEXT NOT NULL,      -- JSON que va en la operación
@@ -233,12 +234,15 @@ CREATE TABLE paquete_datos (
 - `obras/[id]/stock`: stock del paquete más los movimientos `PENDIENTE` y `ENVIANDO` de esa obra (ingresos suman, salidas restan), con el estado recalculado con la regla de `reglas-negocio.md` y la nota «Incluye N movimientos sin enviar».
 - `obras` (lista): sale del paquete local; encabezado «Sin señal · datos del dd/mm hh:mm» cuando NetInfo dice que no hay conexión.
 - Nueva pestaña `pendientes` (roles `maestro` y `almacenero`) con contador; lista agrupada por estado; «Enviar ahora», «Descartar» (en `PENDIENTE` y `RECHAZADO`, con confirmación) y «Actualizar datos».
+- `PERIODO_CERRADO` en un movimiento rechazado: botón «Registrar con fecha de hoy» → `cola.agregar` de una operación nueva (UUID nuevo, mismos `datos` con `registradoEn` = ahora) y `descartar` de la rechazada.
 - Mensajes de rechazo: se muestran según `codigo` (por ejemplo `PERIODO_CERRADO` → «El periodo AAAA-MM ya está cerrado», como la 004); si el código no es conocido, el mensaje genérico de su estado HTTP (`docs/mensajes.md`); el `detail` del servicio no se muestra al usuario.
 
 ### Sesión sin señal
 
+- Sesión larga (decisión del equipo): la app pide `scope=openid offline_access`; Keycloak entrega un *refresh token* «offline» que vale mientras la sesión offline no pase 30 días sin usarse (realm: `offlineSessionIdleTimeout` = 2592000 s; el cliente `app-obra` tiene el *scope* `offline_access`). Se guarda en `expo-secure-store` como en la 001. Al cerrar sesión se revoca.
 - Al iniciar sesión con éxito se guarda en `expo-secure-store` el `usuarioLocal` `{ id, nombre, roles }` (del token).
 - Al abrir la app: si hay red, renueva el token como en la 001; si no hay red y existe `usuarioLocal`, entra en «modo sin señal» con ese usuario; si Keycloak rechaza la renovación, muestra el inicio de sesión (la cola no se toca).
+- Pendientes de otro usuario: «Pendientes de envío» muestra el aviso del criterio 15 con `usuario_nombre`.
 - Cerrar sesión: si hay pendientes del usuario, muestra el aviso del criterio 18; borra tokens, `usuarioLocal` y `paquete_datos` de ese usuario; las operaciones quedan en la cola con su `usuario_id`.
 
 ## Obras y Materiales
@@ -293,7 +297,7 @@ Sin cambios (Sincronización no publica ni escucha eventos).
 
 ### `services/sincronizacion/docs/` (se crean con el proyecto)
 
-- `datos.md`: tablas `operacion_procesada` y `estado_dispositivo` como arriba (y `subida_archivo` de la 102).
+- `datos.md`: tablas `operacion_procesada` y `estado_dispositivo` como arriba.
 - `contratos.md`: los tres endpoints de arriba; consume Obras (`GET /obras`, `GET /obras/{id}`) y Materiales (`GET /materiales`, `GET /obras/{id}/stock`, `POST /movimientos`).
 - `servicio.md`: responsabilidades (recibir lotes sin duplicar, repartirlos por REST al servicio dueño, armar el paquete de datos del celular) y qué no hace (no guarda datos del negocio, no publica eventos, no valida reglas del negocio).
 
@@ -301,6 +305,10 @@ Sin cambios (Sincronización no publica ni escucha eventos).
 
 - `contratos.md`: consume Sincronización `GET /paquete-datos` y `POST /lotes`; deja de llamar directo a `POST /movimientos` de Materiales y a `GET /obras`, `GET /obras/{id}`, `GET /materiales`, `GET /obras/{id}/stock`.
 - `app.md`: la pantalla «Pendientes de envío» queda descrita (contador, estados, «Enviar ahora», «Descartar»).
+
+### `infra/keycloak/realm-supervision.json`
+
+Realm: `offlineSessionIdleTimeout` 2592000 (30 días). Cliente `app-obra`: *scope* opcional `offline_access` (los usuarios ya tienen el rol por defecto `offline_access`). `docs/specs/001-iniciar-sesion/diseno.md`: la app pide `offline_access` desde la 101.
 
 ### `docs/plan.md`
 

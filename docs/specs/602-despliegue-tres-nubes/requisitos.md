@@ -1,5 +1,7 @@
 # 602 · Despliegue en tres nubes
 
+> **Ajuste pendiente por la evaluación de la capa 1 (30/10/2026):** la 102 se simplificó. La app sube la foto completa y directo a S3 con la URL firmada de Obras (pedida a Sincronización), y ya no existen la subida por partes (`/subidas`), la tabla `subida_archivo`, el prefijo `temporal/subidas/`, el acceso de Sincronización a S3 ni la foto de la nota de remisión (`notas-remision/`, variables `MATERIALES_S3_*`). Al evaluar esta capa, quitar esas menciones de este documento.
+
 **Estado:** borrador para aprobar · **Capa:** 6 (requisito del ingeniero) · **Proyectos:** infra (y la configuración de producción de todos los proyectos, hecha en 601)
 
 ## Historia

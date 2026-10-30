@@ -1,5 +1,7 @@
 # 601 · Diseño
 
+> **Ajuste pendiente por la evaluación de la capa 1 (30/10/2026):** la 102 se simplificó. La app sube la foto completa y directo a S3 con la URL firmada de Obras (pedida a Sincronización), y ya no existen la subida por partes (`/subidas`), la tabla `subida_archivo`, el prefijo `temporal/subidas/`, el acceso de Sincronización a S3 ni la foto de la nota de remisión (`notas-remision/`, variables `MATERIALES_S3_*`). Al evaluar esta capa, quitar esas menciones de este documento.
+
 ## Reglas comunes de los Dockerfile
 
 - Imágenes base oficiales, con versión fija al menos hasta *major.minor* (verificadas en Docker Hub el 28/10/2026): `eclipse-temurin:21-jre-alpine`, `node:24-alpine`, `python:3.12-slim`, `dunglas/frankenphp:1-php8.3`, `nginxinc/nginx-unprivileged:1.29-alpine`.

@@ -1,5 +1,7 @@
 # 602 · Diseño
 
+> **Ajuste pendiente por la evaluación de la capa 1 (30/10/2026):** la 102 se simplificó. La app sube la foto completa y directo a S3 con la URL firmada de Obras (pedida a Sincronización), y ya no existen la subida por partes (`/subidas`), la tabla `subida_archivo`, el prefijo `temporal/subidas/`, el acceso de Sincronización a S3 ni la foto de la nota de remisión (`notas-remision/`, variables `MATERIALES_S3_*`). Al evaluar esta capa, quitar esas menciones de este documento.
+
 ## Criterios para elegir servicios
 
 1. **Costo bajo para estudiantes:** niveles gratuitos, créditos de estudiante y escalar a cero cuando se pueda. Los montos de créditos y niveles gratuitos cambian; el equipo los revisa en la página de cada nube antes de crear los recursos.
