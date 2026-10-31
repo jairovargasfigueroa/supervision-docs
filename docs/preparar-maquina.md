@@ -32,7 +32,7 @@ La carpeta queda igual que en todas las máquinas; el `CLAUDE.md` de la raíz y 
 
 ## 3. Primera vez
 
-1. `infra`: copia `.env.example` a `.env` y ejecuta `./scripts/levantar.ps1` (agrega `-Perfil bases` si no tienes PostgreSQL ni MongoDB instalados).
+1. `infra`: copia `.env.example` a `.env` y ejecuta `./scripts/levantar.ps1` (levanta RabbitMQ, Keycloak y DynamoDB Local; agrega `-Perfil bases` si no tienes PostgreSQL ni MongoDB instalados).
 2. En cada proyecto: copia su `.env.example` (Obras: `.env.properties.example`) y completa con los valores de `infra/.env`.
 3. Instala dependencias: `npm install` (JavaScript), `composer install` (Finanzas), `./mvnw -q -DskipTests package` (Obras, descarga dependencias).
 4. Levanta todo en el orden de `docs/entorno-local.md`.

@@ -27,7 +27,7 @@ Todo error lleva `codigo`; sin uno propio, el servicio usa el genérico de su es
 | `RUTA_NO_ENCONTRADA` | 404 | La ruta pedida no existe en el servicio (error de programación o de versión; con token válido) | «No encontramos lo que buscas. Puede que ya no exista o que no tengas acceso.» | Volver a la lista | convenciones (fase 1) · catálogo |
 | (código desconocido) | 404 | Un «no encontrado» que el frontend no conoce | «No encontramos lo que buscas. Puede que ya no exista o que no tengas acceso.» | Volver a la lista | catálogo |
 | (código desconocido) | 409 | Conflicto de estado o de versión que el frontend no conoce | «Los datos cambiaron mientras trabajabas. Recarga para ver la última versión.» | Recargar | catálogo |
-| `ARCHIVO_DEMASIADO_GRANDE` | 413 | El cuerpo supera el límite (lote de Sincronización de más de 256 KB, parte de más de 300 KB) | «El envío supera el tamaño permitido.» | Si es una foto, volver a tomarla; si se repite, avisar a soporte | convenciones, 101, 102 · catálogo |
+| `ARCHIVO_DEMASIADO_GRANDE` | 413 | El cuerpo supera el límite (lote de Sincronización de más de 256 KB) | «El envío supera el tamaño permitido.» | Si se repite, avisar a soporte | convenciones, 101 · catálogo |
 | (código desconocido) | 422 | Regla del negocio que el frontend no conoce | «No se pudo completar la operación porque no cumple una regla del sistema.» | Revisar los datos o consultar al residente o a administración | catálogo |
 | `DEMASIADAS_PETICIONES` | 429 | Ráfaga de pedidos | «Hiciste muchas solicitudes seguidas. Espera un momento e intenta de nuevo.» | Esperar y reintentar | convenciones · catálogo |
 | `ERROR_INTERNO` | 500 | Falla inesperada del servidor (también error de una herramienta MCP, 501) | «Ocurrió un error inesperado. Intenta de nuevo; si se repite, avisa a soporte.» | Reintentar | convenciones · catálogo |
@@ -54,7 +54,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 | `CONTRATO_INVALIDO` | 422 | Monto o plazo ≤ 0, anticipo o retención fuera de 0 a 100, o su suma ≥ 100 | «Los datos del contrato no son válidos: el monto y el plazo deben ser mayores a 0, y el anticipo y la retención deben estar entre 0 y 100 y sumar menos de 100.» | Corregir el paso «Contrato» | ERP · Obras | 002 · catálogo |
 | `OBRA_NO_ENCONTRADA` | 404 | La obra no existe o el usuario no puede verla (también en Materiales, IA y en las herramientas MCP) | «Obra no encontrada» | Volver a la lista de obras | ERP, portal, app | 006 (criterio 6) · texto de la spec |
 | `PARTIDA_NO_ES_DE_LA_OBRA` | 422 | La foto de avance indica una partida de otra obra | «La partida elegida no pertenece a esta obra.» | Pulsar «Actualizar datos» y elegir otra partida | App | 005 · catálogo |
-| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave del archivo no corresponde al registro (foto de avance 005, versión para el cliente 303, nota de remisión 102 en Materiales) | «No se pudo asociar el archivo a este registro.» | App: descartar y volver a tomar la foto. ERP: «Volver a preparar» | App, ERP · Obras | 005, 102, 303 · catálogo |
+| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave del archivo no corresponde al registro (foto de avance 005, también enviada por Sincronización en la 102; versión para el cliente 303) | «No se pudo asociar el archivo a este registro.» | App: descartar y volver a tomar la foto. ERP: «Volver a preparar» | App, ERP · Obras | 005, 102, 303 · catálogo |
 | `PLANILLA_ABIERTA_EXISTE` | 409 | Ya hay una planilla sin aprobar en la obra | «Ya hay una planilla sin aprobar en esta obra. Termínala antes de crear otra.» | Abrir la planilla existente desde la pestaña «Planillas» | ERP · Obras | 007 (criterio 2) · catálogo |
 | `PERIODO_NO_POSTERIOR` | 422 | El periodo no es posterior al de la última planilla | «El periodo debe ser posterior al de la última planilla ({periodoUltima}).» | Elegir un mes posterior | ERP · Obras | 007 (criterio 2) · catálogo |
 | `PERIODO_FUTURO` | 422 | El periodo es un mes futuro | «No se puede crear la planilla de un mes que todavía no llegó.» | Elegir el mes actual o uno anterior | ERP · Obras | 007 (criterio 2) · catálogo |
@@ -107,9 +107,6 @@ Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detall
 | `MATERIAL_INACTIVO` | 422 | Fijar mínimo (003) o registrar un movimiento (004) con un material desactivado | «El material está desactivado; no se puede usar en movimientos ni fijarle un mínimo.» | Elegir otro material o pedir a administración que lo active | ERP · Materiales, app | 003, 004 · catálogo |
 | `OBRA_NO_ENCONTRADA` | 404 | La obra no está en `obra_acceso` o el usuario no la ve | Ver «Obras» | — | ERP · Materiales, app | 003, 004 |
 | `PERIODO_CERRADO` | 409 | El periodo del movimiento ya lo cerró una planilla aprobada | «El periodo {periodo} ya está cerrado» | Consultar al residente; el registro queda «Rechazado» | App | 004 (criterio 7) · texto de la spec |
-| `MOVIMIENTO_NO_ENCONTRADO` | 404 | Se adjunta la foto de la nota a un movimiento que no existe o de una obra que no ve | «No se encontró el ingreso de esta nota de remisión.» | Descartar la foto | App | 102 · catálogo |
-| `MOVIMIENTO_NO_ES_INGRESO` | 422 | La foto de la nota se adjunta a una salida | «La foto de la nota solo se puede adjuntar a un ingreso.» | Descartar la foto | App | 102 · catálogo |
-| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave de la foto de la nota no es `notas-remision/{obraId}/{id}.jpg` | Ver «Obras» | — | App | 102 |
 | `ORDEN_COMPRA_NO_PENDIENTE` | 422 | El ingreso indica una orden ya recibida, de otra obra o de otro material | «La orden de compra no está pendiente para este material» | Volver a registrar el ingreso sin orden | App | 201 (criterio 16) · texto de la spec |
 
 ## Finanzas
@@ -126,7 +123,7 @@ Los cinco códigos de la capa 2 los recibe n8n, no una persona en pantalla: qued
 
 ## Sincronización (app de obra, capa 1)
 
-La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `ERROR`, `REINTENTAR`) o en las subidas. Los de `REINTENTAR` **no** se muestran: la operación vuelve a «Pendiente» y se reintenta sola (101). Los de `ERROR` dejan la operación «Rechazado» con el mensaje.
+La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `ERROR`, `REINTENTAR`) o al pedir la URL de subida de una foto (`POST /fotos/url-subida`, 102). Los de `REINTENTAR` **no** se muestran: la operación vuelve a «Pendiente» y se reintenta sola (101). Los de `ERROR` dejan la operación «Rechazado» con el mensaje.
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
@@ -138,18 +135,11 @@ La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `E
 | `OPERACION_EN_PROCESO` | 409 | Otra petición está procesando la misma operación | No se muestra (el registro sigue «Enviando» o vuelve a «Pendiente») | Ninguna | — | 101 |
 | `TOKEN_VENCIDO` | 401 | El servicio dueño rechazó el token | No se muestra; la app renueva el token. Si no puede, pide iniciar sesión sin perder los pendientes (101, criterio 7) | Iniciar sesión si se pide | App | 101 |
 | `TIEMPO_AGOTADO` | 504 | El servicio dueño no respondió en 5 s, o se agotaron los 20 s del lote | No se muestra (vuelve a «Pendiente») | Ninguna | — | 101 |
-| `SERVICIO_NO_DISPONIBLE` | 503 | Obras o Materiales fallaron (también en `GET /paquete-datos`) | No se muestra en el envío (vuelve a «Pendiente»). En el paquete de datos, la app sigue con los datos guardados: «Sin señal · datos del dd/mm hh:mm» | Ninguna | App | 101 (criterio 3) · texto de la spec |
-| `ARCHIVO_DEMASIADO_GRANDE` | 413 | Lote o parte por encima del límite | Ver «Genéricos» | — | App | 101, 102 |
-| `SUBIDA_INVALIDA` | 400 | Tipo de archivo, tamaño o huella mal formados | «La foto no se pudo preparar para el envío.» | Descartarla y tomarla de nuevo | App (Rechazado) | 102 · catálogo |
-| `SUBIDA_AJENA` | 403 | La subida la creó otro usuario | «Esta foto la empezó a enviar otro usuario.» | Descartarla | App (Rechazado) | 102 · catálogo |
-| `SUBIDA_DISTINTA` | 409 | Ya existe una subida con ese id pero otro tamaño o huella | No se muestra: la app descarta esa subida y empieza otra con un `idSubida` nuevo (mismo `fotoId`) | Ninguna | — | 102 |
-| `SUBIDA_NO_ENCONTRADA` | 404 | Se consulta o completa una subida que no existe | No se muestra (la app vuelve a crear la subida) | Ninguna | — | 102 |
-| `PARTE_INVALIDA` | 400 | Número o tamaño de parte incorrecto | No se muestra (la app vuelve a subir la parte) | Ninguna | — | 102 |
-| `SUBIDA_INCOMPLETA` | 409 | Al completar faltan partes | No se muestra (la app sube las que faltan) | Ninguna | — | 102 |
-| `SUBIDA_REINICIADA` | 409 | Las partes vencieron (7 días) y hay que subir de nuevo | No se muestra; la foto vuelve a subirse desde el principio (102, criterio 15) | Ninguna | — | 102 |
-| `HUELLA_NO_COINCIDE` | 422 | El archivo armado no coincide con la huella del celular | No se muestra hasta el tercer intento; luego: «El archivo de la foto está dañado» | Descartar y tomar la foto de nuevo | App (Rechazado) | 102 (criterio 10) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 | Obras o Materiales fallaron (también en `GET /paquete-datos` y `POST /fotos/url-subida`) | No se muestra en el envío (vuelve a «Pendiente»). En el paquete de datos, la app sigue con los datos guardados: «Sin señal · datos del dd/mm hh:mm» | Ninguna | App | 101 (criterio 3) · texto de la spec |
+| `ARCHIVO_DEMASIADO_GRANDE` | 413 | Lote por encima de 256 KB | Ver «Genéricos» | — | App | 101 |
+| `FOTO_NO_DISPONIBLE` | — | Código solo de la app (no lo envía ningún servicio): el archivo de la foto ya no está en el celular al ir a subirlo | «La foto no se pudo preparar para el envío.» | Descartarla y tomarla de nuevo | App (Rechazado) | 102 · decisión del equipo |
 
-Si `POST /subidas/{id}/completar` devuelve un `403`, `404` o `422` del servicio dueño (por ejemplo `404 OBRA_NO_ENCONTRADA`), la foto queda «Rechazado» con el mensaje de ese código (102).
+Si `POST /fotos/url-subida` devuelve un `400`, `403`, `404` o `422` de Obras (por ejemplo `404 OBRA_NO_ENCONTRADA`), la foto queda «Rechazado» con el mensaje de ese código; un `503` o `504` no se muestra y la foto se vuelve a subir más tarde (102).
 
 ## IA (capas 4 y 5)
 
@@ -285,16 +275,24 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Necesitas señal la primera vez para descargar tus obras» | App | Primer uso sin señal | 101 (criterio 4) · texto de la spec |
 | «Guardado en el celular · se enviará cuando haya señal» | App | El servidor no confirmó en 5 s | 101 (criterio 8) · texto de la spec |
 | «Incluye {N} movimientos sin enviar» | App (stock) | Hay movimientos pendientes | 101 (criterio 9) · texto de la spec |
+| «Incluye 1 movimiento sin enviar» | App (stock) | Hay un solo movimiento pendiente (forma en singular) | 101 · decisión del equipo |
 | `Pendiente` · `Enviando` · `Enviado` · `Rechazado` (con el motivo) | App («Pendientes de envío») | Estado de cada registro | 101 (criterio 16) · texto de la spec |
 | «Salida · 12,5 bolsas de Cemento IP-30 · P-01» (formato: «{tipo} · {cantidad} {unidad} de {material} · {partida}») | App («Pendientes de envío») | Descripción de un movimiento | 101 (criterio 16) · texto de la spec |
 | «¿Descartar este registro? No se enviará y no se podrá recuperar.» con «Descartar» y «Cancelar» | App | Al descartar un registro | 101 (criterio 17) · catálogo |
+| «No hay registros pendientes de envío.» | App («Pendientes de envío») | El usuario no tiene registros en el celular | 101 · decisión del equipo |
 | «Tienes {N} registros sin enviar; se enviarán cuando vuelvas a iniciar sesión con este usuario» | App | Cerrar sesión con pendientes | 101 (criterio 18) · texto de la spec |
-| «Subiendo foto · {X} de {Y} partes» | App («Pendientes de envío») | Foto subiéndose | 102 (criterio 12) · texto de la spec |
-| «El ingreso asociado fue rechazado» | App | Rechazaron el ingreso de la foto de la nota | 102 (criterio 6) · texto de la spec |
-| «El archivo de la foto está dañado» | App | Tercer fallo de huella | 102 (criterio 10) · texto de la spec |
+| «Hay {N} registros de {nombre} sin enviar; se enviarán cuando esa persona vuelva a iniciar sesión» | App («Pendientes de envío») | Hay registros sin enviar de otro usuario en el celular | 101 (criterio 15) · texto de la spec |
+| «1 registro» en lugar de «{N} registros» en los dos avisos anteriores («Tienes 1 registro sin enviar…», «Hay 1 registro de {nombre} sin enviar…») | App | Hay un solo registro (forma en singular) | 101 · decisión del equipo |
+| «Subiendo foto…» | App («Pendientes de envío») | El archivo de la foto se está subiendo | 102 (criterio 7) · texto de la spec |
+| «Tienes {N} fotos sin enviar; busca señal para enviarlas» | App (foto de avance) | Hay más de 100 fotos sin enviar en el celular (no impide tomar más) | 102 (criterio 3) · texto de la spec |
 | «Ya registraste el diario del dd/mm» | App (diario) | Ya hay entrada ese día en el celular o el paquete | 103 (criterio 4) · texto de la spec |
 | «Sin enviar» · «Rechazada» | App (diario) | Estado de la entrada | 103 (criterio 7) · texto de la spec |
 | «Diario · 15/11 · Lluvia leve» (formato: «Diario · dd/mm · {clima}») | App («Pendientes de envío») | Descripción de una entrada | 103 (diseño) · texto de la spec |
+| «Aún no hay entradas del diario en los últimos 30 días.» | App (diario) | La obra no tiene entradas en el paquete ni en la cola | 103 · decisión del equipo |
+| «Elige el clima.» | App (diario, formulario) | Se guarda sin elegir el clima | 103 · decisión del equipo |
+| «Escribe al menos 10 caracteres.» · «Escribe hasta 2000 caracteres.» | App (diario, formulario) | El texto tiene menos de 10 o más de 2000 caracteres (sin contar los espacios de los costados) | 103 · decisión del equipo |
+| «Corrigiendo la entrada del dd/mm» | App (diario, formulario) | Se está corrigiendo una entrada sin enviar | 103 · decisión del equipo |
+| «Esta entrada ya se está enviando y no se puede corregir.» | App (diario) | Se pulsa «Corregir» en una entrada que pasó a `ENVIANDO` | 103 · decisión del equipo |
 
 ### ERP sin conexión (104)
 
@@ -396,7 +394,7 @@ Las que se encontraron al armar este catálogo quedaron resueltas en las specs, 
 7. **Los errores genéricos no tenían código y faltaba el motivo de `ContratoRechazado`.** Códigos genéricos en `convenciones.md` (`DATOS_INVALIDOS`, `NO_AUTENTICADO`, `SIN_PERMISO`, `ARCHIVO_DEMASIADO_GRANDE`, `DEMASIADAS_PETICIONES`, `ERROR_INTERNO`, `SERVICIO_NO_DISPONIBLE`); motivos del contrato en la 002 (diseño).
 8. **Faltaban los textos de `CierreFallido` y `CobroFallido`, y el portal dejaba de consultar a los 90 s.** Textos en la 008 (diseño); el portal consulta hasta 4 minutos y a los 90 s muestra el aviso de espera (008: requisitos, diseño y tareas del portal).
 9. **La detección de EPP no viajaba por Sincronización.** La 301 agrega, en «Cambios a contratos y datos», `deteccion` a los `datos` de `FOTO_AVANCE` de la 102.
-10. **No estaba definido qué hacer con `SUBIDA_DISTINTA`.** La app descarta la subida y empieza otra con un `idSubida` nuevo y el mismo `fotoId` (102: diseño y tareas de la app).
+10. **No estaba definido qué hacer con `SUBIDA_DISTINTA`.** La app descarta la subida y empieza otra con un `idSubida` nuevo y el mismo `fotoId` (102: diseño y tareas de la app). Ya no aplica: la 102 se simplificó el 30/10/2026 y no tiene subida por partes.
 11. **El tablero podía pasar el límite de 100 obras de IA.** El gateway parte las llamadas en lotes de 100 (402 y 403: diseño y tareas del gateway).
 12. **Faltaban textos de interfaz y `PERIODO_INVALIDO` cubría dos causas.** Los textos están en este catálogo; el código se separó en `PERIODO_NO_POSTERIOR` y `PERIODO_FUTURO` (007: requisitos y diseño; contratos de Obras).
 

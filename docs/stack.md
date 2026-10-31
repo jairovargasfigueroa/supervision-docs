@@ -113,11 +113,25 @@ Instalar **siempre** con `npx expo install <paquete>` (elige la versión compati
 | Login y tokens | `expo-auth-session`, `expo-secure-store`, `expo-crypto` |
 | Fotos | `expo-image-picker`, `expo-image-manipulator` |
 | Base local (capa 1) | `expo-sqlite` |
+| Estado de la red (capa 1) | `@react-native-community/netinfo` |
+| Fotos guardadas en el celular hasta enviarlas (102) | `expo-file-system` |
 | Pruebas | `jest-expo` + `@testing-library/react-native` 14 |
 
-## services/sincronizacion y services/ia
+## services/sincronizacion (NestJS 12, capa 1)
 
-Se crean en las capas 1 y 4; sus librerías están en `docs/specs/101-registro-sin-senal/diseno.md` y `docs/specs/401-base-reportes/diseno.md`.
+Misma base que Materiales (TypeScript con módulos ES, Vitest, oxlint; arquitectura Clean). Detalle en `docs/specs/101-registro-sin-senal/diseno.md`.
+
+| Para qué | Librería |
+|---|---|
+| DynamoDB | AWS SDK v3: `@aws-sdk/client-dynamodb` + `@aws-sdk/lib-dynamodb` |
+| Token (JWKS) | `jose` |
+| Validación | `class-validator` + `class-transformer` |
+| Respuestas comprimidas (gzip) | `compression` |
+| Pruebas | Vitest |
+
+## services/ia
+
+Se crea en la capa 4; sus librerías están en `docs/specs/401-base-reportes/diseno.md`.
 
 ## infra
 

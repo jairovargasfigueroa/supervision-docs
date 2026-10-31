@@ -34,8 +34,8 @@ Devuelve `201` con el detalle de la obra (como `GET /obras/{id}`), `estado: "SIN
 Errores: `400` formato · `422 PRESUPUESTO_NO_COINCIDE` · `422 CODIGO_PARTIDA_REPETIDO` · `422 INSUMO_REPETIDO` · `422 CONTRATO_INVALIDO` · `403`.
 Publica `ObraRegistrada`.
 
-### GET /obras?estado=&busqueda= · 006, 009
-Roles: todos; filtra por visibilidad (convenciones).
+### GET /obras?estado=&busqueda= · 006, 009, 101
+Roles: todos; filtra por visibilidad (convenciones). Quién llama: Sincronización (capa 1), con el token del usuario (`estado=EN_EJECUCION`, para el paquete de datos).
 ```json
 [{
   "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "estado": "EN_EJECUCION",
@@ -45,8 +45,8 @@ Roles: todos; filtra por visibilidad (convenciones).
 ```
 `ultimaPlanilla` es `null` si no hay planillas.
 
-### GET /obras/{id} · 002, 004, 006
-Roles: los que pueden ver la obra.
+### GET /obras/{id} · 002, 004, 006, 101
+Roles: los que pueden ver la obra. Quién llama: Sincronización (capa 1), con el token del usuario (partidas del paquete de datos).
 ```json
 {
   "id": "uuid", "nombre": "…", "ubicacion": "…", "estado": "EN_EJECUCION",
@@ -68,12 +68,12 @@ Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla).
 Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`).
 `{ "periodo": "2027-02", "hayPlanilla": true, "items": [{ "partidaId": "…", "materialId": "…", "cantidadPrevista": 55.0 }] }`
 
-### POST /obras/{obraId}/fotos/url-subida · 005
-Roles: `maestro`, `residente` asignados. Recibe `{ "fotoId": "uuid" }`.
+### POST /obras/{obraId}/fotos/url-subida · 005, 102
+Roles: `maestro`, `residente` asignados. Quién llama: Sincronización (capa 1), con el token del usuario. Recibe `{ "fotoId": "uuid" }`.
 Devuelve `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg", "expiraEn": "…" }`.
 
-### POST /obras/{obraId}/fotos · 005
-Roles: `maestro`, `residente` asignados.
+### POST /obras/{obraId}/fotos · 005, 102
+Roles: `maestro`, `residente` asignados. Quién llama: Sincronización (capa 1), con el token del usuario (operación `FOTO_AVANCE`).
 Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z" }`.
 Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false }`.
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
@@ -81,6 +81,20 @@ Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAV
 ### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
 `[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
+
+### POST /obras/{obraId}/diario · 103
+Roles: `maestro` asignado. Quién llama: Sincronización (capa 1), con el token del maestro (la app no llama directo; operación `ENTRADA_DIARIO`).
+Recibe `{ "id": "uuid generado en el celular", "fecha": "2026-11-15", "clima": "LLUVIA_LEVE", "texto": "Se vació la losa del 2do piso. Lluvia por la tarde, se cubrió con nylon." }`.
+Devuelve `201` (o `200` si el `id` ya existía, aunque el cuerpo sea distinto) `{ "id", "obraId", "fecha", "clima", "texto", "registradoPor", "registradoEn" }`.
+Errores: `400 DATOS_INVALIDOS` (`errores[]` con `clima` o `texto`) · `403 SIN_PERMISO` (ve la obra pero no como `maestro`, por ejemplo el residente asignado) · `404 OBRA_NO_ENCONTRADA` (no existe o no la ve, por ejemplo un maestro no asignado) · `409 DIARIO_DIA_YA_REGISTRADO` · `422 OBRA_NO_EN_EJECUCION` · `422 FECHA_DIARIO_INVALIDA` (futura en `America/La_Paz` o anterior a `fechaInicio`).
+- `clima`: `SOLEADO`, `NUBLADO`, `LLUVIA_LEVE` o `LLUVIA_FUERTE`. `texto`: de 10 a 2000 caracteres sin contar los espacios de los extremos (se guarda sin ellos). `registradoPor` = `sub` del token; `registradoEn` = momento en que Obras la recibió.
+- Una entrada por obra y día (único `obra_id`, `fecha`): si dos llegan a la vez con distinto `id`, la segunda recibe `409 DIARIO_DIA_YA_REGISTRADO`. Un `id` que ya existe en otra obra también responde `409 DIARIO_DIA_YA_REGISTRADO`.
+
+### GET /obras/{obraId}/diario?desde=&hasta= · 103
+Roles: `maestro` y `residente` asignados, `admin`, `gerente`. Quién llama: Sincronización (capa 1), con el token del usuario (`diario` del paquete de datos, solo para el `maestro`).
+`[{ "id", "obraId", "fecha", "clima", "texto", "registradoPor", "registradoEn" }]`, de la fecha más reciente a la más antigua.
+- `desde` y `hasta` (`AAAA-MM-DD`, incluidas). Sin ninguna: los últimos 30 días hasta hoy (La Paz); sin `hasta`: hoy; sin `desde`: `hasta` − 29 días.
+- Errores: `400 DATOS_INVALIDOS` (fecha mal formada o `desde` posterior a `hasta`) · `400 RANGO_INVALIDO` (más de 366 días) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o la ve solo como `cliente`) · `403 SIN_PERMISO` (la ve con otro papel, por ejemplo el almacenero asignado).
 
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
@@ -127,8 +141,8 @@ Errores: `409 PLANILLA_NO_PRESENTADA` · `422 MOTIVO_INVALIDO`.
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
-### GET /materiales?busqueda=&soloActivos= · 002, 003, 006
-Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
+### GET /materiales?busqueda=&soloActivos= · 002, 003, 006, 101
+Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Quién llama: Sincronización (capa 1), con el token del usuario (`soloActivos=true`, todas las páginas de a 100, para el paquete de datos). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
 `[{ "id", "codigo": "CEM-IP30", "nombre": "Cemento IP-30", "tipo": "CEMENTO", "unidad": "bolsa", "unidadPlural": "bolsas", "precioReferencial": 62.00, "activo": true, "atributos": [{ "nombre": "peso", "valor": "50 kg" }] }]`
 
 ### POST /materiales · 003
@@ -139,8 +153,8 @@ Errores: `400` · `409 CODIGO_MATERIAL_REPETIDO`.
 Roles: `admin`. Recibe el material completo (incluye `activo`). Devuelve `200`.
 Errores: `404 MATERIAL_NO_ENCONTRADO` · `409 CODIGO_MATERIAL_REPETIDO`.
 
-### GET /obras/{obraId}/stock · 003, 004
-Roles: internos que pueden ver la obra (`obra_acceso`).
+### GET /obras/{obraId}/stock · 003, 004, 101
+Roles: internos que pueden ver la obra (`obra_acceso`). Quién llama: Sincronización (capa 1), con el token del usuario (paquete de datos; un `404` se toma como stock vacío).
 `[{ "materialId", "codigo", "nombre", "unidad", "unidadPlural", "cantidad": 120.0, "minimo": 100.0, "estado": "JUSTO" }]`
 Errores: `404 OBRA_NO_ENCONTRADA`.
 
@@ -148,8 +162,8 @@ Errores: `404 OBRA_NO_ENCONTRADA`.
 Roles: `admin`. Recibe `{ "minimo": 100 }`. Devuelve `200` con la fila de stock.
 Errores: `404 OBRA_NO_ENCONTRADA` · `404 MATERIAL_NO_ENCONTRADO` · `422 MATERIAL_INACTIVO`.
 
-### POST /movimientos · 004
-Roles: `almacenero` asignado.
+### POST /movimientos · 004, 101
+Roles: `almacenero` asignado. Quién llama: Sincronización (capa 1), con el token del usuario (operación `MOVIMIENTO_MATERIAL`; desde la 101 la app no llama directo).
 ```json
 {
   "id": "uuid generado en el celular", "obraId": "uuid", "materialId": "id",
@@ -197,3 +211,87 @@ Vencidos: estado `VENCIDO` y también `PENDIENTE` con vencimiento anterior a hoy
 
 Crear orden de compra y cuenta por pagar (las llama n8n). Se especifican en la capa 2.
 
+## Sincronización (puerto 8084)
+
+Solo la llama la app de obra (capa 1). Reenvía el token del usuario a los servicios dueños, que aplican sus reglas finas; no guarda datos del negocio ni publica eventos. Respuestas con gzip si el cliente manda `Accept-Encoding: gzip`.
+
+Encabezados comunes (todas las rutas salvo `/salud`):
+- `Authorization: Bearer <token>`: sin token o inválido, `401 NO_AUTENTICADO`; si Keycloak no responde al pedir el JWKS, `503 SERVICIO_NO_DISPONIBLE`.
+- Roles `maestro` y `almacenero` (roles efectivos según `azp`); otro rol: `403 SIN_PERMISO`.
+- `X-Dispositivo-Id: <uuid>` (UUID del celular): falta o no es UUID → `400 DISPOSITIVO_REQUERIDO` (se comprueba después del token y del rol).
+- `X-Request-Id`: si no viene, Sincronización lo crea; se reenvía a los servicios dueños y vuelve en la respuesta.
+
+### GET /salud
+Sin token ni `X-Dispositivo-Id` · `200 {"estado":"ok"}`
+
+### GET /paquete-datos?obraActivaId= · 101, 103
+Roles: `maestro`, `almacenero`. Encabezado opcional `If-None-Match: "<versionDatos>"`.
+Devuelve `200` con `ETag: "<versionDatos>"`, o `304` sin cuerpo si la versión no cambió:
+```json
+{
+  "versionDatos": "9f2c…(sha256 en hexadecimal)",
+  "generadoEn": "2026-11-15T13:00:00Z",
+  "obras": [{
+    "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "Av. Banzer 4to anillo",
+    "partidas": [{ "id": "uuid", "codigo": "P-01", "nombre": "Losa de hormigón armado", "unidad": "m2" }],
+    "stock": [{ "materialId": "id", "cantidad": 120.0, "minimo": 100.0, "estado": "JUSTO" }],
+    "diario": [{ "id": "uuid", "fecha": "2026-11-15", "clima": "LLUVIA_LEVE", "texto": "Se vació la losa…" }]
+  }],
+  "materiales": [{ "id": "id", "codigo": "CEM-IP30", "nombre": "Cemento IP-30", "unidad": "bolsa", "unidadPlural": "bolsas" }]
+}
+```
+- Se arma con el token del usuario: Obras `GET /obras?estado=EN_EJECUCION` y, por cada obra, en paralelo, Obras `GET /obras/{id}` (partidas) y Materiales `GET /obras/{id}/stock` (`404` → `stock: []`); además Materiales `GET /materiales?soloActivos=true`.
+- `diario` (103): solo si el token tiene el rol `maestro`; Obras `GET /obras/{id}/diario` (últimos 30 días). `403` o `404` de Obras para esa obra → `diario: []`. Para los demás roles el campo no va.
+- `versionDatos` = SHA-256 del JSON del paquete sin `generadoEn`, con las claves ordenadas y las listas ordenadas por `id` (el stock, por `materialId`).
+- `obraActivaId` opcional (UUID): solo se guarda en el estado del celular.
+- Errores: `401` · `403` · `400 DISPOSITIVO_REQUERIDO` · `400 DATOS_INVALIDOS` (`obraActivaId` que no es UUID) · `503 SERVICIO_NO_DISPONIBLE` (Obras o Materiales fallan) · `504 TIEMPO_AGOTADO` (alguno tarda más de 5 s). La app conserva los datos que ya tenía.
+
+### POST /fotos/url-subida · 102
+Roles: `maestro`. Recibe `{ "obraId": "uuid", "fotoId": "uuid" }`.
+Reenvía a Obras `POST /obras/{obraId}/fotos/url-subida { fotoId }` con el token del usuario (tiempo máximo 5 s) y devuelve su respuesta tal cual: `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg", "expiraEn": "…" }`. La app sube la foto con `PUT` directo a esa URL (vence a los 10 minutos: se pide una nueva en cada intento).
+- `400`, `403`, `404` o `422` de Obras (y cualquier otro `4xx`) → mismo `status` y `codigo`.
+- `5xx` de Obras o error de red → `503 SERVICIO_NO_DISPONIBLE`; tiempo agotado → `504 TIEMPO_AGOTADO`.
+- `400 DATOS_INVALIDOS` si `obraId` o `fotoId` faltan o no son UUID. No guarda nada.
+
+### POST /lotes · 101, 102, 103
+Roles: `maestro`, `almacenero`. Cuerpo de hasta 256 KB.
+```json
+{
+  "operaciones": [{
+    "idOperacion": "uuid creado en el celular",
+    "tipo": "MOVIMIENTO_MATERIAL",
+    "creadaEn": "2026-11-15T14:00:00Z",
+    "datos": {
+      "id": "uuid (igual a idOperacion)", "obraId": "uuid", "materialId": "id",
+      "tipo": "SALIDA", "cantidad": 12.5, "partidaId": "uuid", "registradoEn": "2026-11-15T14:00:00Z"
+    }
+  }]
+}
+```
+Devuelve `200` con un resultado por operación, en el mismo orden:
+```json
+{
+  "resultados": [
+    { "idOperacion": "uuid", "estado": "PROCESADO", "repetida": false, "status": 201,
+      "respuesta": { "id": "uuid", "periodo": "2026-11", "superaStock": false, "stock": { "cantidad": 107.5, "minimo": 100.0, "estado": "JUSTO" } } },
+    { "idOperacion": "uuid", "estado": "ERROR", "repetida": true, "status": 409,
+      "respuesta": { "title": "El periodo está cerrado", "status": 409, "detail": "El periodo 2026-10 ya está cerrado.", "codigo": "PERIODO_CERRADO" } },
+    { "idOperacion": "uuid", "estado": "REINTENTAR", "repetida": false, "status": 503,
+      "respuesta": { "title": "Servicio no disponible", "status": 503, "codigo": "SERVICIO_NO_DISPONIBLE" } }
+  ]
+}
+```
+- `estado`: `PROCESADO` (el servicio dueño lo aceptó), `ERROR` (rechazo definitivo; no se reintenta) o `REINTENTAR` (la app lo vuelve a enviar más tarde con el mismo `idOperacion`). `repetida: true` cuando la respuesta sale de lo guardado y no se llamó al dueño.
+- Errores del lote completo: `400 LOTE_INVALIDO` (vacío, más de 20 operaciones, `idOperacion` repetido dentro del lote o datos mal formados; con `errores[]`) · `401` · `403` · `400 DISPOSITIVO_REQUERIDO` · `413 ARCHIVO_DEMASIADO_GRANDE` (más de 256 KB).
+
+| `tipo` | Servicio | Llamada | Espec. |
+|---|---|---|---|
+| `MOVIMIENTO_MATERIAL` | Materiales | `POST /movimientos` con cuerpo = `datos` | 101 |
+| `FOTO_AVANCE` | Obras | `POST /obras/{datos.obraId}/fotos` con `{ id, partidaId, claveArchivo, tomadaEn }` de `datos` | 102 |
+| `ENTRADA_DIARIO` | Obras | `POST /obras/{datos.obraId}/diario` con `{ id, fecha, clima, texto }` de `datos` | 103 |
+
+- `tipo` que no está en la tabla → resultado `ERROR` con `400 TIPO_OPERACION_DESCONOCIDO`.
+- `idOperacion` distinto de `datos.id` (en `FOTO_AVANCE`, el `fotoId`), o sin `datos.obraId` en `FOTO_AVANCE` y `ENTRADA_DIARIO` → `ERROR` con `400 OPERACION_INVALIDA`.
+- Cada operación, en orden: se guarda en DynamoDB «solo si no existe» (convenciones, «Idempotencia»). Si ya existía: de otro usuario → `ERROR` con `403 OPERACION_AJENA`; ya `PROCESADO` o `ERROR` → la respuesta guardada con `repetida: true`; en proceso (o tomada por otra petición) → `REINTENTAR` con `409 OPERACION_EN_PROCESO` (un `PROCESANDO` de más de 60 s se retoma).
+- Respuesta del dueño (tiempo máximo 5 s): `2xx` → `PROCESADO`; `400`, `403`, `404`, `409`, `422` → `ERROR` con su Problem Details; otro `4xx` también → `ERROR` (decisión de implementación); `401` → `REINTENTAR` con `TOKEN_VENCIDO` (la app renueva el token); `408`, `429`, `5xx` → `REINTENTAR` con el `status` recibido; tiempo agotado → `REINTENTAR` con `504 TIEMPO_AGOTADO`; error de red o falla de DynamoDB → `REINTENTAR` con `503 SERVICIO_NO_DISPONIBLE`.
+- Si pasan 20 s desde que empezó el lote, las operaciones que faltan vuelven `REINTENTAR` con `504 TIEMPO_AGOTADO` sin empezarse.
