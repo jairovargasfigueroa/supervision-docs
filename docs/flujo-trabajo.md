@@ -62,7 +62,7 @@ Ejemplos: `feat/002-registrar-obra`, `feat/1.2-docker-compose`, `fix/007-redonde
 **Una tarea** está terminada cuando:
 
 1. Hace lo que dice su `tareas.md` y cumple el diseño.
-2. Tiene sus pruebas y **todas las pruebas del proyecto pasan** (`./mvnw verify`, `npm test`, `php artisan test`, etc.).
+2. Tiene sus pruebas y pasan las pruebas de lo que tocó (las de los archivos o módulos cambiados; por ejemplo `./mvnw test -Dtest=…`, `npx vitest run <ruta>`).
 3. Pasan el lint, el formato y la revisión de tipos del proyecto (comandos en su `CLAUDE.md`).
 4. Si cambió un contrato, un dato o una regla, la documentación está actualizada en el mismo commit.
 5. No hay secretos en el commit ni mensajes de depuración (`console.log`, `print`).
@@ -70,7 +70,8 @@ Ejemplos: `feat/002-registrar-obra`, `feat/1.2-docker-compose`, `fix/007-redonde
 
 **Una funcionalidad** está terminada cuando:
 
-1. Todas sus tareas, en todos sus repos, están terminadas y sus PR fusionados en `develop`.
-2. Cada criterio de aceptación de `requisitos.md` se comprobó (automático o a mano) y se anotó cómo en el PR.
-3. La prueba manual de la sección «Pruebas» del diseño se hizo con los datos de prueba.
-4. Su estado está en `hecho` en `docs/plan.md`.
+1. Al terminar sus tareas, en cada repo pasan todas las pruebas del proyecto (`./mvnw verify`, `npm test`, `php artisan test`, etc.), el lint, el formato, los tipos y el build, una vez, antes de crear el PR.
+2. Todas sus tareas, en todos sus repos, están terminadas y sus PR fusionados en `develop`.
+3. Cada criterio de aceptación de `requisitos.md` se comprobó (automático o a mano) y se anotó cómo en el PR.
+4. La prueba manual de la sección «Pruebas» del diseño se hizo con los datos de prueba.
+5. Su estado está en `hecho` en `docs/plan.md`.

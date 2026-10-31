@@ -2,7 +2,7 @@
 
 Orden de trabajo y estado. Estados: `pendiente`, `en curso`, `hecho`. Al terminar una tarea, cambia su estado aquí.
 
-**Siguiente tarea:** la primera `pendiente` de la fase 1.
+**Siguiente:** la capa 4, empezando por la **401** (aprobada el 31/10/2026). Las capas siguen el orden 4 → 3 → 5 → 2 → 6 (sección «Fases 3 a 8»). La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
 
 Ramas, *pull requests* y definición de terminado: `docs/flujo-trabajo.md`. Solo se empieza algo cuyas dependencias están `hecho`.
 
@@ -73,11 +73,16 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 - **Respuesta tardía entre dos sagas de la misma planilla (008):** un `ConsumosCerrados` tardío de una saga ya compensada envía `ReabrirConsumos` con el mismo `planillaId` y podría reabrir el cierre de una segunda saga en curso. Muy improbable (exige vencimiento, corrección y nueva aprobación dentro de esa ventana).
 - **Límite de 120 peticiones por minuto:** lo aplica el gateway; Obras no lo aplica en los endpoints que el portal llama directo.
 
-## Fases 3 a 8. Capas (especificaciones en borrador)
+## Fases 3 a 8. Capas
 
-Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
+Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026 y la capa 4 el 31/10/2026). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
 
-Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado.
+**Orden de las capas (decisión de Jairo, 31/10/2026): 4 → 3 → 5 → 2 → 6.** Los números de las funcionalidades no cambian (la 401 sigue siendo la 401); solo cambia el orden en que se hacen. La tabla está en ese orden. **La siguiente es la capa 4, empezando por la 401.** Dentro de cada capa, se hacen en el orden de la tabla.
+
+- Capa 3: los rostros difuminados (303) quedan **opcionales**, y el uso del deep learning de la 301 está **por decidir** (se decide al reevaluar la capa 3). Como la capa 4 va antes, el repositorio `services/ia` (`supervision-ms-ia`) lo llena la 401, no la 301.
+- Capa 5: el modelo de lenguaje se decide al reevaluar esa capa; la capa 4 no usa ninguno.
+
+Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado (lo que la spec marca como «ya aplicado» ya está en los documentos de esta carpeta).
 
 | N.º | Funcionalidad | Capa | Depende de | Estado |
 |---|---|---|---|---|
@@ -85,16 +90,16 @@ Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambio
 | 102 | Fotos sin señal y envío con mala conexión (simplificada: foto completa directo a S3, sin nota de remisión) | 1 | 005, 101 | hecho (sincronizacion, app-obra; aprobada el 30/10/2026) |
 | 103 | Diario de obra | 1 | 101 | hecho (obras, sincronizacion, app-obra; aprobada el 30/10/2026) |
 | 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | hecho (erp-shell, mf-obras, mf-materiales, mf-supervision; aprobada el 30/10/2026) |
-| 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
-| 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; crea `services/ia` con el entrenamiento) | 3 | 005 | pendiente |
+| 401 | Base de reportes: CQRS, modelo de lectura alimentado por eventos, con carga inicial por REST (servicio IA con FastAPI; llena `services/ia`) | 4 | 008 | pendiente (aprobada el 31/10/2026) |
+| 402 | Riesgo de retraso (ML supervisado, XGBoost, datos sintéticos) | 4 | 401 | pendiente (aprobada el 31/10/2026) |
+| 403 | Consumos atípicos (ML no supervisado, Isolation Forest, datos sintéticos) | 4 | 401 (402 opcional: recálculo del riesgo) | pendiente (aprobada el 31/10/2026) |
+| 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; el uso del deep learning está por decidir) | 3 | 005, 401 (repositorio `services/ia`) | pendiente |
 | 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente |
-| 303 | Rostros difuminados en las fotos del cliente | 3 | 007, 008 | pendiente |
-| 401 | Base de reportes (servicio IA con FastAPI) | 4 | 008 | pendiente |
-| 402 | Riesgo de retraso (ML supervisado, XGBoost) | 4 | 401 | pendiente |
-| 403 | Consumos atípicos (ML no supervisado, Isolation Forest) | 4 | 401 | pendiente |
+| 303 | Rostros difuminados en las fotos del cliente (**opcional**) | 3 | 007, 008 | pendiente |
 | 501 | Servidores MCP de solo lectura en cada microservicio | 5 | 401 | pendiente |
 | 502 | Agentes del ERP (Seguimiento de obras, Control de materiales, Control de cobros) | 5 | 501, 402, 403 | pendiente |
 | 503 | Reportes por voz con exportación a Excel | 5 | 302, 401 | pendiente |
 | 504 | Seguridad de la IA (inyección SQL y de instrucciones) | 5 | 502, 503 | pendiente |
+| 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
 | 601 | Contenedores y CI (Dockerfile y GitHub Actions por proyecto) | 6 | — (se puede adelantar) | pendiente |
 | 602 | Despliegue en tres nubes (AWS, Google Cloud, Azure) | 6 | 601 | pendiente |
