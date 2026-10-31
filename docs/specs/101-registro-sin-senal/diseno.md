@@ -43,7 +43,7 @@ La app ya no llama directo a Obras ni a Materiales para registrar: todo registro
 | id_operacion | S | UUID creado en el celular (es el `id` del registro cuando la operación crea uno) |
 | id_dispositivo | S | encabezado `X-Dispositivo-Id` |
 | usuario_id | S | `sub` del token |
-| tipo | S | `MOVIMIENTO_MATERIAL` (101); `FOTO_AVANCE`, `FOTO_NOTA_REMISION` (102); `ENTRADA_DIARIO` (103) |
+| tipo | S | `MOVIMIENTO_MATERIAL` (101); `FOTO_AVANCE` (102); `ENTRADA_DIARIO` (103) |
 | servicio_destino | S | `materiales` u `obras` |
 | estado | S | `PROCESANDO`, `PROCESADO`, `ERROR` |
 | respuesta | S | JSON `{ status, cuerpo }` del servicio dueño (en `ERROR`, el Problem Details) |
@@ -145,7 +145,6 @@ Devuelve `200` con un resultado por operación, en el mismo orden:
 |---|---|---|---|
 | `MOVIMIENTO_MATERIAL` | Materiales | `POST /movimientos` con cuerpo = `datos` | 101 |
 | `FOTO_AVANCE` | Obras | `POST /obras/{datos.obraId}/fotos` | 102 |
-| `FOTO_NOTA_REMISION` | Materiales | `PUT /movimientos/{datos.movimientoId}/nota-remision/foto` | 102 |
 | `ENTRADA_DIARIO` | Obras | `POST /obras/{datos.obraId}/diario` | 103 |
 
 - Si el `tipo` no está en la tabla → resultado `ERROR` con `400 TIPO_OPERACION_DESCONOCIDO` (no se guarda en DynamoDB).

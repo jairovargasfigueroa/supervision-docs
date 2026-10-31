@@ -26,8 +26,11 @@
 | ERP (todos sus microfrontends) | Gateway | **GraphQL** | Toda la interacción del ERP |
 | Gateway | Obras, Materiales, Finanzas, IA | REST | Resolver las consultas y mutaciones |
 | Portal | Obras | REST | Ver avance y planillas; aprobar u observar |
-| App de obra | Sincronización (capa 1) | REST | Enviar lo registrado; en el sistema base, la app llama directo a Obras y Materiales |
-| Sincronización | Obras, Materiales | REST | Repartir lo recibido sin duplicar |
+| App de obra | Sincronización (capa 1) | REST | `POST /lotes`: enviar lo registrado (movimientos, fotos de avance y diario); desde la 101 la app ya no llama directo a Obras ni a Materiales |
+| App de obra | Sincronización (capa 1) | REST | `GET /paquete-datos`: datos para trabajar sin señal |
+| App de obra | Sincronización (capa 1) | REST | `POST /fotos/url-subida`: pedir la URL firmada para subir una foto de avance (102) |
+| App de obra | Almacenamiento (S3) | HTTPS (`PUT` con URL firmada) | Subir la foto de avance completa, directo del celular (102) |
+| Sincronización | Obras, Materiales | REST | Repartir lo recibido sin duplicar, armar el paquete de datos y pedir a Obras la URL firmada de la foto (con el token del usuario) |
 | Obras, Materiales, Finanzas | RabbitMQ | AMQP | Eventos y comandos de la saga |
 | RabbitMQ | n8n (capa 2) | AMQP / webhook | Eventos «stock bajo» e «ingreso» |
 | n8n | Finanzas, correo | REST, SMTP | Crear orden de compra y cuenta por pagar; avisar al proveedor |
@@ -54,7 +57,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Native Federation | `@angular-architects/native-federation` 22.2 (Angular) · `@softarc/native-federation` 4.7 + `@softarc/native-federation-esbuild` 4.2 (React) | El adaptador esbuild 4.2 pide el núcleo 4.7 |
 | React | 19.3 | Estable; lo usan los dos microfrontends y el portal |
 | Vite | 8 (solo el portal) | Plantilla oficial `create-vite` con React y TypeScript |
-| NestJS | 12 (gateway y Materiales) | Misma versión en ambos |
+| NestJS | 12 (gateway, Materiales y Sincronización) | Misma versión en todos |
 | GraphQL en el gateway | `@nestjs/graphql` 14 + `@nestjs/apollo` 14 + Apollo Server 5 | Versiones declaradas compatibles con NestJS 12 |
 | Cliente GraphQL (previsto) | apollo-angular 14 · Apollo Client 4 | Compatibles con Angular 22 y React 19 |
 | Login (previsto) | Keycloak 26 · keycloak-angular 22 · react-oidc-context 3 | OIDC estándar |

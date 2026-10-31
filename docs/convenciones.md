@@ -29,9 +29,10 @@ Lo que todos los proyectos hacen igual.
 | Portal | 4300 |
 | Metro de Expo (app en desarrollo; el 8081 es de Obras) | 8090 |
 | PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
+| DynamoDB Local (Sincronización, capa 1) | 8000 |
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
-- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ y Keycloak. Quien no los tenga instalados levanta también los contenedores de las bases.
+- En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y DynamoDB Local (101). Quien no los tenga instalados levanta también los contenedores de las bases.
 
 ## Datos de prueba (011)
 
@@ -116,6 +117,7 @@ Lo que todos los proyectos hacen igual.
 
 - Toda operación que crea algo desde el celular o desde un evento usa un identificador de operación (el UUID del registro).
 - El servicio guarda los identificadores ya procesados y, si llega uno repetido, devuelve `200` con el registro existente en lugar de crearlo otra vez.
+- En la capa 1, la primera barrera es Sincronización: guarda cada `idOperacion` en DynamoDB (`operacion_procesada`, «guardar solo si no existe», TTL de 30 días) y devuelve la respuesta guardada si se repite. Los servicios dueños mantienen su propia idempotencia por `id` (101).
 
 ## Eventos y comandos (RabbitMQ)
 
@@ -157,6 +159,7 @@ Lo que todos los proyectos hacen igual.
 
 - Cada servicio expone `GET /salud` sin token, que responde `200 {"estado":"ok"}`. El gateway responde además la consulta GraphQL `{ salud }`, que tampoco exige token (el ERP la usa para saber si volvió la conexión, también sin sesión; 104).
 - Encabezado `X-Request-Id`: el gateway lo crea si no viene y lo reenvía a cada servicio; todos los registros lo incluyen. En los eventos se usa `correlacionId`.
+- Encabezado `X-Dispositivo-Id` (UUID del celular, generado por la app al instalarse): obligatorio en las llamadas de la app a Sincronización, salvo `GET /salud`; sin él, `400 DISPOSITIVO_REQUERIDO` (101).
 - Registros en formato JSON en producción y texto legible en desarrollo.
 
 ## Archivos (fotos y notas de remisión)
@@ -165,6 +168,7 @@ Lo que todos los proyectos hacen igual.
 - Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
+- En la capa 1 la app guarda la foto comprimida (1280 px, calidad 70) en el celular y la sube completa con la URL firmada que pide a Sincronización (que la obtiene del servicio dueño); si falla, la vuelve a subir completa (102).
 
 ## Git
 

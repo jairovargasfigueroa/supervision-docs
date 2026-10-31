@@ -35,6 +35,7 @@
 - Navegación con Expo Router: grupo `(auth)` para el inicio de sesión y grupo `(app)` con pestañas según el rol (criterio 5).
 - Sin rol `maestro` ni `almacenero` → pantalla «No tienes acceso».
 - Cerrar sesión borra los tokens guardados y llama al `end_session_endpoint`.
+- Desde la 101 (capa 1), la app pide también el alcance `offline_access` (`scope=openid offline_access`): Keycloak entrega un *refresh token* «offline» que vale mientras la sesión offline no pase 30 días sin usarse (realm: `offlineSessionIdleTimeout` = 2592000 s; el cliente `app-obra` tiene el *scope* opcional `offline_access`). Al cerrar sesión, antes del `end_session_endpoint`, revoca el refresh token en el `revocation_endpoint` (`POST` con `client_id`, `token` y `token_type_hint=refresh_token`).
 
 ## Servicios y gateway
 

@@ -165,7 +165,6 @@ El cliente no ve los datos de detección de EPP (301), ni el riesgo de retraso (
 | «Foto de avance» (partida, cámara o galería, «Enviar») | | | | propias | | | 005 |
 | Ver el aviso de casco y chaleco antes de enviar la foto | | | | propias | | | 301 |
 | «Ingreso» de material (con número de nota de remisión opcional) | | | | | propias | | 004 |
-| Foto de la nota de remisión en el ingreso | | | | | propias | | 102 |
 | Elegir la orden de compra pendiente en el ingreso | | | | | propias | | 201 |
 | «Salida» de material (con partida de destino) | | | | | propias | | 004 |
 | «Stock» de la obra (también al abrirlo desde un aviso de stock bajo) | | | | | propias | | 004, 010 |
@@ -232,8 +231,6 @@ Quién llama: gateway (ERP), portal (`GET /obras`, `GET /obras/{id}`, fotos, pla
 | `GET /obras/{obraId}/movimientos?periodo=` | 004, 102 | internos que pueden ver la obra | Según `obra_acceso` |
 | `GET /obras/{obraId}/consumos?periodo=` | 006 | `admin`, `gerente`, `residente` | Residente asignado; si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `GET /stock/resumen?obraIds=` | 009 | `admin`, `residente`, `gerente` | Solo devuelve obras visibles |
-| `POST /obras/{obraId}/notas-remision/url-subida` | 102 | `almacenero` | Asignado |
-| `PUT /movimientos/{id}/nota-remision/foto` | 102 | `almacenero` | Asignado; `404 MOVIMIENTO_NO_ENCONTRADO` si no puede ver la obra |
 | `GET /obras/{obraId}/ordenes-compra?estado=` | 201 | internos que pueden ver la obra | Según `obra_acceso`; `404 OBRA_NO_ENCONTRADA` |
 | `POST /mcp` (MCP) | 501 | `agente_ia` | Tratado como `gerente` (todas las obras) |
 
@@ -264,10 +261,7 @@ Todas las rutas, salvo `/salud`, piden además el encabezado `X-Dispositivo-Id`.
 | `GET /salud` | 101 | sin token | — |
 | `GET /paquete-datos?obraActivaId=` | 101, 103, 201 | `maestro`, `almacenero` | Los datos los filtran Obras y Materiales con el token del usuario. El diario por obra solo se agrega si el token tiene `maestro` (103) |
 | `POST /lotes` | 101, 102, 103 | `maestro`, `almacenero` | Cada operación se reenvía con el token del usuario; una operación guardada por otro usuario → `OPERACION_AJENA` |
-| `POST /subidas` | 102 | `maestro`, `almacenero` | Una subida creada por otro usuario → `403 SUBIDA_AJENA` |
-| `GET /subidas/{idSubida}` | 102 | los mismos | Ídem |
-| `PUT /subidas/{idSubida}/partes/{n}` | 102 | los mismos | Ídem |
-| `POST /subidas/{idSubida}/completar` | 102 | los mismos | Ídem; la URL firmada la entrega el servicio dueño según sus reglas |
+| `POST /fotos/url-subida` | 102 | `maestro` | La reenvía a Obras `POST /obras/{obraId}/fotos/url-subida` con el token del usuario; Obras aplica sus reglas (asignado) |
 
 ### IA (puerto 8085, capas 4 y 5)
 
@@ -400,6 +394,6 @@ Todas las que se encontraron al armar esta matriz quedaron resueltas en las spec
 8. **El SDL del gateway no anotaba el rol de todas las operaciones.** Ahora sí (`gateway/docs/contratos.md`, `docs/contratos/graphql-erp.md`, 402 y 502).
 9. **No se decía si `{ salud }` exigía token.** No lo exige (`convenciones.md`, SDL).
 10. **Faltaban los roles técnicos en las convenciones.** `automatizacion` (201) y `agente_ia` (501) figuran como «se crean con su capa».
-11. **`admin` podía registrar movimientos sin tener dónde.** `POST /movimientos` es solo para el `almacenero` asignado (004, contratos de Materiales); por coherencia, también los dos endpoints de la nota de remisión de la 102, que dependen del movimiento.
+11. **`admin` podía registrar movimientos sin tener dónde.** `POST /movimientos` es solo para el `almacenero` asignado (004, contratos de Materiales); por coherencia, también los dos endpoints de la nota de remisión que tenía la 102 (quitados al simplificarla el 30/10/2026).
 
 Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010, la 201 y la 501 se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye.

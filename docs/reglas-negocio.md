@@ -95,4 +95,9 @@ Reglas que cruzan varios proyectos. Los valores marcados como **(decisión del e
 ## Diario de obra (capa 1)
 
 - El maestro de obra registra una entrada por día y obra desde la app (también sin señal): clima y texto libre.
+- Valores de clima: soleado, nublado, lluvia leve, lluvia fuerte (**decisión del equipo**).
+- Texto de 10 a 2000 caracteres.
+- La fecha no puede ser futura (hora de La Paz) ni anterior al inicio de la obra; la obra debe estar en ejecución.
+- La app permite elegir hasta 7 días atrás (**decisión del equipo**).
+- Una entrada enviada no se edita.
 - Lo usa el agente de Seguimiento de obras (herramienta MCP `buscar_diario`). No forma parte del sistema base.
