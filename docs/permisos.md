@@ -277,7 +277,7 @@ Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `age
 | `GET /modelos/riesgo-retraso` | 402 | `admin`, `gerente`, `residente` | — |
 | `GET /consumos-atipicos?obraId=&estado=&desde=&hasta=` | 403 | `admin`, `gerente`, `residente` | Obras visibles; `404 OBRA_NO_ENCONTRADA` si pide una que no ve |
 | `GET /consumos-atipicos/resumen?obraIds=` | 403 | `admin`, `gerente`, `residente` | Solo obras visibles; hasta 100 ids |
-| `PUT /consumos-atipicos/{id}/revision` | 403 | `admin`, `residente` | Residente asignado a la obra; `gerente` recibe `403` |
+| `PUT /consumos-atipicos/{id}/revision` | 403 | `admin`, `residente` | Residente asignado a la obra (si no, `404 CONSUMO_ATIPICO_NO_ENCONTRADO`); `gerente` recibe `403` |
 | `GET /agentes` | 502 | `admin`, `gerente`, `residente` | Residente: sin `CONTROL_COBROS`; pendientes solo de sus obras |
 | `POST /agentes/{agente}/ejecuciones` | 502 | `admin`, `gerente` | — |
 | `GET /ejecuciones?agente=&estado=&limite=` | 502 | `admin`, `gerente` | — |

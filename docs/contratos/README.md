@@ -4,9 +4,9 @@ Cómo se hablan los proyectos. Es la fuente única: cuando un contrato cambia, s
 
 | Archivo | Contenido | Estado |
 |---|---|---|
-| `graphql-erp.md` | Consultas, mutaciones y suscripciones entre el ERP y el gateway | Escrito para el sistema base |
-| `rest.md` | Endpoints REST de Obras, Materiales y Finanzas (los que usan el gateway, el portal, la app y otros servicios) | Escrito para el sistema base |
-| `eventos.md` | Eventos y comandos por RabbitMQ, incluida la saga «aprobar planilla» | Escrito para el sistema base |
+| `graphql-erp.md` | Consultas, mutaciones y suscripciones entre el ERP y el gateway | Escrito para el sistema base y la capa 4 |
+| `rest.md` | Endpoints REST de Obras, Materiales, Finanzas, Sincronización e IA (los que usan el gateway, el portal, la app y otros servicios) | Escrito para el sistema base y las capas 1 y 4 |
+| `eventos.md` | Eventos y comandos por RabbitMQ, incluida la saga «aprobar planilla» | Escrito para el sistema base y la capa 4 (IA como consumidor) |
 
 Las capas agregan sus operaciones al escribir su `diseno.md`. El formato de errores, el sobre de los eventos y las claves de RabbitMQ están en `docs/convenciones.md`.
 

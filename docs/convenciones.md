@@ -31,7 +31,7 @@ Lo que todos los proyectos hacen igual.
 | PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 | DynamoDB Local (Sincronización, capa 1) | 8000 |
 
-- PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db`.
+- PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db` (modelo de lectura del servicio de IA, 401), con su usuario propio `ia`, dueño de la base (`POSTGRES_IA_CLAVE` de `infra/.env`). El servicio de IA usa además la base `ia_db` de MongoDB (402, 403).
 - En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y DynamoDB Local (101). Quien no los tenga instalados levanta también los contenedores de las bases.
 
 ## Datos de prueba (011)
@@ -51,7 +51,7 @@ Lo que todos los proyectos hacen igual.
 - Todos los tokens llevan la audiencia `plataforma-api` (mapper de audiencia en Keycloak).
 - Cada servicio valida firma (JWKS del realm), vencimiento, emisor y audiencia `plataforma-api`. Si Keycloak no responde al pedir el JWKS, se responde `503 SERVICIO_NO_DISPONIBLE` (en el gateway, `extensions.servicio = "keycloak"`), no `401`: un `401` haría que la aplicación cierre la sesión del usuario por una falla del servidor.
 - Los roles van en el token (`realm_access.roles`); el id del usuario es el `sub` del token.
-- Las reglas finas (qué obras puede ver el usuario) las valida cada servicio. Obras es dueño de las asignaciones; Materiales guarda una copia (`obra_acceso`) que recibe con el evento `ObraRegistrada`.
+- Las reglas finas (qué obras puede ver el usuario) las valida cada servicio. Obras es dueño de las asignaciones; Materiales guarda una copia (`obra_acceso`) que recibe con el evento `ObraRegistrada`, y el servicio de IA usa `rpt_obra_resumen.residente_id` de su modelo de lectura (401).
 - Visibilidad de obras: `admin` y `gerente` ven todas; `residente`, `maestro` y `almacenero` ven las que tienen asignadas; `cliente` ve las suyas.
 - **Usuario con varios roles** (por ejemplo `demo1`, residente y cliente): cada servicio aplica solo los roles de la aplicación desde la que se inició sesión, que viene en el campo `azp` del token. Con `azp = portal` cuentan solo las reglas de `cliente`; con `azp = erp` o `app-obra`, solo las de los roles internos. Las llamadas de servicio a servicio usan el `azp` de su propio cliente (`gateway`, `ia-reportes`, `ia-agentes`, `n8n`). Un `azp` que no es `portal`, `erp` ni `app-obra` (clientes de servicio, o un token sin `azp`) usa los roles del token tal cual. Cada servicio lo aplica con una función pura de «roles efectivos» y toda regla por rol (incluida la visibilidad de obras) la usa. Excepción: el menú «Aplicaciones» del ERP mira los roles del token completo, para ofrecer el portal a quien tiene `cliente`.
 - Respuestas de permiso:
@@ -59,7 +59,7 @@ Lo que todos los proyectos hacen igual.
   - `403 SIN_PERMISO`: el rol del usuario no permite esa acción (no figura en los roles del endpoint, o figura con una condición que no cumple, por ejemplo `residente` en una acción solo de `admin`). Se comprueba primero, en el guardia de cada endpoint.
   - `404` con el código de «no encontrado» del recurso (por ejemplo `404 OBRA_NO_ENCONTRADA`): el rol sí puede hacer la acción, pero el usuario no ve esa obra (no está asignado o no es su cliente). Se responde igual que si no existiera, para no revelar que existe; vale para lecturas y escrituras.
 - La matriz completa de quién puede qué está en `docs/permisos.md`.
-- Librerías: Spring Security OAuth2 Resource Server (Obras), `jose` (NestJS: gateway, Materiales), `firebase/php-jwt` con JWKS (Finanzas), keycloak-angular 22 + keycloak-js 26 (shell), react-oidc-context + oidc-client-ts (portal), `expo-auth-session` (app).
+- Librerías: Spring Security OAuth2 Resource Server (Obras), `jose` (NestJS: gateway, Materiales, Sincronización), `firebase/php-jwt` con JWKS (Finanzas), `PyJWT[crypto]` 2 con `PyJWKClient` (IA), keycloak-angular 22 + keycloak-js 26 (shell), react-oidc-context + oidc-client-ts (portal), `expo-auth-session` (app).
 
 ## Sesión dentro del ERP
 
@@ -144,7 +144,7 @@ Lo que todos los proyectos hacen igual.
 - Cada consumidor guarda los `id` de mensajes procesados (patrón inbox) y descarta los repetidos.
 - Mensajes que fallan 3 veces van a la cola `plataforma.fallidos` para revisión. Cada reintento se vuelve a publicar en la misma cola por el exchange por defecto con el cuerpo original sin tocar y estos encabezados (iguales en todos los servicios): `x-intentos` (intentos ya hechos), `x-error` (texto del error, sin datos sensibles), `x-cola-origen` (cola de donde salió) y `x-clave-origen` (clave de enrutamiento original, que se pierde al pasar por el exchange por defecto).
 - Van directo a `plataforma.fallidos`, sin reintentos: un cuerpo que no es JSON, un sobre con `version` distinta de 1, datos incompletos y un `tipo` que la cola recibe pero el servicio todavía no procesa (así no se pierde y se puede reenviar cuando exista su consumidor).
-- Librerías: Spring AMQP (Obras), `amqplib` / `@nestjs/microservices` (Materiales), `php-amqplib` 3 (Finanzas).
+- Librerías: Spring AMQP (Obras), `amqplib` / `@nestjs/microservices` (Materiales), `php-amqplib` 3 (Finanzas), `aio-pika` 10 (IA; solo consume en la capa 4).
 
 ## Seguridad
 

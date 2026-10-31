@@ -333,10 +333,11 @@ Devuelve: 200 {
   "ultimosEventos": [{ "tipo": "PlanillaAprobada", "aplicadoEn": "2026-11-15T14:30:00Z" }],
   "cargaInicial": {
     "cargaId": "uuid", "estado": "TERMINADA", "iniciadaEn": "2026-11-01T13:00:00Z", "terminadaEn": "2026-11-01T13:00:09Z",
-    "obras": 3, "filas": { "rptObraResumen": 3, "rptPlanilla": 5, "rptMovimiento": 67, "rptCobro": 3 }, "error": null
+    "obras": 3, "filas": { "rptObraResumen": 3, "rptPlanilla": 4, "rptMovimiento": 67, "rptCobro": 3 }, "error": null
   }
 }
 `cargaInicial`: la última corrida; `null` si nunca se corrió.
+El ejemplo es la carga de los datos de prueba (011): 4 de sus 5 planillas, porque la N.º 3 de la obra 1 está `PRESENTADA` sin observación y no se carga (regla del paso 3 de «Qué escribe y cómo»).
 Errores: 401 · 403
 ```
 
@@ -382,7 +383,7 @@ No se expone por GraphQL en esta spec (decisión del equipo): es una ayuda para 
 
 - IA (dominio): avance con varias planillas aprobadas y redondeo; plazo antes de iniciar (0), a mitad y vencido (100); vencimiento de cobros en el borde (vence hoy: `PENDIENTE`; venció ayer: `VENCIDO`).
 - IA (proyecciones, con PostgreSQL real en contenedor o local): cada evento produce las filas esperadas; mismo evento dos veces no duplica ni suma dos veces; `CobroEmitido` antes y después de `PlanillaAprobada` deja la misma fila; `ContratoRegistrado` sin obra falla y se reintenta; tercer fallo publica en `plataforma.fallidos` (canal de RabbitMQ simulado).
-- IA (carga inicial, con PostgreSQL real y los tres servicios simulados con `httpx.MockTransport`): llena las tablas con los datos de la 011 (3 obras, 5 planillas, 3 cobros, 67 movimientos) y el avance coincide con el de Obras; correrla dos veces deja las mismas filas y el mismo consumo; un `MovimientoRegistrado` y un `PlanillaObservada` viejos aplicados después de la carga no suman; un `PlanillaAprobada` aplicado en paralelo con la carga de la misma obra deja el avance correcto (dos conexiones); una segunda carga simultánea se niega; un `503` de Finanzas en la segunda obra deja `FALLIDA` con la obra y el servicio en `error`, y la siguiente corrida completa; pide un token nuevo cuando el anterior está por vencer; solo hace `GET`.
+- IA (carga inicial, con PostgreSQL real y los tres servicios simulados con `httpx.MockTransport`): llena las tablas con los datos de la 011 (3 obras, 4 de sus 5 planillas —la N.º 3 de la obra 1, `PRESENTADA` sin observación, no se carga—, 3 cobros, 67 movimientos) y el avance coincide con el de Obras; correrla dos veces deja las mismas filas y el mismo consumo; un `MovimientoRegistrado` y un `PlanillaObservada` viejos aplicados después de la carga no suman; un `PlanillaAprobada` aplicado en paralelo con la carga de la misma obra deja el avance correcto (dos conexiones); una segunda carga simultánea se niega; un `503` de Finanzas en la segunda obra deja `FALLIDA` con la obra y el servicio en `error`, y la siguiente corrida completa; pide un token nuevo cuando el anterior está por vencer; solo hace `GET`.
 - IA (API): `/salud` sin token; `/reportes/estado` con `admin` (200, con `cargaInicial`), con `gerente` (403) y sin token (401); formato Problem Details.
 - Obras: `zona` válida, inválida (400) y ausente; `ObraRegistrada` con `ubicacion` y `zona` en el outbox.
 - Materiales: `MovimientoRegistrado` con `precioReferencial`.

@@ -23,6 +23,10 @@ Función pura `calcular_variables_salida(salida, historial)` en `src/ia/atipicos
 | `supera_stock` | 1 si la salida superó el stock (004) |
 | `log_horas_anterior` | `ln(1 + horas desde la salida anterior del mismo material en la obra)`, máximo 720 h |
 | `salidas_dia` | salidas del mismo material en la obra ese día (incluida esta) |
+| `salidas_1h` | salidas del mismo material en la obra en la última hora (incluida esta) |
+| `salidas_3h` | salidas del mismo material en la obra en las últimas 3 horas (incluida esta) |
+
+`salidas_1h` y `salidas_3h` se agregaron al implementar (decisión de Jairo, 31/10/2026): con solo las 11 primeras, las ráfagas no se distinguían de un día normal con varias salidas. En total son 13 variables.
 
 ### Motivos (texto para la persona)
 
@@ -36,6 +40,7 @@ El Isolation Forest no explica sus decisiones, así que los motivos salen de reg
 | `fuera_horario = 1` | «Se registró fuera del horario habitual (HH:MM)» |
 | `domingo = 1` | «Se registró en domingo» |
 | `supera_stock = 1` | «Salió más material del que había en stock» |
+| `salidas_1h ≥ p99` (y al menos 2) | «Hubo X salidas de este material en la última hora» |
 | `salidas_dia ≥ p99` | «Hubo X salidas de este material el mismo día» |
 | `log_horas_anterior ≤ p1` | «Salida muy seguida de la anterior (X minutos)» |
 | ninguna | «Combinación poco habitual de cantidad, horario y frecuencia» |
@@ -54,7 +59,7 @@ Parámetros en `ml/atipicos/parametros.yaml` (decisión del equipo), semilla 202
 ## Entrenamiento (`ml/atipicos/entrenar.py`)
 
 - División por obra 80 % / 20 %. El entrenamiento incluye las anomalías (como pasaría con datos reales, que nadie etiquetó).
-- `IsolationForest(n_estimators=200, contamination=0.02, random_state=2026)`.
+- `IsolationForest(n_estimators=200, contamination=0.02, max_samples=4096, random_state=2026)`. `max_samples = 4096` (decisión de Jairo, 31/10/2026; el de scikit-learn es 256): con muestras de 256, las salidas de noche, en domingo o en ráfaga casi nunca entraban en la muestra de cada árbol y el bosque no las aislaba (con las variables y la muestra originales la sensibilidad era 0,53).
 - **Tiempo y recursos:** generar y entrenar tarda segundos (objetivo: menos de 1 minuto entre los dos) en la computadora del equipo, **sin GPU**; igual al reentrenar con datos reales.
 - Comandos:
 
@@ -81,6 +86,8 @@ Sobre el 20 % de prueba sintético (con la marca `anomalia` solo para medir):
 | Proporción marcada | entre 1 % y 3 % |
 
 Con datos reales (`--fuente real`): proporción marcada ≤ 3 % (criterio 14).
+
+**Resultado de `ca-1.0.0` (semilla 2026, 31/10/2026):** sensibilidad 0,72, precisión 0,80, AUC-ROC 0,97 y 2,1 % marcadas. La sensibilidad cumple con **margen justo**: con otras semillas del generador (1 a 4) va de 0,65 a 0,75, así que puede quedar bajo el mínimo si se regeneran los datos. Por tipo: cantidad 0,81, horario 0,98, *stock* 0,81 y ráfagas 0,41; las ráfagas quedan bajas por naturaleza (la primera salida de una ráfaga no se distingue de una normal). Detalle y tiempos medidos en `services/ia/README.md`.
 
 ## Detección en el servicio (`ia-worker`)
 

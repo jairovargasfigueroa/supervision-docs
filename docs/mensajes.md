@@ -239,6 +239,8 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Registrando contrato» (etiqueta en la lista) · «Registrando contrato…» (detalle) | ERP · Obras | Obra `SIN_CONTRATO` sin motivo de rechazo | 002 (criterio 7; diseño) · texto de la spec |
+| Selector «Zona» con «Sin zona» y las cinco zonas (Norte, Sur, Este, Oeste, Centro) | ERP · Obras (registro de obra, paso de datos) | Siempre; empieza en «Sin zona» (opcional) | 401 (criterio 1; diseño) · catálogo |
+| «Zona {Norte\|Sur\|Este\|Oeste\|Centro}» · «Sin zona» | ERP · Obras (lista y encabezado del detalle) | Zona de la obra, o sin zona | 401 (criterio 2; diseño) · catálogo |
 | «En riesgo» | ERP · Obras y Supervisión | Plazo transcurrido − avance > 10 puntos | 006, 009 · texto de la spec |
 | «Sin planilla en este periodo» | ERP · Obras (pestaña «Material») | No hay planilla en el periodo elegido | 006 (criterio 5) · texto de la spec |
 | «No disponible por el momento» | ERP · Obras (cada pestaña) | El servicio de esa sección no responde | 006 (criterio 4) · texto de la spec |
@@ -341,11 +343,18 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Riesgo alto (modelo)» | ERP · Supervisión (tarjeta) | Siempre | 402 (criterio 6) · texto de la spec |
-| «Riesgo de retraso (modelo): {NIVEL} · {porcentaje} %» · «Sin datos suficientes» | ERP · Obras (encabezado) | Con o sin predicción | 402 (criterios 2 y 10) · texto de la spec |
+| «Riesgo de retraso (modelo): {NIVEL} · {porcentaje} %» · «Sin datos suficientes» | ERP · Obras (encabezado) | Con o sin predicción; los factores van en un *tooltip* | 402 (criterios 2 y 10) · texto de la spec |
+| Columna «Riesgo (modelo)» con chip «Bajo», «Medio», «Alto» o «Sin datos» y el porcentaje | ERP · Supervisión (tablero y «Riesgo de retraso») | Siempre (ordenable) | 402 (diseño) · catálogo |
+| «Riesgo de retraso» (menú interno) · «Riesgo de retraso por obra» (lista) · «Sobre el modelo» (panel) | ERP · Supervisión | Pantalla `/supervision/riesgo` | 402 (diseño) · catálogo |
+| «Datos sintéticos · {N} filas de entrenamiento» (o «Datos reales · …») · «Medio desde {X} % · Alto desde {Y} %» | ERP · Supervisión («Sobre el modelo») | Siempre | 402 (criterio 9) · catálogo |
+| «Estas métricas muestran que el modelo aprende las relaciones simuladas; no prueban que acierte con obras reales.» | ERP · Supervisión («Sobre el modelo») | Siempre | 402 (diseño, «Métricas mínimas») · texto de la spec |
 | «Datos de IA no disponibles» (con «—») | ERP · Supervisión y Obras | IA no responde | 402 (criterio 12), 403 (criterio 12) · texto de la spec |
-| «Modelo entrenado con datos sintéticos; es una estimación de apoyo, no reemplaza la revisión de la obra» | ERP · Supervisión («Riesgo de retraso») | Siempre | 402 (criterio 9) · texto de la spec |
-| «Consumos atípicos por revisar» | ERP · Supervisión (tarjeta) | Siempre | 403 (criterio 10) · texto de la spec |
+| «Modelo entrenado con datos sintéticos; es una estimación de apoyo, no reemplaza la revisión de la obra» (con un modelo reentrenado con datos reales: «Modelo entrenado con datos reales; …») | ERP · Supervisión («Riesgo de retraso») | Siempre; el texto depende de `datos` (`SINTETICOS` o `REALES`) | 402 (criterio 9) · texto de la spec |
+| «Consumos atípicos por revisar» (tarjeta) · columna «Atípicos» (pendientes por obra) | ERP · Supervisión (tablero) | Siempre | 403 (criterio 10) · texto de la spec |
 | «Detectado por comparación con el consumo habitual; es distinto de "excedido sobre lo previsto"» | ERP · Obras (pestaña «Material») | Ayuda de la sección | 403 (diseño) · texto de la spec |
+| «Consumos atípicos» (sección, con filtro «Estado», por defecto «Pendiente») · «No hay consumos atípicos con este estado.» | ERP · Obras (pestaña «Material») | Siempre · sin consumos con ese estado | 403 (diseño) · catálogo |
+| «Es normal» · «Confirmar problema» (diálogo con comentario: obligatorio al confirmar, contador de 5 a 300) | ERP · Obras (pestaña «Material») | Solo `residente` asignado y `admin`, y solo en `PENDIENTE` | 403 (criterios 7 y 9; diseño) · texto de la spec |
+| Motivos de un consumo atípico (los arma IA, de 1 a 3): «La cantidad es X veces la habitual de este material en la obra» · «… en todas las obras» · «El consumo del mes ya es X veces el promedio mensual» · «Se registró fuera del horario habitual (HH:MM)» · «Se registró en domingo» · «Salió más material del que había en stock» · «Hubo X salidas de este material en la última hora» · «Hubo X salidas de este material el mismo día» · «Salida muy seguida de la anterior (X minutos)» · «Combinación poco habitual de cantidad, horario y frecuencia» | ERP · Obras (columna «Motivos») | Cada consumo atípico | 403 (diseño, «Motivos») · texto de la spec |
 | «En curso…» | ERP · Supervisión (agentes) | Ejecución en curso (consulta cada 3 s, máx. 5 min) | 502 (criterio 2) · texto de la spec |
 | «No disponible por el momento» | ERP (secciones de agentes) | IA no responde | 502 (criterio 21) · texto de la spec |
 
