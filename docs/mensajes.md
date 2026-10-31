@@ -314,6 +314,7 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «La planilla cambió en el servidor» · «Aplicar mi borrador sobre la última versión» · «Descartar mi borrador» | ERP · Obras | `VERSION_DESACTUALIZADA` al enviar el borrador | 104 (criterio 14) · texto de la spec |
 | «La planilla ya no se puede editar (estado {estado})» | ERP · Obras | `PLANILLA_NO_EDITABLE` al enviar el borrador | 104 (criterio 15) · texto de la spec |
 | «Tienes {N} borradores de planilla sin enviar. Si cierras sesión se borrarán de este equipo» | ERP | Cerrar sesión con borradores | 104 (diseño) · texto de la spec |
+| «Tienes 1 borrador de planilla sin enviar. Si cierras sesión se borrará de este equipo» (diálogo con título «Cerrar sesión») | ERP | Cerrar sesión con un solo borrador | 104 · singular del texto anterior (decisión del equipo) |
 
 ### IA en el dispositivo y en el navegador (301, 302, 303)
 

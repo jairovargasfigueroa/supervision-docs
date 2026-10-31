@@ -84,7 +84,7 @@ Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambio
 | 101 | Registro de material sin señal y sincronización sin duplicados (crea `services/sincronizacion`) | 1 | 004 | en curso (aprobada el 30/10/2026) |
 | 102 | Fotos sin señal y envío con mala conexión (simplificada: foto completa directo a S3, sin nota de remisión) | 1 | 005, 101 | en curso (aprobada el 30/10/2026) |
 | 103 | Diario de obra | 1 | 101 | en curso (aprobada el 30/10/2026) |
-| 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | en curso (aprobada el 30/10/2026) |
+| 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | hecho (erp-shell, mf-obras, mf-materiales, mf-supervision; aprobada el 30/10/2026) |
 | 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
 | 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; crea `services/ia` con el entrenamiento) | 3 | 005 | pendiente |
 | 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente |
