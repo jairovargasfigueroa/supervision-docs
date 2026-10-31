@@ -36,6 +36,7 @@ Un usuario sin un rol permitido en esa aplicación ve «No tienes acceso a esta 
 | `view-users` y `view-realm` (roles del cliente `realm-management`, solo lectura) | *Service account* del cliente confidencial `gateway` | Listar usuarios por rol para los formularios de asignación (`view-realm` lo exige Keycloak para `GET /roles/{rol}/users`) y resolver nombres | convenciones, 002, 006 |
 | `automatizacion` (rol de realm) | *Service account* del cliente confidencial `n8n` | Solo las rutas de Finanzas que llama n8n (órdenes de compra y cuentas por pagar) | 201 |
 | `agente_ia` (rol de realm) | *Service account* del cliente confidencial `ia-agentes` | Solo `POST /mcp` (herramientas de solo lectura); ve todas las obras como `gerente`; ningún endpoint REST lo acepta | 501 |
+| `gerente` (rol de realm de personas, asignado también a una *service account*) | *Service account* del cliente confidencial `ia-reportes` (solo *client credentials*) | Carga inicial del modelo de lectura: solo `GET` a Obras (`/obras`, `/obras/{id}`, `/obras/{obraId}/planillas`, `/planillas/{id}`), Materiales (`/materiales`, `/obras/{obraId}/movimientos`) y Finanzas (`/cobros`); ve todas las obras como cualquier `gerente`. Se eligió un rol existente para no cambiar los tres servicios; el secreto solo lo usa el comando de carga | 401 |
 
 Sincronización (capa 1) y Notificaciones (010) no tienen cliente propio: Sincronización reenvía el token del usuario a Obras y Materiales; Notificaciones conoce los roles por los tokens que recibe (`usuario_conocido`).
 
@@ -196,8 +197,8 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 |---|---|---|---|
 | `GET /salud` | fase 1 | sin token | — |
 | `POST /obras` | 002, 401 | `admin` | — |
-| `GET /obras?estado=&busqueda=` | 006, 009 | todos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`) | Filtra por visibilidad de obras |
-| `GET /obras/{id}` | 002, 004, 006, 008 | los que pueden ver la obra | `404 OBRA_NO_ENCONTRADA` si no la ve |
+| `GET /obras?estado=&busqueda=` | 006, 009, 401 | todos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`) | Filtra por visibilidad de obras |
+| `GET /obras/{id}` | 002, 004, 006, 008, 401 | los que pueden ver la obra | `404 OBRA_NO_ENCONTRADA` si no la ve |
 | `GET /obras/{id}/material-previsto?periodo=` | 006 | `admin`, `gerente`, `residente` | Residente asignado; si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `POST /obras/{obraId}/fotos/url-subida` | 005, 102 | `maestro`, `residente` | Asignados a la obra |
 | `POST /obras/{obraId}/fotos` | 005, 102, 301 | `maestro`, `residente` | Asignados a la obra |
@@ -205,8 +206,8 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 | `POST /obras/{obraId}/fotos/{fotoId}/url-subida-cliente` | 303 | `residente` | Asignado a la obra |
 | `PUT /obras/{obraId}/fotos/{fotoId}/version-cliente` | 303 | `residente` | Asignado a la obra |
 | `POST /obras/{obraId}/planillas` | 007 | `residente` | Asignado a la obra |
-| `GET /obras/{obraId}/planillas` | 006, 007, 008 | los que pueden ver la obra | `cliente` no recibe `BORRADOR`; incluye `cobroNumero` |
-| `GET /planillas/{id}` | 007, 008 | los que pueden ver la obra | `cliente` recibe `404` si es `BORRADOR`; incluye `cobroNumero` |
+| `GET /obras/{obraId}/planillas` | 006, 007, 008, 401 | los que pueden ver la obra | `cliente` no recibe `BORRADOR`; incluye `cobroNumero` |
+| `GET /planillas/{id}` | 007, 008, 401 | los que pueden ver la obra | `cliente` recibe `404` si es `BORRADOR`; incluye `cobroNumero` |
 | `PUT /planillas/{id}` | 007 | `residente` | Asignado a la obra |
 | `POST /planillas/{id}/presentar` | 007, 303 | `residente` | Asignado a la obra |
 | `POST /planillas/{id}/aprobar` | 008 | `cliente` | Dueño de la obra |
@@ -215,20 +216,20 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 | `GET /obras/{obraId}/diario?desde=&hasta=` | 103 | `maestro`, `residente` asignados; `admin`, `gerente` | `cliente` → `404 OBRA_NO_ENCONTRADA` |
 | `POST /mcp` (MCP) | 501 | `agente_ia` | Ve todas las obras |
 
-Quién llama: gateway (ERP), portal (`GET /obras`, `GET /obras/{id}`, fotos, planillas, aprobar, observar), Sincronización con el token del usuario (101, 102, 103) y el servicio de IA por MCP (501).
+Quién llama: gateway (ERP), portal (`GET /obras`, `GET /obras/{id}`, fotos, planillas, aprobar, observar), Sincronización con el token del usuario (101, 102, 103), el servicio de IA en la carga inicial con el token de `ia-reportes` (`gerente`; solo los `GET` marcados con 401) y el servicio de IA por MCP (501).
 
 ### Materiales (puerto 8082)
 
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
 | `GET /salud` | fase 1 | sin token | — |
-| `GET /materiales?busqueda=&soloActivos=` | 002, 003, 006, 201, 503 | `admin`, `residente`, `gerente`, `maestro`, `almacenero` | — (también lo llaman Sincronización e IA con el token del usuario) |
+| `GET /materiales?busqueda=&soloActivos=` | 002, 003, 006, 201, 401, 503 | `admin`, `residente`, `gerente`, `maestro`, `almacenero` | — (también lo llaman Sincronización e IA con el token del usuario, y la carga inicial de IA con el token de `ia-reportes`) |
 | `POST /materiales` | 003, 201 | `admin` | — |
 | `PUT /materiales/{id}` | 003, 201 | `admin` | — |
 | `GET /obras/{obraId}/stock` | 003, 004 | internos que pueden ver la obra | Según `obra_acceso`; `404 OBRA_NO_ENCONTRADA` si no la ve |
 | `PUT /obras/{obraId}/stock/{materialId}/minimo` | 003 | `admin` | — |
 | `POST /movimientos` | 004, 201 | `almacenero` | Asignado (`obra_acceso`); si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
-| `GET /obras/{obraId}/movimientos?periodo=` | 004, 102 | internos que pueden ver la obra | Según `obra_acceso` |
+| `GET /obras/{obraId}/movimientos?periodo=` | 004, 102, 401 | internos que pueden ver la obra | Según `obra_acceso` (la carga inicial de IA, como `gerente`, ve todas) |
 | `GET /obras/{obraId}/consumos?periodo=` | 006 | `admin`, `gerente`, `residente` | Residente asignado; si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `GET /stock/resumen?obraIds=` | 009 | `admin`, `residente`, `gerente` | Solo devuelve obras visibles |
 | `GET /obras/{obraId}/ordenes-compra?estado=` | 201 | internos que pueden ver la obra | Según `obra_acceso`; `404 OBRA_NO_ENCONTRADA` |
@@ -242,7 +243,7 @@ Finanzas no guarda asignaciones de obras: sus endpoints de consulta son solo par
 |---|---|---|---|
 | `GET /salud` | fase 1 | sin token | — |
 | `GET /contratos?obraId=` | 006 | `admin`, `gerente` | — |
-| `GET /cobros?obraId=&estado=` | 006, 008 | `admin`, `gerente` | — |
+| `GET /cobros?obraId=&estado=` | 006, 008, 401 | `admin`, `gerente` | — (también la carga inicial de IA con el token de `ia-reportes`) |
 | `GET /cobros/{id}` | 008 | `admin`, `gerente` | — (el residente ve solo el número del cobro, que guarda Obras) |
 | `GET /cobros/resumen` | 009 | `admin`, `gerente` | — |
 | `GET /proveedores` | 201 | `admin`, `gerente` | — |
@@ -265,7 +266,7 @@ Todas las rutas, salvo `/salud`, piden además el encabezado `X-Dispositivo-Id`.
 
 ### IA (puerto 8085, capas 4 y 5)
 
-Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `agente_ia` reciben `403 SIN_PERMISO` en todo el servicio (401). Visibilidad del residente: `rpt_obra_resumen.residente_id = sub` (401); la cola `ia` existe desde la fase 1, así que la base de reportes conoce todas las obras.
+Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `agente_ia` reciben `403 SIN_PERMISO` en todo el servicio (401). Visibilidad del residente: `rpt_obra_resumen.residente_id = sub` (401); la cola `ia` existe desde la fase 1 y la carga inicial (401) trae lo que ya existía, así que la base de reportes conoce todas las obras. El servicio de IA **llama** a Obras, Materiales y Finanzas solo en la carga inicial (cliente `ia-reportes`).
 
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
@@ -390,7 +391,7 @@ Todas las que se encontraron al armar esta matriz quedaron resueltas en las spec
 4. **`GET /cobros/{id}` aceptaba `residente` sin regla de visibilidad.** Ahora es solo para `admin` y `gerente`; Obras guarda `planilla.cobro_numero` al recibir `CobroEmitido` y el gateway resuelve `Planilla.cobro.numero` desde Obras (008: diseño y tareas de Obras y del gateway; datos y contratos de Obras; contratos de Finanzas y del gateway).
 5. **`material-previsto` y `consumos` no decían «residente asignado».** Ahora lo dicen los contratos y la 006.
 6. **El enlace al portal desde el ERP llevaba a «No tienes acceso».** «Aplicaciones» muestra solo las aplicaciones web para las que el usuario tiene rol; el usuario de prueba `demo1` (`residente` y `cliente`) sirve para demostrar el SSO (001: requisitos, diseño, tareas del shell y de infra). Sus obras las asigna la 011.
-7. **La visibilidad del residente en IA dependía de la carga de la base de reportes.** La cola `ia` y sus enlaces se declaran desde la fase 1 (`docs/entorno-local.md`, 401); los datos de prueba de las tablas `rpt_*` los carga la 011 (dependencia anotada en la 401).
+7. **La visibilidad del residente en IA dependía de la carga de la base de reportes.** La cola `ia` y sus enlaces se declaran desde la fase 1 (`docs/entorno-local.md`, 401); los datos de prueba de las tablas `rpt_*` los trae la carga inicial de la 401 desde lo que cargó la 011 (31/10/2026; antes, una semilla propia de IA).
 8. **El SDL del gateway no anotaba el rol de todas las operaciones.** Ahora sí (`gateway/docs/contratos.md`, `docs/contratos/graphql-erp.md`, 402 y 502).
 9. **No se decía si `{ salud }` exigía token.** No lo exige (`convenciones.md`, SDL).
 10. **Faltaban los roles técnicos en las convenciones.** `automatizacion` (201) y `agente_ia` (501) figuran como «se crean con su capa».

@@ -13,7 +13,7 @@
 | Materiales | Microservicio | NestJS | MongoDB |
 | Finanzas | Microservicio | Laravel | PostgreSQL |
 | Sincronización | Microservicio (capa 1) | NestJS | DynamoDB |
-| IA | Microservicio (capas 3 a 5) | FastAPI + Ollama | MongoDB (agentes) y PostgreSQL de lectura (reportes) |
+| IA | Microservicio (capas 3 a 5) | FastAPI (procesos `ia-api` e `ia-worker`); ML clásico en la capa 4; el modelo de lenguaje se decide en la capa 5 | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, agentes) |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
 | Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
@@ -32,10 +32,12 @@
 | App de obra | Almacenamiento (S3) | HTTPS (`PUT` con URL firmada) | Subir la foto de avance completa, directo del celular (102) |
 | Sincronización | Obras, Materiales | REST | Repartir lo recibido sin duplicar, armar el paquete de datos y pedir a Obras la URL firmada de la foto (con el token del usuario) |
 | Obras, Materiales, Finanzas | RabbitMQ | AMQP | Eventos y comandos de la saga |
+| RabbitMQ | IA (capa 4) | AMQP | Eventos para el modelo de lectura (`reportes_db`, 401) |
+| IA (capa 4) | Obras, Materiales, Finanzas | REST (solo `GET`) | Carga inicial del modelo de lectura, una vez, con el cliente `ia-reportes` (401) |
 | RabbitMQ | n8n (capa 2) | AMQP / webhook | Eventos «stock bajo» e «ingreso» |
 | n8n | Finanzas, correo | REST, SMTP | Crear orden de compra y cuenta por pagar; avisar al proveedor |
 | IA | Obras, Materiales, Finanzas | **MCP** (HTTP, solo lectura) | Herramientas para los agentes |
-| IA | Ollama | HTTP | Modelo de lenguaje local |
+| IA | Ollama | HTTP | Modelo de lenguaje local (capa 5; se decide en esa capa) |
 
 ## Microfrontends del ERP
 
@@ -69,7 +71,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 
 - **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales.
 - **Frontend:** shell + microfrontends en el ERP; portal y app como aplicaciones separadas.
-- **Datos:** una base por servicio; sin JOIN entre servicios. Los reportes que cruzan servicios leen una base de lectura del servicio de IA, alimentada por eventos.
+- **Datos:** una base por servicio; sin JOIN entre servicios. Para los reportes que cruzan servicios (el ingeniero pidió «algún mecanismo», no un microservicio), **CQRS: modelo de lectura alimentado por eventos**, solo para lo que cruza servicios: cada microservicio sigue escribiendo y leyendo lo suyo, y las proyecciones de sus eventos de RabbitMQ arman `reportes_db` (tablas `rpt_*`) dentro del servicio de IA, que es quien lo usa (predicciones de la capa 4 y reportes por voz de la capa 5). Sin *event sourcing*. Lo que existía antes se trae una vez con una carga inicial por REST (401). Decisión de Jairo, 31/10/2026.
 - **Despliegue:** cada proyecto produce su propia imagen de contenedor y se despliega por separado.
 
 ## Resiliencia

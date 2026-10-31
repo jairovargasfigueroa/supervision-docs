@@ -2,6 +2,8 @@
 
 **Estado:** borrador · **Capa:** 3 (IA en el dispositivo) · **Puntos:** 6 y 12 · **Proyectos:** mobile/app-obra, services/obras, services/ia (entrenamiento), gateway, mf-obras
 
+**Nota (31/10/2026):** el uso del deep learning en esta funcionalidad está **por decidir**; se decide al reevaluar la capa 3 (que ahora va después de la capa 4).
+
 ## Historia
 
 Como **maestro de obra** quiero que la app me avise, al tomar la foto de avance, cuántas personas aparecen sin casco o sin chaleco, para corregirlo en el momento; y como **residente** quiero ver ese dato junto a cada foto para dar seguimiento a la seguridad de la cuadrilla.

@@ -466,7 +466,7 @@ La semilla escribe en cada servicio sus datos **ya coherentes** con los de los d
 2. **Publicar repetiría efectos:** `ObraRegistrada` haría que Finanzas intente crear el contrato otra vez y responda `ContratoRegistrado`; un `CobroEmitido` sin saga se registraría como incidente; un `StockBajo` dispararía en la capa 2 una orden de compra y un correo cada vez que se carga.
 3. **La carga dejaría de ser determinista e idempotente:** dependería del orden de llegada de los mensajes y de que todos los servicios estén corriendo.
 
-Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga del sistema base. Por eso cada capa que agrega una de esas piezas amplía la semilla (sección 13); por ejemplo, la base de reportes de la 401.
+Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga del sistema base. Por eso cada capa que agrega una de esas piezas amplía la semilla (sección 13) o, como la base de reportes de la 401, la llena con su carga inicial por REST.
 
 ### Cada servicio carga lo suyo
 
@@ -510,6 +510,6 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 | 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). |
 | 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
 | 301 y 303 (capa 3) | `personas_detectadas`, `sin_casco` y `clave_archivo_cliente` de las fotos (las imágenes generadas no tienen personas). |
-| 401 Base de reportes | Columna `zona` de las obras (sección 6). La base de reportes solo se llena con eventos, así que el servicio de IA agrega su propia semilla que escribe las filas `rpt_*` equivalentes a este documento. |
-| 402 y 403 | Predicciones y consumos atípicos de prueba coherentes con la obra 2 (riesgo) y con el `FIE-12` excedido de la obra 1. |
+| 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
+| 402 y 403 | Predicciones: no se siembran; las calcula el modelo al terminar la carga inicial (motivo `CARGA_INICIAL`). Consumos atípicos de prueba coherentes con el `FIE-12` excedido de la obra 1 (la carga inicial no evalúa salidas pasadas). |
 | 502 Agentes | Revisa que estén sus casos: obra atrasada (obra 2), material bajo (`CEM-IP30` obra 2), salida que supera el stock (20018), cobro vencido (`COB-…-0001`), planilla presentada (obra 1 N.º 3), y agrega lo que falte. |
