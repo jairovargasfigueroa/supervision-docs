@@ -73,7 +73,9 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Estado | *signals* de Angular y servicios; sin NgRx | — |
 | Formularios | Reactive Forms tipados | — |
 | PWA (solo el shell, capa 1) | `@angular/pwa` | 22 |
-| Pruebas | Vitest (ya configurado por Angular CLI) | — |
+| Almacén local sin conexión (solo el shell, capa 1) | `idb` | 8 |
+| Pruebas | Vitest (ya configurado por Angular CLI); en el shell, `fake-indexeddb` para el almacén | — |
+| Servir la versión compilada para probar la PWA (solo el shell, desarrollo) | `http-server` | — |
 
 ## frontend/mf-materiales y frontend/mf-supervision (React 19 · Native Federation esbuild)
 

@@ -68,6 +68,11 @@ Lo que todos los proyectos hacen igual.
 - Cuando la sesión cambia, el shell emite el evento `plataforma:sesion` en `window`.
 - El shell publica también `window.plataforma.configuracion` con `{ gatewayUrl }`, para que los microfrontends no repitan configuración.
 - Los microfrontends (Angular y React) solo leen ese objeto; nunca hablan con Keycloak.
+- ERP sin conexión (104):
+  - `sesion.sinConexion: boolean`; en ese modo `obtenerToken()` rechaza con `Error('SIN_CONEXION')`.
+  - `window.plataforma.conexion`: `{ enLinea, reportarFallo() }` y el evento `plataforma:conexion` (`detail: { enLinea }`).
+  - `window.plataforma.almacen`: almacén local en IndexedDB (`guardarConsulta`, `leerConsulta`, `guardarBorradorPlanilla`, `leerBorradorPlanilla`, `listarBorradoresPlanilla`, `borrarBorradorPlanilla`), separado por usuario y borrado al cerrar sesión; evento `plataforma:borradores`.
+  - Los microfrontends no usan IndexedDB, `localStorage` ni service workers propios: usan lo que publica el shell.
 - Rutas del shell: `/obras` (mf-obras), `/materiales` (mf-materiales), `/supervision` (mf-supervision).
 
 ## Listas y paginación
