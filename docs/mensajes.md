@@ -290,6 +290,7 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Diario · 15/11 · Lluvia leve» (formato: «Diario · dd/mm · {clima}») | App («Pendientes de envío») | Descripción de una entrada | 103 (diseño) · texto de la spec |
 | «Aún no hay entradas del diario en los últimos 30 días.» | App (diario) | La obra no tiene entradas en el paquete ni en la cola | 103 · decisión del equipo |
 | «Elige el clima.» | App (diario, formulario) | Se guarda sin elegir el clima | 103 · decisión del equipo |
+| «Elige la fecha.» | App (diario, formulario) | Se guarda sin elegir la fecha | 103 · decisión del equipo |
 | «Escribe al menos 10 caracteres.» · «Escribe hasta 2000 caracteres.» | App (diario, formulario) | El texto tiene menos de 10 o más de 2000 caracteres (sin contar los espacios de los costados) | 103 · decisión del equipo |
 | «Corrigiendo la entrada del dd/mm» | App (diario, formulario) | Se está corrigiendo una entrada sin enviar | 103 · decisión del equipo |
 | «Esta entrada ya se está enviando y no se puede corregir.» | App (diario) | Se pulsa «Corregir» en una entrada que pasó a `ENVIANDO` | 103 · decisión del equipo |
