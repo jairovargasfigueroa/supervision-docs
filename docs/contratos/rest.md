@@ -9,12 +9,13 @@ Convenciones comunes (errores, token, idempotencia, paginación): `docs/convenci
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
-### POST /obras · 002
+### POST /obras · 002, 401
 Roles: `admin` (el `403` se comprueba antes que el formato del cuerpo). Montos, precios y porcentajes con hasta 2 decimales; cantidades con hasta 3. Los errores de validación traen `errores[]` por campo; se revisan en este orden: contrato, códigos de partida, insumos, presupuesto.
 ```json
 {
   "nombre": "Edificio Las Palmas",
   "ubicacion": "Av. Banzer 4to anillo, Santa Cruz",
+  "zona": "NORTE",
   "fechaInicio": "2026-11-01",
   "asignaciones": {
     "residenteId": "uuid-keycloak", "maestroId": "uuid-keycloak",
@@ -31,25 +32,26 @@ Roles: `admin` (el `403` se comprueba antes que el formato del cuerpo). Montos, 
 }
 ```
 Devuelve `201` con el detalle de la obra (como `GET /obras/{id}`), `estado: "SIN_CONTRATO"`.
+`zona` (401): opcional; `NORTE`, `SUR`, `ESTE`, `OESTE` o `CENTRO` (decisión del equipo). Ausente o `null`: la obra queda sin zona. Otro valor (también minúsculas o vacío): `400 DATOS_INVALIDOS` con `errores[].campo = zona`.
 Errores: `400` formato · `422 PRESUPUESTO_NO_COINCIDE` · `422 CODIGO_PARTIDA_REPETIDO` · `422 INSUMO_REPETIDO` · `422 CONTRATO_INVALIDO` · `403`.
-Publica `ObraRegistrada`.
+Publica `ObraRegistrada` (desde la 401, con `ubicacion` y `zona`).
 
-### GET /obras?estado=&busqueda= · 006, 009, 101
-Roles: todos; filtra por visibilidad (convenciones). Quién llama: Sincronización (capa 1), con el token del usuario (`estado=EN_EJECUCION`, para el paquete de datos).
+### GET /obras?estado=&busqueda= · 006, 009, 101, 401
+Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`estado=EN_EJECUCION`, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 ```json
 [{
-  "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "estado": "EN_EJECUCION",
+  "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
   "fechaInicio": "2026-11-01", "avancePct": 32.5, "plazoPct": 41.0, "enRiesgo": false,
   "ultimaPlanilla": { "periodo": "2027-02", "estado": "APROBADA" }
 }]
 ```
-`ultimaPlanilla` es `null` si no hay planillas.
+`ultimaPlanilla` es `null` si no hay planillas; `zona` (401) es `null` si la obra no tiene zona.
 
-### GET /obras/{id} · 002, 004, 006, 101
-Roles: los que pueden ver la obra. Quién llama: Sincronización (capa 1), con el token del usuario (partidas del paquete de datos).
+### GET /obras/{id} · 002, 004, 006, 101, 401
+Roles: los que pueden ver la obra. Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (partidas del paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 ```json
 {
-  "id": "uuid", "nombre": "…", "ubicacion": "…", "estado": "EN_EJECUCION",
+  "id": "uuid", "nombre": "…", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
   "motivoRechazoContrato": null, "fechaInicio": "2026-11-01",
   "asignaciones": { "residenteId": "…", "maestroId": "…", "almaceneroId": "…", "clienteId": "…" },
   "contrato": { "contratoId": "uuid|null", "monto": 1250000.00, "plazoDias": 300, "anticipoPct": 10, "retencionPct": 7 },
@@ -62,6 +64,7 @@ Roles: los que pueden ver la obra. Quién llama: Sincronización (capa 1), con e
   }]
 }
 ```
+`zona` (401): `NORTE`, `SUR`, `ESTE`, `OESTE`, `CENTRO` o `null` (sin zona).
 Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla).
 
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
@@ -100,12 +103,12 @@ Roles: `maestro` y `residente` asignados, `admin`, `gerente`. Quién llama: Sinc
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
 Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es posterior al de la última planilla) · `422 PERIODO_FUTURO` (mes futuro) · `422 OBRA_NO_EN_EJECUCION`.
 
-### GET /obras/{obraId}/planillas · 006, 007, 008
-Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`.
+### GET /obras/{obraId}/planillas · 006, 007, 008, 401
+Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`. Quién llama: el gateway, el portal y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 
-### GET /planillas/{id} · 007, 008
-Roles: los que pueden ver la obra. `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
+### GET /planillas/{id} · 007, 008, 401
+Roles: los que pueden ver la obra. Quién llama: el gateway, el portal y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`). `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
 ```json
 {
   "id": "uuid", "obraId": "uuid", "numero": 3, "periodo": "2027-03", "estado": "BORRADOR", "version": 2,
@@ -141,8 +144,8 @@ Errores: `409 PLANILLA_NO_PRESENTADA` · `422 MOTIVO_INVALIDO`.
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
-### GET /materiales?busqueda=&soloActivos= · 002, 003, 006, 101
-Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Quién llama: Sincronización (capa 1), con el token del usuario (`soloActivos=true`, todas las páginas de a 100, para el paquete de datos). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
+### GET /materiales?busqueda=&soloActivos= · 002, 003, 006, 101, 401
+Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`soloActivos=true`, todas las páginas de a 100, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100, para el `precioReferencial`). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
 `[{ "id", "codigo": "CEM-IP30", "nombre": "Cemento IP-30", "tipo": "CEMENTO", "unidad": "bolsa", "unidadPlural": "bolsas", "precioReferencial": 62.00, "activo": true, "atributos": [{ "nombre": "peso", "valor": "50 kg" }] }]`
 
 ### POST /materiales · 003
@@ -175,8 +178,8 @@ Roles: `almacenero` asignado. Quién llama: Sincronización (capa 1), con el tok
 Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "periodo": "2026-11", "superaStock": false, "stock": { "cantidad", "minimo", "estado" } }`.
 Errores: `400` · `403` · `404 OBRA_NO_ENCONTRADA` · `422 MATERIAL_INACTIVO` · `409 PERIODO_CERRADO`.
 
-### GET /obras/{obraId}/movimientos?periodo= · 004
-Roles: internos que pueden ver la obra. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento: `[{ "id", "materialId", "tipo", "cantidad", "partidaId", "periodo", "superaStock", "cerrado", "registradoPor", "registradoEn" }]`
+### GET /obras/{obraId}/movimientos?periodo= · 004, 401
+Roles: internos que pueden ver la obra. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (`orden=registradoEn&direccion=asc`, todas las páginas, sin `periodo`). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento: `[{ "id", "materialId", "tipo", "cantidad", "partidaId", "periodo", "superaStock", "cerrado", "registradoPor", "registradoEn" }]`
 
 ### GET /obras/{obraId}/consumos?periodo=AAAA-MM · 006
 Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`). `[{ "partidaId", "materialId", "cantidad" }]` (suma de salidas).
@@ -195,8 +198,8 @@ Roles: `admin`, `gerente`.
 `[{ "id", "obraId", "monto": 1250000.00, "plazoDias": 300, "anticipoPct": 10, "retencionPct": 7, "firmadoEn": "2026-10-20", "saldoDisponible": 1180000.00, "totalCobrado": 41881.80, "totalReservado": 0.00 }]`
 (lista con 0 o 1 elemento).
 
-### GET /cobros?obraId=&estado= · 006, 008
-Roles: `admin`, `gerente`. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `venceEn asc`. Cada elemento:
+### GET /cobros?obraId=&estado= · 006, 008, 401
+Roles: `admin`, `gerente`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `venceEn asc`. Cada elemento:
 `[{ "id", "numero": "COB-2027-0003", "obraId", "planillaId", "montoNeto": 41881.80, "emitidoEn": "2027-04-02", "venceEn": "2027-05-02", "estado": "PENDIENTE" }]`
 
 ### GET /cobros/{id} · 008
@@ -295,3 +298,82 @@ Devuelve `200` con un resultado por operación, en el mismo orden:
 - Cada operación, en orden: se guarda en DynamoDB «solo si no existe» (convenciones, «Idempotencia»). Si ya existía: de otro usuario → `ERROR` con `403 OPERACION_AJENA`; ya `PROCESADO` o `ERROR` → la respuesta guardada con `repetida: true`; en proceso (o tomada por otra petición) → `REINTENTAR` con `409 OPERACION_EN_PROCESO` (un `PROCESANDO` de más de 60 s se retoma).
 - Respuesta del dueño (tiempo máximo 5 s): `2xx` → `PROCESADO`; `400`, `403`, `404`, `409`, `422` → `ERROR` con su Problem Details; otro `4xx` también → `ERROR` (decisión de implementación); `401` → `REINTENTAR` con `TOKEN_VENCIDO` (la app renueva el token); `408`, `429`, `5xx` → `REINTENTAR` con el `status` recibido; tiempo agotado → `REINTENTAR` con `504 TIEMPO_AGOTADO`; error de red o falla de DynamoDB → `REINTENTAR` con `503 SERVICIO_NO_DISPONIBLE`.
 - Si pasan 20 s desde que empezó el lote, las operaciones que faltan vuelven `REINTENTAR` con `504 TIEMPO_AGOTADO` sin empezarse.
+
+## IA (puerto 8085, capa 4)
+
+Atiende solo al ERP (lo llama el gateway). Toda ruta salvo `/salud` exige token (`401 NO_AUTENTICADO`; `503 SERVICIO_NO_DISPONIBLE` si Keycloak no entrega el JWKS). Solo `admin`, `gerente` y `residente` (roles efectivos según `azp`); los demás roles reciben `403 SIN_PERMISO` en todo el servicio. Visibilidad: `admin` y `gerente` ven todas las obras; `residente`, las de `rpt_obra_resumen.residente_id = sub`. Una ruta que no existe (con token válido): `404 RUTA_NO_ENCONTRADA`. Las consultas leen `reportes_db` y `ia_db`; no calculan nada en la petición.
+
+### GET /salud · 401
+Sin token · `200 {"estado":"ok"}`
+
+### GET /reportes/estado · 401
+Servicio: IA · Quién llama: (pruebas y administración) · Rol: `admin`. No se expone por GraphQL.
+```json
+{
+  "tablas": { "rptObraResumen": 12, "rptPlanilla": 40, "rptConsumoMaterial": 310, "rptMovimiento": 2210, "rptCobro": 35 },
+  "ultimosEventos": [{ "tipo": "PlanillaAprobada", "aplicadoEn": "2026-11-15T14:30:00Z" }],
+  "cargaInicial": {
+    "cargaId": "uuid", "estado": "TERMINADA", "iniciadaEn": "2026-11-01T13:00:00Z", "terminadaEn": "2026-11-01T13:00:09Z",
+    "obras": 3, "filas": { "rptObraResumen": 3, "rptPlanilla": 4, "rptMovimiento": 67, "rptCobro": 3 }, "error": null
+  }
+}
+```
+`cargaInicial`: la última corrida (`EN_CURSO`, `TERMINADA` o `FALLIDA`); `null` si nunca se corrió. Con los datos de prueba (011) la carga trae 4 de las 5 planillas: la N.º 3 de la obra 1 está `PRESENTADA` sin observación y no se carga (no llega ningún evento por ella). Errores: `401` · `403`.
+
+### GET /predicciones?obraIds=a,b,c · 402
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente`. Recibe hasta 100 ids separados por coma.
+```json
+[{
+  "obraId": "uuid", "probabilidad": 0.72, "nivel": "ALTO",
+  "factores": [{ "variable": "relacion_ritmo", "descripcion": "El ritmo de avance de los últimos meses es menor al necesario para terminar a tiempo", "peso": 0.81 }],
+  "versionModelo": "rr-1.0.0", "calculadaEn": "2026-11-15T05:00:00Z"
+}]
+```
+Solo las obras visibles que tengan predicción, en el orden pedido; las demás se omiten. Con `SIN_DATOS`: `"probabilidad": null`, `"factores": []`. `nivel`: `BAJO` < 0,30 ≤ `MEDIO` < 0,60 ≤ `ALTO`, o `SIN_DATOS`.
+Errores: `400 DEMASIADAS_OBRAS` (más de 100) · `400 DATOS_INVALIDOS` (sin ids o con un id que no es UUID) · `401` · `403`.
+
+### GET /obras/{obraId}/prediccion?historial=30 · 402
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente` (que pueda ver la obra).
+Devuelve `200` con el mismo objeto más `"historial": [{ "probabilidad": 0.65, "calculadaEn": "…" }]` (`historial` de 1 a 90, por defecto 30; del más antiguo al más reciente; omite los cálculos `SIN_DATOS`). Obra visible sin predicción todavía: `200` con `"nivel": "SIN_DATOS"`, `"probabilidad": null`, `"factores": []`, `"versionModelo": null`, `"calculadaEn": null`, `"historial": []`.
+Errores: `404 OBRA_NO_ENCONTRADA` (también si no la puede ver) · `400 DATOS_INVALIDOS` (`historial` fuera de 1 a 90) · `401` · `403`.
+
+### GET /modelos/riesgo-retraso · 402
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente`.
+```json
+{
+  "versionModelo": "rr-1.0.0", "entrenadoEn": "2026-11-20T15:00:00Z", "datos": "SINTETICOS", "filasEntrenamiento": 9600,
+  "metricas": { "aucRoc": 0.86, "aucRocRegla": 0.74, "recallMedio": 0.83, "precisionAlto": 0.74, "brier": 0.14 },
+  "umbrales": { "medio": 0.30, "alto": 0.60 },
+  "variables": [{ "nombre": "relacion_ritmo", "descripcion": "Ritmo reciente / ritmo necesario" }]
+}
+```
+`datos`: `SINTETICOS` o `REALES`. Errores: `503 MODELO_NO_DISPONIBLE` · `401` · `403`.
+
+### GET /consumos-atipicos?obraId=&estado=&desde=&hasta= · 403
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente`. `obraId` opcional (sin él, todas las obras visibles); `estado` opcional (`PENDIENTE`, `NORMAL`, `CONFIRMADO`; sin él, todos); `desde` y `hasta` opcionales (`AAAA-MM-DD` en La Paz, ambas incluidas, sobre `registradoEn`).
+```json
+[{
+  "id": "uuid-del-movimiento", "movimientoId": "uuid", "obraId": "uuid", "materialId": "id", "partidaId": "uuid",
+  "cantidad": 120.0, "periodo": "2026-11", "registradoEn": "2026-11-15T02:40:00Z",
+  "puntaje": 0.71, "motivos": ["La cantidad es 4,2 veces la habitual de este material en la obra", "Se registró fuera del horario habitual (22:40)"],
+  "estadoRevision": "PENDIENTE", "revisadoPor": null, "revisadoEn": null, "comentario": null,
+  "versionModelo": "ca-1.0.0", "detectadoEn": "2026-11-15T02:40:03Z"
+}]
+```
+Máximo 200, de la más reciente a la más antigua.
+Errores: `400 DATOS_INVALIDOS` (estado o fechas inválidos, o `desde` posterior a `hasta`) · `404 OBRA_NO_ENCONTRADA` (también si no la puede ver) · `401` · `403`.
+
+### GET /consumos-atipicos/resumen?obraIds=a,b,c · 403
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente`.
+`[{ "obraId": "uuid", "pendientes": 2 }]`: solo obras visibles, en el orden pedido; las que no tienen pendientes vienen con 0.
+Errores: `400 DEMASIADAS_OBRAS` (más de 100 distintas) · `401` · `403`.
+
+### PUT /consumos-atipicos/{id}/revision · 403
+Servicio: IA · Quién llama: Gateway · Roles: `admin`, `residente` asignado a la obra.
+Recibe `{ "estado": "CONFIRMADO", "comentario": "Se usó en la losa de otra obra sin registrarlo" }`. Devuelve `200` con el consumo atípico actualizado (`revisadoPor` = `sub`, `revisadoEn`, `comentario` sin espacios a los lados).
+Errores: `400 DATOS_INVALIDOS` (estado `PENDIENTE`, desconocido o falta) · `404 CONSUMO_ATIPICO_NO_ENCONTRADO` (también si el residente no está asignado a su obra) · `409 REVISION_YA_REGISTRADA` · `422 COMENTARIO_INVALIDO` (falta en `CONFIRMADO` o fuera de 5 a 300 caracteres; `errores[]` con `campo` = `comentario` y la regla en `mensaje`) · `403` (por ejemplo `gerente`) · `401`.
+- La revisión es una actualización atómica que solo cambia un consumo `PENDIENTE`; si existe pero ya no está pendiente, `409`.
+
+### Carga inicial (401): lo que llama IA
+
+Comando `ia-carga-inicial` (no es un endpoint). Con el token del cliente `ia-reportes` (*client credentials*, rol `gerente`), solo `GET`, 10 s por llamada y un reintento tras 1 s ante `5xx`, error de red o tiempo agotado; cada corrida manda su `cargaId` como `X-Request-Id`. En orden: Materiales `GET /materiales` (todas las páginas de a 100) → Obras `GET /obras` → por cada obra, Obras `GET /obras/{id}`, `GET /obras/{id}/planillas` y `GET /planillas/{id}` de cada una, Finanzas `GET /cobros?obraId=` (todas las páginas) y Materiales `GET /obras/{id}/movimientos?orden=registradoEn&direccion=asc` (todas las páginas; un `404 OBRA_NO_ENCONTRADA` se toma como «sin movimientos»).

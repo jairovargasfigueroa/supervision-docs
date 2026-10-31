@@ -13,7 +13,7 @@
 | Materiales | Microservicio | NestJS | MongoDB |
 | Finanzas | Microservicio | Laravel | PostgreSQL |
 | Sincronización | Microservicio (capa 1) | NestJS | DynamoDB |
-| IA | Microservicio (capas 3 a 5) | FastAPI (procesos `ia-api` e `ia-worker`); ML clásico en la capa 4; el modelo de lenguaje se decide en la capa 5 | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, agentes) |
+| IA | Microservicio (capa 4; luego 3 y 5) | Python 3.12 · FastAPI: procesos `ia-api` (REST, 8085) e `ia-worker` (cola `ia` y tareas programadas) y el comando `ia-carga-inicial`, de la misma imagen; ML clásico en la capa 4 (XGBoost e Isolation Forest, en CPU); el modelo de lenguaje se decide en la capa 5 | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, agentes) |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
 | Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
@@ -34,6 +34,7 @@
 | Obras, Materiales, Finanzas | RabbitMQ | AMQP | Eventos y comandos de la saga |
 | RabbitMQ | IA (capa 4) | AMQP | Eventos para el modelo de lectura (`reportes_db`, 401) |
 | IA (capa 4) | Obras, Materiales, Finanzas | REST (solo `GET`) | Carga inicial del modelo de lectura, una vez, con el cliente `ia-reportes` (401) |
+| Gateway | IA (capa 4) | REST | Riesgo de retraso (402) y consumos atípicos (403), en lotes de hasta 100 obras para el tablero |
 | RabbitMQ | n8n (capa 2) | AMQP / webhook | Eventos «stock bajo» e «ingreso» |
 | n8n | Finanzas, correo | REST, SMTP | Crear orden de compra y cuenta por pagar; avisar al proveedor |
 | IA | Obras, Materiales, Finanzas | **MCP** (HTTP, solo lectura) | Herramientas para los agentes |
@@ -66,10 +67,11 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | App móvil | Expo SDK 58 · React Native 0.88 | Recomendado por la documentación de React Native; TensorFlow Lite (capa 3) con `react-native-fast-tflite` en una *development build* |
 | Obras | Spring Boot 4.1 · Java 21 | Ya creado |
 | Finanzas | Laravel 13 · PHP 8.3 o superior | Ya creado |
+| IA | Python 3.12 · FastAPI 0.162 · `uv` · XGBoost 3 · scikit-learn 1 | `xgboost` 3 y `numpy` 2.5 exigen Python 3.12; librerías en `docs/stack.md` (401) |
 
 ## Los 4 niveles
 
-- **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales.
+- **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales y Sincronización; hexagonal ligera por módulo en IA (`reportes`, `riesgo`, `atipicos`).
 - **Frontend:** shell + microfrontends en el ERP; portal y app como aplicaciones separadas.
 - **Datos:** una base por servicio; sin JOIN entre servicios. Para los reportes que cruzan servicios (el ingeniero pidió «algún mecanismo», no un microservicio), **CQRS: modelo de lectura alimentado por eventos**, solo para lo que cruza servicios: cada microservicio sigue escribiendo y leyendo lo suyo, y las proyecciones de sus eventos de RabbitMQ arman `reportes_db` (tablas `rpt_*`) dentro del servicio de IA, que es quien lo usa (predicciones de la capa 4 y reportes por voz de la capa 5). Sin *event sourcing*. Lo que existía antes se trae una vez con una carga inicial por REST (401). Decisión de Jairo, 31/10/2026.
 - **Despliegue:** cada proyecto produce su propia imagen de contenedor y se despliega por separado.

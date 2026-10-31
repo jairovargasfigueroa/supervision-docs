@@ -13,7 +13,7 @@ Para quien se suma al equipo. Windows 11 (los comandos de PowerShell tienen su e
 | Java (JDK) | **21** (Temurin u OpenJDK) | Obras | `java -version` |
 | PHP + Composer | PHP **8.3 o más** (Laravel Herd trae 8.5) | Finanzas | `php -v` en PowerShell |
 | Docker Desktop | con WSL 2 | `infra` | `docker compose version` |
-| Python | **3.12** estable + `uv` | servicio IA (capas 3–5) | `python --version`, `uv --version` |
+| Python | **3.12** estable, gestionado por `uv` | servicio IA (capa 4; luego 3 y 5) | `uv --version` y `uv python find 3.12` |
 | Expo Go | en el celular Android | probar la app (sistema base) | — |
 | Android Studio | solo para la *development build* (capa 3 y notificaciones) | — | — |
 | Editor | VS Code o IntelliJ | — | — |
@@ -34,8 +34,10 @@ La carpeta queda igual que en todas las máquinas; el `CLAUDE.md` de la raíz y 
 
 1. `infra`: copia `.env.example` a `.env` y ejecuta `./scripts/levantar.ps1` (levanta RabbitMQ, Keycloak y DynamoDB Local; agrega `-Perfil bases` si no tienes PostgreSQL ni MongoDB instalados).
 2. En cada proyecto: copia su `.env.example` (Obras: `.env.properties.example`) y completa con los valores de `infra/.env`.
-3. Instala dependencias: `npm install` (JavaScript), `composer install` (Finanzas), `./mvnw -q -DskipTests package` (Obras, descarga dependencias).
-4. Levanta todo en el orden de `docs/entorno-local.md`.
+3. Instala dependencias: `npm install` (JavaScript), `composer install` (Finanzas), `./mvnw -q -DskipTests package` (Obras, descarga dependencias) y `uv sync` (IA).
+   - **IA (capa 4):** instala `uv` (por ejemplo `py -3.12 -m pip install --user uv` y agrega su carpeta `Scripts` al `PATH`), luego `uv python install 3.12` (una versión preliminar como 3.12.0rc2 no sirve) y, en `services/ia`, `uv sync`. Detalle y el arreglo de un error conocido de `uv python install` en Windows: `services/ia/README.md`.
+   - **Base de reportes (401):** si usas tu PostgreSQL instalado, crea una vez como `postgres` el usuario `ia` y la base `reportes_db` (`docs/entorno-local.md`); con el perfil `bases` la crea el contenedor. Luego, en `services/ia`, `uv run alembic upgrade head`.
+4. Levanta todo en el orden de `docs/entorno-local.md` (IA con `uv run ia-api` y `uv run ia-worker`, o en contenedor con `docker compose --profile ia up -d --build` en `infra`). Con los datos de prueba cargados, corre una vez la carga inicial de la base de reportes (`uv run ia-carga-inicial`).
 5. Comprueba con `infra/scripts/estado.ps1`: todo en «sano».
 6. Abre `http://localhost:4200` e inicia sesión con `admin1` / `Prueba123!`.
 

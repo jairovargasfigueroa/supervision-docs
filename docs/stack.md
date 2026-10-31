@@ -129,10 +129,27 @@ Misma base que Materiales (TypeScript con módulos ES, Vitest, oxlint; arquitect
 | Respuestas comprimidas (gzip) | `compression` |
 | Pruebas | Vitest |
 
-## services/ia
+## services/ia (Python 3.12 · FastAPI, capa 4)
 
-Se crea en la capa 4; sus librerías están en `docs/specs/401-base-reportes/diseno.md`.
+Creado por la 401 (llenado en la 401, 402 y 403). Gestor de dependencias `uv` (`pyproject.toml` + `uv.lock`); arquitectura DDD + hexagonal ligera por módulo (`reportes`, `riesgo`, `atipicos`). Detalle en `services/ia/docs/estructura.md`. La capa 4 no usa modelos de lenguaje ni TensorFlow (si la 301 lo usa, va en un entorno aparte).
+
+| Para qué | Librería | Versión |
+|---|---|---|
+| API | `fastapi` + `uvicorn`, `pydantic` + `pydantic-settings` (variables `IA_*`) | 0.162 · 0.54 · 2 · 2 |
+| PostgreSQL (`reportes_db`) | `sqlalchemy` (Core, async, sin ORM) + `psycopg`; migraciones con `alembic` | 2 · 3 · 1 |
+| MongoDB (`ia_db`) | `pymongo` (`AsyncMongoClient`) | 4 |
+| RabbitMQ | `aio-pika` | 10 |
+| Token (JWKS) | `PyJWT[crypto]` (`PyJWKClient`) | 2 |
+| Tareas programadas | `apscheduler` (`AsyncIOScheduler`) | 3 |
+| Cliente HTTP (carga inicial) | `httpx` | 0.28 |
+| Zonas horarias (Windows e imagen) | `tzdata` | — |
+| ML: riesgo de retraso (402) | `xgboost` (`XGBClassifier`, `tree_method = "hist"`, en CPU); `scikit-learn` (división por grupos y métricas), `pandas` y `pyyaml` (solo en `ml/`) | 3 · 1 · 3 · 6 |
+| ML: consumos atípicos (403) | `scikit-learn` (`IsolationForest`, también en el servicio), `joblib` (`modelo.joblib`) | 1 · 1 |
+| Cálculo | `numpy` | 2 |
+| Pruebas | `pytest` + `pytest-asyncio`, `testcontainers[postgres]` (PostgreSQL y MongoDB reales) | 9 · 1 · 4 |
+| Lint, formato y tipos | `ruff`, `mypy --strict` | — |
+| Gráficos del notebook (opcional, grupo `notebook`) | `matplotlib`, `ipykernel` | — |
 
 ## infra
 
-Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo.
+Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`).

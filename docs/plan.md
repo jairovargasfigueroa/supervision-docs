@@ -2,7 +2,7 @@
 
 Orden de trabajo y estado. Estados: `pendiente`, `en curso`, `hecho`. Al terminar una tarea, cambia su estado aquí.
 
-**Siguiente:** la capa 4, empezando por la **401** (aprobada el 31/10/2026). Las capas siguen el orden 4 → 3 → 5 → 2 → 6 (sección «Fases 3 a 8»). La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
+**Siguiente:** la **capa 5** (antes se reevalúa y se aprueba; suma el dictado por voz de la 302). La capa 4 (401, 402 y 403) se terminó el 31/10/2026 y la capa 3 se salta por ahora (sección «Fases 3 a 8»). La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
 
 Ramas, *pull requests* y definición de terminado: `docs/flujo-trabajo.md`. Solo se empieza algo cuyas dependencias están `hecho`.
 
@@ -75,11 +75,11 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 
 ## Fases 3 a 8. Capas
 
-Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026 y la capa 4 el 31/10/2026). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
+Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026 y la capa 4 el 31/10/2026; las dos están hechas). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
 
-**Orden de las capas (decisión de Jairo, 31/10/2026): 4 → 3 → 5 → 2 → 6.** Los números de las funcionalidades no cambian (la 401 sigue siendo la 401); solo cambia el orden en que se hacen. La tabla está en ese orden. **La siguiente es la capa 4, empezando por la 401.** Dentro de cada capa, se hacen en el orden de la tabla.
+**Orden de las capas (decisión de Jairo, 31/10/2026): 4 → 3 → 5 → 2 → 6.** Los números de las funcionalidades no cambian (la 401 sigue siendo la 401); solo cambia el orden en que se hacen. La tabla está en ese orden. La capa 4 está **hecha** (31/10/2026) y la capa 3 se salta por ahora (abajo), así que **la siguiente es la capa 5.** Dentro de cada capa, se hacen en el orden de la tabla.
 
-- Capa 3: los rostros difuminados (303) quedan **opcionales**, y el uso del deep learning de la 301 está **por decidir** (se decide al reevaluar la capa 3). Como la capa 4 va antes, el repositorio `services/ia` (`supervision-ms-ia`) lo llena la 401, no la 301.
+- Capa 3: **se salta por ahora** (decisión de Jairo, 31/10/2026). El dictado por voz (302) pasa a hacerse en la capa 5, junto a los reportes por voz (503). Queda pendiente el deep learning con TensorFlow sobre fotos en el celular (301), con el uso **por decidir**, antes del 10/11/2026. Los rostros difuminados (303) quedan **opcionales**. El repositorio `services/ia` (`supervision-ms-ia`) ya existe: lo llenó la 401.
 - Capa 5: el modelo de lenguaje se decide al reevaluar esa capa; la capa 4 no usa ninguno.
 
 Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado (lo que la spec marca como «ya aplicado» ya está en los documentos de esta carpeta).
@@ -90,12 +90,12 @@ Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambio
 | 102 | Fotos sin señal y envío con mala conexión (simplificada: foto completa directo a S3, sin nota de remisión) | 1 | 005, 101 | hecho (sincronizacion, app-obra; aprobada el 30/10/2026) |
 | 103 | Diario de obra | 1 | 101 | hecho (obras, sincronizacion, app-obra; aprobada el 30/10/2026) |
 | 104 | ERP como PWA y borrador de planilla sin conexión | 1 | 007 | hecho (erp-shell, mf-obras, mf-materiales, mf-supervision; aprobada el 30/10/2026) |
-| 401 | Base de reportes: CQRS, modelo de lectura alimentado por eventos, con carga inicial por REST (servicio IA con FastAPI; llena `services/ia`) | 4 | 008 | pendiente (aprobada el 31/10/2026) |
-| 402 | Riesgo de retraso (ML supervisado, XGBoost, datos sintéticos) | 4 | 401 | pendiente (aprobada el 31/10/2026) |
-| 403 | Consumos atípicos (ML no supervisado, Isolation Forest, datos sintéticos) | 4 | 401 (402 opcional: recálculo del riesgo) | pendiente (aprobada el 31/10/2026) |
-| 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; el uso del deep learning está por decidir) | 3 | 005, 401 (repositorio `services/ia`) | pendiente |
-| 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente |
-| 303 | Rostros difuminados en las fotos del cliente (**opcional**) | 3 | 007, 008 | pendiente |
+| 401 | Base de reportes: CQRS, modelo de lectura alimentado por eventos, con carga inicial por REST (servicio IA con FastAPI; llena `services/ia`) | 4 | 008 | hecho (ia, obras, materiales, infra, gateway, mf-obras; aprobada el 31/10/2026) |
+| 402 | Riesgo de retraso (ML supervisado, XGBoost, datos sintéticos) | 4 | 401 | hecho (ia, gateway, mf-obras, mf-supervision; aprobada el 31/10/2026) |
+| 403 | Consumos atípicos (ML no supervisado, Isolation Forest, datos sintéticos) | 4 | 401 (402 opcional: recálculo del riesgo) | hecho (ia, gateway, mf-obras, mf-supervision; aprobada el 31/10/2026) |
+| 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; el uso del deep learning está por decidir) | 3 | 005, 401 (repositorio `services/ia`) | pendiente (uso por decidir antes del 10/11/2026) |
+| 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente (se hace en la capa 5, junto a la 503) |
+| 303 | Rostros difuminados en las fotos del cliente (**opcional**) | 3 | 007, 008 | pendiente (opcional) |
 | 501 | Servidores MCP de solo lectura en cada microservicio | 5 | 401 | pendiente |
 | 502 | Agentes del ERP (Seguimiento de obras, Control de materiales, Control de cobros) | 5 | 501, 402, 403 | pendiente |
 | 503 | Reportes por voz con exportación a Excel | 5 | 302, 401 | pendiente |
