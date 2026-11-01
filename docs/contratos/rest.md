@@ -75,15 +75,15 @@ Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO
 Roles: `maestro`, `residente` asignados. Quién llama: Sincronización (capa 1), con el token del usuario. Recibe `{ "fotoId": "uuid" }`.
 Devuelve `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg", "expiraEn": "…" }`.
 
-### POST /obras/{obraId}/fotos · 005, 102
+### POST /obras/{obraId}/fotos · 005, 102, 301
 Roles: `maestro`, `residente` asignados. Quién llama: Sincronización (capa 1), con el token del usuario (operación `FOTO_AVANCE`).
-Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z" }`.
-Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false }`.
+Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z", "deteccion": { "personas": 4, "sinCasco": 1, "sinChaleco": 2, "versionModelo": "epp-1.0.0" } }`; `deteccion` es opcional (301, hecha en el celular).
+Devuelve `201` (o `200` si el `id` ya existía; la detección no cambia) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false, "deteccion", "avisos" }`. `deteccion` es `null` si no llegó o no era válida; en ese caso `avisos: ["DETECCION_DESCARTADA"]` y la foto se guarda igual.
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
 
-### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
+### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008, 301
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
-`[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
+`[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga", "deteccion" }]`; `deteccion` (301) es `{ personas, sinCasco, sinChaleco, versionModelo }` o `null`, y siempre `null` para `cliente`.
 
 ### POST /obras/{obraId}/diario · 103
 Roles: `maestro` asignado. Quién llama: Sincronización (capa 1), con el token del maestro (la app no llama directo; operación `ENTRADA_DIARIO`).
@@ -332,7 +332,7 @@ Devuelve `200` con un resultado por operación, en el mismo orden:
 | `tipo` | Servicio | Llamada | Espec. |
 |---|---|---|---|
 | `MOVIMIENTO_MATERIAL` | Materiales | `POST /movimientos` con cuerpo = `datos` | 101 |
-| `FOTO_AVANCE` | Obras | `POST /obras/{datos.obraId}/fotos` con `{ id, partidaId, claveArchivo, tomadaEn }` de `datos` | 102 |
+| `FOTO_AVANCE` | Obras | `POST /obras/{datos.obraId}/fotos` con `{ id, partidaId, claveArchivo, tomadaEn, deteccion? }` de `datos` | 102, 301 |
 | `ENTRADA_DIARIO` | Obras | `POST /obras/{datos.obraId}/diario` con `{ id, fecha, clima, texto }` de `datos` | 103 |
 
 - `tipo` que no está en la tabla → resultado `ERROR` con `400 TIPO_OPERACION_DESCONOCIDO`.

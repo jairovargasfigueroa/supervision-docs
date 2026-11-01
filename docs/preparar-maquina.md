@@ -15,8 +15,8 @@ Para quien se suma al equipo. Windows 11 (los comandos de PowerShell tienen su e
 | Docker Desktop | con WSL 2 | `infra` | `docker compose version` |
 | Python | **3.12** estable, gestionado por `uv` | servicio IA (capas 4 y 5) | `uv --version` y `uv python find 3.12` |
 | Modelo de lenguaje (capa 5, uno de los dos) | Ollama en Docker (perfil `ollama` de `infra`, modelo `qwen3:8b`, unos 5 GB; GPU NVIDIA opcional) **o** una clave propia de la API de Anthropic | agentes (502) y reportes (503) del servicio IA | `infra/scripts/estado.ps1` («Ollama: responde») |
-| Expo Go | en el celular Android | probar la app (sistema base) | — |
-| Android Studio | solo para la *development build* (capa 3 y notificaciones) | — | — |
+| Expo Go | en el celular Android | probar la app hasta la capa 2 (desde la 301 la app necesita la *development build*) | — |
+| Android Studio | SDK de Android y CMake 3.31.6 para compilar la *development build* (301 y notificaciones; pasos en el README de `mobile/app-obra`) | — | `adb version` |
 | Editor | VS Code o IntelliJ | — | — |
 
 Configura git con tu nombre: `git config --global user.name "Tu Nombre"` y `git config --global user.email "tu-correo-de-github"`.

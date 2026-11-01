@@ -323,11 +323,14 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Analizando…» | App (foto) | Mientras corre el modelo | 301 (diseño) · texto de la spec |
-| «Personas: {N} · Sin casco: {M} · Sin chaleco: {K}» | App (foto) | Terminó el análisis | 301 (criterio 1) · texto de la spec |
+| «Personas: {N} · Sin casco: {M} · Sin chaleco: {K}» | App (foto y control de seguridad) | Terminó el análisis | 301 (criterio 1) · texto de la spec |
 | «Hay personas sin equipo de protección. Recuerda el uso de casco y chaleco.» | App (foto) | Al menos una persona sin casco o chaleco | 301 (criterio 2) · texto de la spec |
 | «No se detectaron personas» | App (foto) | Ninguna persona | 301 (criterio 4) · texto de la spec |
 | «No se pudo analizar la foto» | App (foto) | Falla o tarda más de 5 s | 301 (criterio 5) · texto de la spec |
-| «{N} sin casco · {M} sin chaleco» · «Sin alertas de EPP» | ERP · Obras (fotos) | Foto analizada | 301 (criterio 9) · texto de la spec |
+| Recuadro «Persona sin equipo de protección» (texto accesible) | App (foto y control de seguridad) | Persona señalada en la vista previa | 301 (criterio 2) · decisión de la implementación |
+| «Control de seguridad» (botón y título) · «Otro control» | App (detalle de la obra, control de seguridad) | Maestro asignado | 301 (criterios 10 y 11) · texto de la spec |
+| «La foto se analiza en el celular y no se envía ni se guarda.» | App (control de seguridad) | Al abrir la pantalla | 301 (criterio 11) · decisión de la implementación |
+| «{N} sin casco · {M} sin chaleco» · «Sin alertas de EPP» | ERP · Obras (fotos) | Foto analizada | 301 (criterio 12) · texto de la spec |
 | «Detectado en el celular con el modelo {versionModelo}» | ERP · Obras (ayuda al pasar el cursor) | Foto analizada | 301 (diseño) · texto de la spec |
 | «Grabando…» (con el tiempo) · «Transcribiendo…» | ERP · Supervisión (dictado) | Grabación y transcripción | 302 (criterios 1 y 2) · texto de la spec |
 | «Preparando el dictado: {porcentaje} %» | ERP · Supervisión | Primera descarga del modelo | 302 (criterio 5) · texto de la spec |

@@ -61,7 +61,7 @@ Datos de prueba (011), en `infra/semilla/`: `semilla.ps1` / `.sh` cargan los dat
    - **Carga inicial de la base de reportes (401):** después de levantar IA por primera vez y después de cada `recargar` de los datos de prueba, con Obras, Materiales y Finanzas levantados: `uv run ia-carga-inicial` en `services/ia` (o `docker compose --profile ia-carga run --rm ia-carga-inicial` en `infra`). Termina con código 0 si cargó todo; se puede repetir sin duplicar.
 3. Gateway: `npm run start:dev`.
 4. Frontends: mf-obras `npm start`, mf-materiales `npm start`, mf-supervision `npm start`, shell `npm start`; portal `npm run dev`.
-5. App: celular Android con depuración USB (o inalámbrica) → `infra/scripts/celular.ps1` (hace `adb reverse` de 8080, 8081, 8082, 8084 y 8090) → en `mobile/app-obra`, `npm start` (Metro en el **8090**, porque el 8081 es de Obras) y abrir en Expo Go.
+5. App: celular Android con depuración USB (o inalámbrica) → `infra/scripts/celular.ps1` (hace `adb reverse` de 8080, 8081, 8082, 8084 y 8090) → en `mobile/app-obra`, `npm start` (Metro en el **8090**, porque el 8081 es de Obras) y abrir la *development build* de la app. Desde la 301 (TensorFlow Lite, código nativo) la app **no funciona en Expo Go**: se compila e instala una vez con `npx expo run:android --port 8090` (pasos, incluido el `android/local.properties` que Windows necesita, en el README de `mobile/app-obra`).
 
 ## Variables de entorno por proyecto (`.env.example` de cada repo)
 

@@ -422,7 +422,7 @@ Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.
 
 ## 10. Fotos de avance (Obras y bucket S3)
 
-Dos por partida en ejecución, todas registradas por maestro1 a las 11:00 de La Paz. `clave_archivo = fotos/{obraId}/{fotoId}.jpg`. Las adjuntas a una planilla presentada están publicadas para el cliente (`publicada_cliente = true`); las demás son internas. Los campos de la capa 3 (`clave_archivo_cliente`, `personas_detectadas`, `sin_casco`) quedan en `null`.
+Dos por partida en ejecución, todas registradas por maestro1 a las 11:00 de La Paz. `clave_archivo = fotos/{obraId}/{fotoId}.jpg`. Las adjuntas a una planilla presentada están publicadas para el cliente (`publicada_cliente = true`); las demás son internas. Detección de casco y chaleco (301): las diez figuran analizadas sin personas (`personas_detectadas`, `sin_casco` y `sin_chaleco` en 0, `version_modelo_epp = epp-1.0.0`, valor `fotosVersionModeloEpp` de `semilla/obras.json`), porque las imágenes generadas no tienen personas; en el ERP muestran «Sin alertas de EPP». `clave_archivo_cliente` (303) queda en `null`.
 
 | `id` (`f1000000-0000-4000-8000-0000000…`) | Obra · partida | Tomada | Publicada | Adjunta a |
 |---|---|---|---|---|
@@ -510,7 +510,7 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 |---|---|
 | 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). Las carga `infra/semilla/agentes.mjs` por la API de Obras (como lo haría Sincronización), no la semilla de Obras: el diario se registra solo por la API (decisión de la implementación de la 502). |
 | 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
-| 301 y 303 (capa 3) | `personas_detectadas`, `sin_casco` y `clave_archivo_cliente` de las fotos (las imágenes generadas no tienen personas). |
+| 301 y 303 (capa 3) | 301 (hecho): detección 0 / 0 / 0 con `epp-1.0.0` en las diez fotos (sección 10). 303: `clave_archivo_cliente` de las fotos. |
 | 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
 | 402 y 403 | Predicciones: no se siembran; las calcula el modelo al terminar la carga inicial (motivo `CARGA_INICIAL`). Consumos atípicos de prueba coherentes con el `FIE-12` excedido de la obra 1 (la carga inicial no evalúa salidas pasadas). |
 | 502 Agentes | Revisa que estén sus casos: obra atrasada (obra 2), material bajo (`CEM-IP30` obra 2), salida que supera el stock (20018), cobro vencido (`COB-…-0001`), planilla presentada (obra 1 N.º 3), y agrega lo que falte. |

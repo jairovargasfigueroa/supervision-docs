@@ -120,6 +120,7 @@ Instalar **siempre** con `npx expo install <paquete>` (elige la versión compati
 | Base local (capa 1) | `expo-sqlite` |
 | Estado de la red (capa 1) | `@react-native-community/netinfo` |
 | Fotos guardadas en el celular hasta enviarlas (102) | `expo-file-system` |
+| Detección de casco y chaleco en el celular (301) | `react-native-fast-tflite` 3 + `react-native-nitro-modules` 0.37, `jpeg-js` 0.4 (JPEG → píxeles) y `buffer` 6; `expo-dev-client` (la app ya no corre en Expo Go: *development build*) |
 | Pruebas | `jest-expo` + `@testing-library/react-native` 14 |
 
 ## services/sincronizacion (NestJS 12, capa 1)
