@@ -88,7 +88,7 @@ extend type Foto { deteccion: DeteccionEpp }
 - Archivos:
   - `preparar_recortes.py`: lee las anotaciones del dataset, recorta personas y les asigna etiquetas.
   - `entrenar_clasificador_epp.ipynb`: entrenamiento, evaluación, elección de umbrales y exportación.
-  - `salida/`: `clasificador_epp.tflite`, `epp.json`, `metricas.json`, matriz de confusión (PNG). Solo se versionan el `.tflite`, `epp.json` y `metricas.json`.
+  - `salida/`: `clasificador_epp.tflite`, `epp.json`, `metricas.json`, matriz de confusión (PNG). Se versionan el `.tflite`, `epp.json`, `metricas.json` y la matriz de confusión; el notebook se guarda ejecutado, con sus gráficos, como evidencia de las métricas.
   - `README.md`: cómo descargar el dataset, ejecutar y copiar los archivos a `mobile/app-obra/assets/modelos/`.
 - **Dataset** (decisión del equipo; se revisan licencia y clases en la primera tarea). **Usados** (implementación, 01/11/2026; los dos CC BY 4.0 y descargables sin cuenta):
   - *Construction Safety* de Roboflow 100 (copia de Hugging Face `Francesco/construction-safety-gsnvb`): 1 206 imágenes, 2 614 recortes, pero solo 118 personas sin casco.
