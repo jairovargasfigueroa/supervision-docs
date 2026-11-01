@@ -38,9 +38,9 @@ Recibe `{ "obraId": "uuid", "fotoId": "uuid" }`. Reenvía a Obras `POST /obras/{
 
 | `tipo` | `datos` | Llamada |
 |---|---|---|
-| `FOTO_AVANCE` | `{ id, obraId, partidaId, claveArchivo, tomadaEn }` | Obras `POST /obras/{obraId}/fotos` con `{ id, partidaId, claveArchivo, tomadaEn }` |
+| `FOTO_AVANCE` | `{ id, obraId, partidaId, claveArchivo, tomadaEn, deteccion? }` | Obras `POST /obras/{obraId}/fotos` con `{ id, partidaId, claveArchivo, tomadaEn, deteccion? }` |
 
-`idOperacion` = `datos.id` (el `fotoId`). La 301 agrega después el campo opcional `deteccion`.
+`idOperacion` = `datos.id` (el `fotoId`). `deteccion` (opcional) la agrega la 301: `{ personas, sinCasco, sinChaleco, versionModelo }`, hecha en el celular; Sincronización la reenvía tal cual.
 
 ## Obras
 
