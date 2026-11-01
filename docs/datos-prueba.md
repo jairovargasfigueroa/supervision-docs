@@ -214,6 +214,7 @@ Cada planilla tiene una línea por cada partida de su obra; las que no figuran a
 | **Neto** | **290.134,80** | **365.764,40** | **330.149,10** |
 | `cobro_id` | `c2000000-…-000000000101` | `c2000000-…-000000000102` | `null` |
 | Fotos adjuntas | — | — | `…010302`, `…010402`, `…010502` |
+| `presentada_en` (501) | `null` | `null` | `D − 10, 15:00` |
 
 Acumulados contra lo contratado: P-02 120 + 60 = 180 de 180 (terminada); P-03 50 + 40 = 90 de 140; P-04 300 + 500 = 800 de 2.400; P-05 400 de 3.200 ✓ (ninguna supera lo contratado).
 
@@ -507,7 +508,7 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 
 | Funcionalidad | Qué agrega a la semilla |
 |---|---|
-| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). |
+| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). Las carga `infra/semilla/agentes.mjs` por la API de Obras (como lo haría Sincronización), no la semilla de Obras: el diario se registra solo por la API (decisión de la implementación de la 502). |
 | 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
 | 301 y 303 (capa 3) | `personas_detectadas`, `sin_casco` y `clave_archivo_cliente` de las fotos (las imágenes generadas no tienen personas). |
 | 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |

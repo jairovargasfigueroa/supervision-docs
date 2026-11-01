@@ -13,7 +13,8 @@ Para quien se suma al equipo. Windows 11 (los comandos de PowerShell tienen su e
 | Java (JDK) | **21** (Temurin u OpenJDK) | Obras | `java -version` |
 | PHP + Composer | PHP **8.3 o más** (Laravel Herd trae 8.5) | Finanzas | `php -v` en PowerShell |
 | Docker Desktop | con WSL 2 | `infra` | `docker compose version` |
-| Python | **3.12** estable, gestionado por `uv` | servicio IA (capa 4; luego 3 y 5) | `uv --version` y `uv python find 3.12` |
+| Python | **3.12** estable, gestionado por `uv` | servicio IA (capas 4 y 5) | `uv --version` y `uv python find 3.12` |
+| Modelo de lenguaje (capa 5, uno de los dos) | Ollama en Docker (perfil `ollama` de `infra`, modelo `qwen3:8b`, unos 5 GB; GPU NVIDIA opcional) **o** una clave propia de la API de Anthropic | agentes (502) y reportes (503) del servicio IA | `infra/scripts/estado.ps1` («Ollama: responde») |
 | Expo Go | en el celular Android | probar la app (sistema base) | — |
 | Android Studio | solo para la *development build* (capa 3 y notificaciones) | — | — |
 | Editor | VS Code o IntelliJ | — | — |
@@ -37,7 +38,8 @@ La carpeta queda igual que en todas las máquinas; el `CLAUDE.md` de la raíz y 
 3. Instala dependencias: `npm install` (JavaScript), `composer install` (Finanzas), `./mvnw -q -DskipTests package` (Obras, descarga dependencias) y `uv sync` (IA).
    - **IA (capa 4):** instala `uv` (por ejemplo `py -3.12 -m pip install --user uv` y agrega su carpeta `Scripts` al `PATH`), luego `uv python install 3.12` (una versión preliminar como 3.12.0rc2 no sirve) y, en `services/ia`, `uv sync`. Detalle y el arreglo de un error conocido de `uv python install` en Windows: `services/ia/README.md`.
    - **Base de reportes (401):** si usas tu PostgreSQL instalado, crea una vez como `postgres` el usuario `ia` y la base `reportes_db` (`docs/entorno-local.md`); con el perfil `bases` la crea el contenedor. Luego, en `services/ia`, `uv run alembic upgrade head`.
-4. Levanta todo en el orden de `docs/entorno-local.md` (IA con `uv run ia-api` y `uv run ia-worker`, o en contenedor con `docker compose --profile ia up -d --build` en `infra`). Con los datos de prueba cargados, corre una vez la carga inicial de la base de reportes (`uv run ia-carga-inicial`).
+   - **Capa 5:** en tu PostgreSQL instalado crea también, antes de migrar, el rol de solo lectura `ia_reportes_lector` (503; comando en el README de infra). Si usas Ollama: `docker compose --profile ollama up -d ollama` y `./scripts/descargar-modelo.ps1` en `infra` (una vez; baja unos 5 GB). Si usas Anthropic: `IA_LLM_PROVEEDOR=anthropic` y tu clave en `IA_ANTHROPIC_API_KEY` del `.env` (nunca en el repositorio). El secreto de `ia-agentes` va en `IA_AGENTES_CLIENT_SECRET` de `infra/.env` y del `.env` de IA.
+4. Levanta todo en el orden de `docs/entorno-local.md` (IA con `uv run ia-api` y `uv run ia-worker`, o en contenedor con `docker compose --profile ia up -d --build` en `infra`). Con los datos de prueba cargados, corre una vez la carga inicial de la base de reportes (`uv run ia-carga-inicial`) y, para la capa 5, `node semilla/eventos-ia.mjs` y `node semilla/agentes.mjs` en `infra`.
 5. Comprueba con `infra/scripts/estado.ps1`: todo en «sano».
 6. Abre `http://localhost:4200` e inicia sesión con `admin1` / `Prueba123!`.
 

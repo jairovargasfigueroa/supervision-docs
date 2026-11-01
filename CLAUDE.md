@@ -23,7 +23,7 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 | `infra` | Docker Compose · realm de Keycloak | Entorno de desarrollo (RabbitMQ, Keycloak, bases) y pruebas de punta a punta | Fase 1 |
 | `services/notificaciones` | NestJS · MongoDB · Firebase | Notificaciones *push* y bandeja | Funcionalidad 010 (todavía no existe) |
 | `services/sincronizacion` | NestJS 12 · TypeScript · DynamoDB | Recibe lo del celular sin duplicar y arma sus datos para trabajar sin señal | Capa 1 |
-| `services/ia` | Python 3.12 · FastAPI · PostgreSQL (`reportes_db`) · MongoDB (`ia_db`) | Base de reportes (CQRS), riesgo de retraso y consumos atípicos; en la capa 5, host de los agentes, servidor MCP y reportes por voz | Capa 4 (luego 5) |
+| `services/ia` | Python 3.12 · FastAPI · PostgreSQL (`reportes_db`) · MongoDB (`ia_db`) | Base de reportes (CQRS), riesgo de retraso y consumos atípicos; en la capa 5, host de los agentes, servidor MCP y reportes por voz | Capas 4 y 5 |
 
 Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `ms-sincronizacion`, `ms-ia`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal`, `app-obra` e `infra` (y `ms-notificaciones` cuando se cree), más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
 

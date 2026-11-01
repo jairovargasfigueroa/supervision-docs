@@ -127,6 +127,8 @@ Modelos Pydantic en `src/ia/agentes/dominio/reporte.py` (con `extra="forbid"`); 
 8. Límite total de 3 minutos (`asyncio.timeout`): si se supera → `FALLIDA`, error `EJECUCION_TIEMPO_AGOTADO`.
 9. Al iniciar el servicio, las ejecuciones `EN_CURSO` con más de 10 minutos pasan a `FALLIDA` con error `INTERRUMPIDA`.
 
+Códigos de una ejecución `FALLIDA`: `SIN_HERRAMIENTAS`, `REPORTE_INVALIDO`, `EJECUCION_TIEMPO_AGOTADO` e `INTERRUMPIDA` (arriba) y, como decisión técnica de la implementación, `LLM_NO_DISPONIBLE` (el modelo de lenguaje no responde) y `ERROR_INTERNO` (fallo no previsto).
+
 ## Programación
 
 - En `ia-worker`, con el APScheduler 3 (`AsyncIOScheduler`, zona `America/La_Paz`) de la 401; cron `IA_AGENTES_CRON` (por defecto `0 6 * * *`): encola los tres agentes en orden. Si ya existe una ejecución `PROGRAMADA` del agente con `iniciada_en` de hoy, no la repite. **(decisión del equipo)**
@@ -347,7 +349,8 @@ extend type Mutation {
 ## Infra
 
 - El servicio `ollama` de Compose (perfil `ollama`, imagen oficial `ollama/ollama`, volumen de modelos, `ollama pull qwen3:8b`) y las variables `IA_LLM_*` los agrega la 503; las del cliente MCP (`IA_AGENTES_*`, `IA_*_MCP_URL`), la 501. Aquí solo se usan; `ia_db` ya existe por la 401.
-- Datos de prueba para los agentes: una obra atrasada con entradas de diario de lluvia, un material bajo, una salida que supera el stock, un cobro vencido, una planilla presentada hace más de 7 días, una predicción de riesgo `ALTO` (402) y un consumo atípico `PENDIENTE` (403).
+- Datos de prueba para los agentes: una obra atrasada con entradas de diario de lluvia, un material bajo, una salida que supera el stock, un cobro vencido, una planilla presentada hace más de 7 días, predicciones de riesgo (402) y un consumo atípico `PENDIENTE` (403).
+  - Decisión de Jairo (01/11/2026): con los datos de prueba el modelo `rr-1.0.0` da `BAJO` a la obra 2 (su única planilla aprobada juntó 16,34 puntos en un mes); la obra 2 sale como `ATRASO` por la regla y el camino «el modelo dice `ALTO`» se prueba con datos simulados en las pruebas de IA.
 
 ## Pruebas
 

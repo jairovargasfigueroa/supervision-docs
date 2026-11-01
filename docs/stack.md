@@ -2,7 +2,7 @@
 
 Qué librerías usa cada proyecto y para qué. Versiones verificadas el 28 de octubre de 2026 (npm, Maven Central, Packagist). **No agregues otras librerías para lo mismo**: si hace falta algo que no está aquí, propónlo antes de instalarlo y, si se aprueba, agrégalo a esta tabla y al `docs/estructura.md` del proyecto.
 
-Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite, Ollama, etc.); están en sus especificaciones.
+Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite, Ollama, etc.); están en sus especificaciones y, cuando se implementan, en la tabla de su proyecto.
 
 ## Decisiones generales
 
@@ -27,6 +27,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Fotos en S3 | AWS SDK for Java v2 (`s3`) | 2.x |
 | Pruebas | JUnit 5 + AssertJ (del starter de test), Testcontainers 2 (PostgreSQL, RabbitMQ) | versiones del BOM de Spring Boot |
 | Reglas de arquitectura hexagonal | ArchUnit (`archunit-junit5`) | 1.5 |
+| Servidor MCP (capa 5, 501) | Spring AI (`spring-ai-bom` + `spring-ai-starter-mcp-server-webmvc`, modo `STATELESS`), que trae el SDK oficial de MCP para Java (`io.modelcontextprotocol.sdk:mcp` 2.1.0) | 2.0.2 |
 
 ## services/materiales (NestJS 12 · MongoDB)
 
@@ -38,6 +39,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | RabbitMQ | `amqplib` (con un módulo propio de mensajería) | última 0.x |
 | Validar el token de Keycloak | `jose` | 6 |
 | Pruebas | Vitest (ya), `supertest`, `mongodb-memory-server` (con *replica set*) | — / 11 |
+| Servidor MCP (capa 5, 501) | `@modelcontextprotocol/server` (SDK oficial de MCP para TypeScript) + `zod` (lo exige el SDK; **solo en `src/mcp/`**, el resto sigue con `class-validator`) | 2.4 / 4 |
 
 ## gateway (NestJS 12 · GraphQL)
 
@@ -60,6 +62,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Análisis estático | `larastan/larastan` (nivel 6) | 3 |
 | Formato | Laravel Pint (ya incluido) | — |
 | Pruebas | PHPUnit 12 (ya instalado; no migrar a Pest) | 12 |
+| Servidor MCP (capa 5, 501) | `laravel/mcp` (paquete oficial de Laravel; `Mcp::web('/mcp', …)` en `routes/ai.php`) | 1.1 |
 
 ## frontend/erp-shell y frontend/mf-obras (Angular 22)
 
@@ -86,6 +89,8 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Tablas | `@tanstack/react-table` (lógica) dibujada con la `Table` de MUI | 9 |
 | Formularios | `@tanstack/react-form` + `zod` | 1 / 4 |
 | GraphQL | `@apollo/client` 4 + `graphql` 16 | — |
+| Voz a texto en el navegador (solo mf-supervision, capa 5, 302) | `@huggingface/transformers` (transformers.js, modelo `onnx-community/whisper-base` `q8` en un Web Worker; WebGPU o WASM) | 4 |
+| Exportar a Excel y CSV (solo mf-supervision, capa 5, 503) | SheetJS `xlsx`, desde el CDN oficial (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`; el paquete del registro de npm quedó en 0.18.5) | 0.20.3 |
 | Pruebas | Vitest + `@testing-library/react` + `jsdom` | — / 16 |
 
 ## frontend/portal (React 19 · Vite 8)
@@ -129,9 +134,9 @@ Misma base que Materiales (TypeScript con módulos ES, Vitest, oxlint; arquitect
 | Respuestas comprimidas (gzip) | `compression` |
 | Pruebas | Vitest |
 
-## services/ia (Python 3.12 · FastAPI, capa 4)
+## services/ia (Python 3.12 · FastAPI, capas 4 y 5)
 
-Creado por la 401 (llenado en la 401, 402 y 403). Gestor de dependencias `uv` (`pyproject.toml` + `uv.lock`); arquitectura DDD + hexagonal ligera por módulo (`reportes`, `riesgo`, `atipicos`). Detalle en `services/ia/docs/estructura.md`. La capa 4 no usa modelos de lenguaje ni TensorFlow (si la 301 lo usa, va en un entorno aparte).
+Creado por la 401 (llenado en la 401, 402 y 403; la capa 5 suma la 503, 501, 502 y 504). Gestor de dependencias `uv` (`pyproject.toml` + `uv.lock`); arquitectura DDD + hexagonal ligera por módulo (`reportes`, `riesgo`, `atipicos` y, en la capa 5, `lenguaje`, `constructor_reportes`, `mcp`, `agentes` y `seguridad`). Detalle en `services/ia/docs/estructura.md`. Los módulos de la capa 4 no usan modelos de lenguaje; el modelo de lenguaje vive solo en `src/ia/lenguaje/` (capa 5). Sin TensorFlow (si la 301 lo usa, va en un entorno aparte).
 
 | Para qué | Librería | Versión |
 |---|---|---|
@@ -146,10 +151,12 @@ Creado por la 401 (llenado en la 401, 402 y 403). Gestor de dependencias `uv` (`
 | ML: riesgo de retraso (402) | `xgboost` (`XGBClassifier`, `tree_method = "hist"`, en CPU); `scikit-learn` (división por grupos y métricas), `pandas` y `pyyaml` (solo en `ml/`) | 3 · 1 · 3 · 6 |
 | ML: consumos atípicos (403) | `scikit-learn` (`IsolationForest`, también en el servicio), `joblib` (`modelo.joblib`) | 1 · 1 |
 | Cálculo | `numpy` | 2 |
+| Modelo de lenguaje (503; lo reutiliza la 502), solo en `src/ia/lenguaje/infraestructura/` | `ollama` (`AsyncClient`) y `anthropic` (`AsyncAnthropic`, Messages API), según `IA_LLM_PROVEEDOR` | 0.6 · 2 |
+| MCP (501): servidor `MCPServer` en `ia-api` y cliente `Client` en `ia-worker`, solo en `src/ia/mcp/` | `mcp` (SDK oficial de MCP para Python) y `httpx2` (su cliente HTTP, para mandar `Authorization` y `X-Request-Id`; lo exige el SDK y solo se usa en el cliente MCP: el resto del servicio sigue con `httpx`) | 2.3 · 2 |
 | Pruebas | `pytest` + `pytest-asyncio`, `testcontainers[postgres]` (PostgreSQL y MongoDB reales) | 9 · 1 · 4 |
 | Lint, formato y tipos | `ruff`, `mypy --strict` | — |
 | Gráficos del notebook (opcional, grupo `notebook`) | `matplotlib`, `ipykernel` | — |
 
 ## infra
 
-Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`).
+Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`). Capa 5 (503 y 502): la imagen oficial `ollama/ollama:0.40.4` (servicio `ollama`, perfil `ollama`; GPU opcional con `docker-compose.gpu.yml`) y `mongo:8.0` como `mongo-cli` (perfil `herramientas`) para vaciar `ia_db.consumo_atipico` en `recargar`.

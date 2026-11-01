@@ -30,8 +30,9 @@ Lo que todos los proyectos hacen igual.
 | Metro de Expo (app en desarrollo; el 8081 es de Obras) | 8090 |
 | PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 | DynamoDB Local (Sincronización, capa 1) | 8000 |
+| Ollama (modelo de lenguaje local, capa 5, perfil `ollama`; solo en `127.0.0.1`) | 11434 |
 
-- PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db` (modelo de lectura del servicio de IA, 401), con su usuario propio `ia`, dueño de la base (`POSTGRES_IA_CLAVE` de `infra/.env`). El servicio de IA usa además la base `ia_db` de MongoDB (402, 403).
+- PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db` (modelo de lectura del servicio de IA, 401), con su usuario propio `ia`, dueño de la base (`POSTGRES_IA_CLAVE` de `infra/.env`), y desde la 503 el rol de solo lectura `ia_reportes_lector` (`POSTGRES_IA_LECTOR_CLAVE`; `SELECT` solo sobre las tablas `rpt_*` que lee el constructor de reportes). El servicio de IA usa además la base `ia_db` de MongoDB (402, 403 y, en la capa 5, agentes, sugerencias, consultas de reportes y límite por minuto).
 - En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y DynamoDB Local (101). Quien no los tenga instalados levanta también los contenedores de las bases.
 
 ## Datos de prueba (011)
@@ -59,6 +60,7 @@ Lo que todos los proyectos hacen igual.
   - `403 SIN_PERMISO`: el rol del usuario no permite esa acción (no figura en los roles del endpoint, o figura con una condición que no cumple, por ejemplo `residente` en una acción solo de `admin`). Se comprueba primero, en el guardia de cada endpoint.
   - `404` con el código de «no encontrado» del recurso (por ejemplo `404 OBRA_NO_ENCONTRADA`): el rol sí puede hacer la acción, pero el usuario no ve esa obra (no está asignado o no es su cliente). Se responde igual que si no existiera, para no revelar que existe; vale para lecturas y escrituras.
 - La matriz completa de quién puede qué está en `docs/permisos.md`.
+- Servidores MCP (capa 5, 501): `POST /mcp` de Obras, Materiales, Finanzas e IA pasa por la misma validación de token de cada servicio y exige `agente_ia` (roles efectivos con `azp = ia-agentes`); también el `/mcp` del servicio de IA, que en sus rutas REST sigue aceptando solo `admin`, `gerente` y `residente`. Librerías: Spring AI 2.0 (SDK de MCP para Java 2.1, Obras), `@modelcontextprotocol/server` 2 + `zod` 4 (Materiales), `laravel/mcp` 1 (Finanzas) y `mcp` 2 (servidor y cliente, IA). Versión común del protocolo: 2025-11-25. El secreto de `ia-agentes` (`IA_AGENTES_CLIENT_SECRET`) es un secreto como los de los demás clientes confidenciales: solo en `.env` o en el gestor de secretos.
 - Librerías: Spring Security OAuth2 Resource Server (Obras), `jose` (NestJS: gateway, Materiales, Sincronización), `firebase/php-jwt` con JWKS (Finanzas), `PyJWT[crypto]` 2 con `PyJWKClient` (IA), keycloak-angular 22 + keycloak-js 26 (shell), react-oidc-context + oidc-client-ts (portal), `expo-auth-session` (app).
 
 ## Sesión dentro del ERP
@@ -106,6 +108,7 @@ Lo que todos los proyectos hacen igual.
 - Estados: `400` datos mal formados · `401` sin token · `403` sin permiso · `404` no existe o no lo puede ver · `409` conflicto de estado o versión · `413` cuerpo demasiado grande · `422` regla del negocio incumplida · `429` demasiadas peticiones · `500` error interno · `503` servicio no disponible (se puede reintentar) · `504` tiempo agotado.
 - Todo error lleva `codigo`. Si no hay uno propio, se usa el genérico de su estado: `400 DATOS_INVALIDOS`, `401 NO_AUTENTICADO`, `403 SIN_PERMISO`, `413 ARCHIVO_DEMASIADO_GRANDE`, `429 DEMASIADAS_PETICIONES`, `500 ERROR_INTERNO`, `503 SERVICIO_NO_DISPONIBLE`; una ruta que no existe responde `404 RUTA_NO_ENCONTRADA` (solo con token válido: sin token, `401`). En los contratos, un estado escrito sin código (por ejemplo «`400`» o «`403`») significa ese genérico. `404`, `409` y `422` siempre llevan un código propio.
 - `504 TIEMPO_AGOTADO`: el servicio llamó a otro servicio (o a un componente externo, como el modelo de lenguaje) y no recibió respuesta en su tiempo máximo. Es el mismo código y estado en todos los servicios. El error de una ejecución de agente por pasar su límite de tiempo es otro: `EJECUCION_TIEMPO_AGOTADO` (502).
+- Códigos propios del servicio de IA en la capa 5: `TEXTO_INVALIDO` (`400`), `INTENCION_NO_RECONOCIDA` y `RECETA_INVALIDA` (`422`), `DEMASIADAS_CONSULTAS` (`429`), `LLM_NO_DISPONIBLE` y `REPORTES_NO_DISPONIBLES` (`503`) (503); `AGENTE_INVALIDO` (`400`), `EJECUCION_NO_ENCONTRADA` y `SUGERENCIA_NO_ENCONTRADA` (`404`), `EJECUCION_EN_CURSO` y `SUGERENCIA_YA_DECIDIDA` (`409`), `COMENTARIO_INVALIDO` y `MOTIVO_INVALIDO` (`422`) (502). Los de una ejecución de agente o de una herramienta MCP no son respuestas HTTP (`docs/mensajes.md`, «Errores de la ejecución de un agente»).
 - El texto que ve el usuario por cada `codigo` está en `docs/mensajes.md`; un código que el frontend no conoce se muestra con el mensaje genérico de su estado HTTP.
 
 ## Errores GraphQL (gateway)
@@ -113,6 +116,7 @@ Lo que todos los proyectos hacen igual.
 - Cada error va en `errors[]` con `extensions.codigo` (el mismo `codigo` del servicio) y `extensions.servicio`.
 - Si un servicio no responde, solo los campos que dependen de él vuelven en `null` con `extensions.codigo = "SERVICIO_NO_DISPONIBLE"`; el resto de la respuesta llega.
 - Tiempo máximo por llamada del gateway a un servicio: **3 segundos**. Las consultas se reintentan una vez; las mutaciones no se reintentan.
+- **Excepción (503):** `consultarReporte` espera hasta **60 segundos** a IA (interpretar con el modelo de lenguaje, consultar y resumir), sin reintento por ser mutación; si IA no responde en ese tiempo, `SERVICIO_NO_DISPONIBLE`. El resto de las operaciones de IA siguen con 3 s. **(decisión del equipo)**
 
 ## Idempotencia
 
@@ -155,6 +159,15 @@ Lo que todos los proyectos hacen igual.
 - **Encabezados:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` y, en producción, HSTS.
 - **Keycloak:** política de contraseñas «mínimo 8 caracteres, 1 mayúscula, 1 número, distinta del usuario»; protección contra fuerza bruta activada (bloqueo temporal tras 5 intentos); idioma por defecto **español** y único habilitado; tema propio `supervision` (colores y logo de `docs/diseno-visual.md`) para la pantalla de inicio de sesión, en `infra/keycloak/temas/supervision` (extiende el tema `keycloak.v2`).
 - **Datos sensibles en registros:** nunca se registran tokens, contraseñas ni el cuerpo completo de las peticiones.
+
+### IA segura (capa 5, 504)
+
+- El modelo de lenguaje nunca escribe SQL ni filtros de base de datos ni ejecuta acciones: entrega una **receta** que el código valida contra el catálogo (503); el SQL lo arma el código con nombres del catálogo y valores enlazados (usuario `ia_reportes_lector`, transacción `READ ONLY`, 5 s). Todo dato externo (resultados de herramientas, filas de reportes, texto del usuario) llega al modelo solo por `como_dato` (delimitado con etiquetas y con `<` y `>` escapados).
+- Toda salida del modelo se valida con esquema estricto (Pydantic, `extra="forbid"`) y listas permitidas antes de usarse, con cualquier proveedor (Ollama o Anthropic). Los agentes solo usan sus herramientas MCP de solo lectura y solo sugieren acciones de su lista; una persona decide (502).
+- Los frontends muestran el texto de la IA como texto (prohibido `dangerouslySetInnerHTML` e `innerHTML`); el Excel y el CSV anteponen un apóstrofo a los textos que empiezan con `=`, `+`, `-` o `@`.
+- No se registran tokens, la clave de la API del modelo (`IA_ANTHROPIC_API_KEY`) ni secretos; tampoco el texto completo de los mensajes al modelo.
+- Las pruebas de `services/ia/tests/seguridad/` (entradas maliciosas con `ModeloSimulado` y prueba de arquitectura) corren con las pruebas normales del servicio de IA (`uv run pytest`).
+- Librerías del modelo de lenguaje: `ollama` 0.6 y `anthropic` 2 (IA, solo en `src/ia/lenguaje/`). Exportación a Excel y CSV: SheetJS 0.20.3 desde `cdn.sheetjs.com` (mf-supervision). Detalle en `docs/stack.md`.
 
 ## Registros y salud
 
