@@ -403,4 +403,4 @@ Todas las que se encontraron al armar esta matriz quedaron resueltas en las spec
 
 12. **Capa 5 (31/10/2026): las «herramientas locales» de IA no pasaban por MCP ni por su validación.** Ahora `riesgo_retraso`, `consumos_atipicos` y `consultar_reporte` son herramientas del servidor MCP de IA (`POST /mcp`, solo `agente_ia`), y el host limita por agente las herramientas y los conjuntos de `consultar_reporte` (501, 502). Las rutas de reportes pasaron a `/consultas-reporte` y `/catalogo-reportes` (503).
 
-Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010, la 201 y la capa 5 (501, 502, 503 y 504) se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye.
+Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010 y la 201 se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye. Los de la capa 5 (501, 502, 503 y 504) ya están en `docs/contratos/` (01/11/2026).

@@ -214,6 +214,7 @@ Cada planilla tiene una línea por cada partida de su obra; las que no figuran a
 | **Neto** | **290.134,80** | **365.764,40** | **330.149,10** |
 | `cobro_id` | `c2000000-…-000000000101` | `c2000000-…-000000000102` | `null` |
 | Fotos adjuntas | — | — | `…010302`, `…010402`, `…010502` |
+| `presentada_en` (501) | `null` | `null` | `D − 10, 15:00` |
 
 Acumulados contra lo contratado: P-02 120 + 60 = 180 de 180 (terminada); P-03 50 + 40 = 90 de 140; P-04 300 + 500 = 800 de 2.400; P-05 400 de 3.200 ✓ (ninguna supera lo contratado).
 

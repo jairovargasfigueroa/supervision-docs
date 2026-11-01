@@ -113,3 +113,17 @@ Reglas que cruzan varios proyectos. Los valores marcados como **(decisión del e
 - Un cobro `PENDIENTE` pasa a `VENCIDO` al día siguiente de su vencimiento (igual que en Finanzas).
 - Va unos segundos detrás de los servicios (consistencia eventual).
 - Aproximaciones de la carga inicial (lo que los servicios no exponen): una planilla observada antes de la carga cuenta como observada una sola vez, y los movimientos anteriores usan el precio actual del catálogo.
+
+## Reportes (capa 5)
+
+- Solo se consultan los conjuntos del catálogo (Obras, Material usado, Movimientos de material, Cobros, Planillas y Consumos atípicos), leídos de la base de reportes (401) y de los consumos atípicos (403); el modelo de lenguaje arma una receta y el código la valida y arma la consulta (503).
+- La base de reportes puede ir hasta un día atrasada en el plazo y en el estado de los cobros (se recalculan una vez al día), y solo conoce las planillas **aprobadas** u **observadas**: las que están en borrador o presentadas sin observación no salen en los reportes.
+- Hasta 100 filas en pantalla (el resto se avisa); 10 consultas por minuto por usuario, también con los reportes comunes (**decisión del equipo**). Solo `admin` y `gerente` (los reportes cruzan todas las obras).
+- «Monto referencial» del material = cantidad × precio referencial del material al registrar la salida (401; no es el precio del contrato). «Cobrado» = cobros emitidos (los pagos están fuera del alcance).
+
+## Agentes (capa 5)
+
+- Tres agentes fijos con su misión: Seguimiento de obras, Control de materiales y Control de cobros. Se ejecutan todos los días a las 06:00 (La Paz) y a pedido de `admin` o `gerente` («Ejecutar ahora»); una ejecución a la vez (502).
+- Solo consultan sus herramientas MCP de solo lectura y sugieren acciones de la lista permitida de cada agente; no ejecutan nada. Aprobar una sugerencia solo registra la decisión (no se crea ni se envía nada en otra área); rechazarla exige un motivo de 10 a 500 caracteres; el comentario al aprobar es opcional, hasta 300. No se repite una sugerencia pendiente con la misma obra y acción.
+- Planilla sin respuesta del cliente: `PRESENTADA` hace más de 7 días (**decisión del equipo**; desde la 501, Obras guarda `presentada_en`, la última vez que la planilla pasó a `PRESENTADA`). Cobros por vencer: los próximos 15 días (**decisión del equipo**).
+- Visibilidad: el residente ve solo los hallazgos y sugerencias de sus obras y nunca los de Control de cobros.

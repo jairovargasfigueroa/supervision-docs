@@ -14,7 +14,7 @@
 | Finanzas | Microservicio | Laravel | PostgreSQL |
 | Sincronización | Microservicio (capa 1) | NestJS | DynamoDB |
 | IA | Microservicio (capas 4 y 5) | Python 3.12 · FastAPI: procesos `ia-api` (REST y servidor MCP en `/mcp`, 8085) e `ia-worker` (cola `ia`, tareas programadas y **host de los agentes** con el cliente MCP) y el comando `ia-carga-inicial`, de la misma imagen; ML clásico en la capa 4 (XGBoost e Isolation Forest, en CPU); en la capa 5, **modelo de lenguaje por un puerto** (`ModeloLenguaje`) con dos adaptadores, Ollama local (`qwen3:8b`) o la API de Anthropic (`claude-sonnet-5-5`), elegido con `IA_LLM_PROVEEDOR` | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, ejecuciones de agentes, sugerencias, consultas de reportes y límite por minuto) |
-| Ollama | Modelo de lenguaje local (capa 5, opcional) | `ollama/ollama` con `qwen3:8b`; solo si `IA_LLM_PROVEEDOR=ollama` | — |
+| Ollama | Modelo de lenguaje local (capa 5, opcional) | `ollama/ollama:0.40.4` con `qwen3:8b` (perfil `ollama` de infra; GPU opcional); solo si `IA_LLM_PROVEEDOR=ollama` | — |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
 | Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
@@ -71,7 +71,8 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Finanzas | Laravel 13 · PHP 8.3 o superior | Ya creado |
 | IA | Python 3.12 · FastAPI 0.162 · `uv` · XGBoost 3 · scikit-learn 1 | `xgboost` 3 y `numpy` 2.5 exigen Python 3.12; librerías en `docs/stack.md` (401) |
 | Capa 5: MCP | Especificación vigente 2026-07-28; versión común 2025-11-25. SDK oficiales: Java `io.modelcontextprotocol.sdk:mcp` 2.1.0 (por Spring AI 2.0.2), TypeScript `@modelcontextprotocol/server` 2.4.0 + `@modelcontextprotocol/express` 2.0.2, Python `mcp` 2.3.0; PHP: `laravel/mcp` 1.1.2 (oficial de Laravel; el SDK de la organización MCP, `mcp/sdk`, sigue en 0.9) | Verificado el 31/10/2026; detalle en la 501 |
-| Capa 5: modelo de lenguaje | `ollama` 0.6.3 (Python) con `qwen3:8b` · `anthropic` 2.3.0 (Python) con `claude-sonnet-5-5` | Verificado el 31/10/2026; detalle en la 503 |
+| Capa 5: modelo de lenguaje | `ollama` 0.6.3 (Python) con `qwen3:8b` · `anthropic` 2.3.0 (Python) con `claude-sonnet-5-5` | Verificado el 31/10/2026; detalle en la 503. En desarrollo, imagen `ollama/ollama:0.40.4` (`docs/entorno-local.md`) |
+| Capa 5: navegador (mf-supervision) | `@huggingface/transformers` 4 (Whisper `onnx-community/whisper-base` `q8`, 302) · SheetJS `xlsx` 0.20.3 desde `cdn.sheetjs.com` (503) | Detalle en la 302 y la 503; librerías en `docs/stack.md` |
 
 ## Los 4 niveles
 

@@ -62,3 +62,7 @@ La capa 4 no agrega eventos nuevos: el servicio de IA escucha seis de los del si
 - Lector tolerante: los campos desconocidos se ignoran, y `ubicacion`, `zona` y `precioReferencial` pueden faltar (eventos anteriores al cambio; sin precio, el monto del consumo suma 0).
 - Inbox (`evento_aplicado`), reintentos con `x-intentos` y `plataforma.fallidos` como en `docs/convenciones.md`. El servicio de IA no publica eventos en la capa 4.
 - Lo que ya existía antes de la cola (o después de vaciarla con `recargar`) lo trae la carga inicial por REST (`docs/contratos/rest.md`, «IA»).
+
+### Capa 5: sin eventos nuevos (302, 501, 502, 503, 504)
+
+La capa 5 no publica ni escucha eventos nuevos. Los agentes (502) leen el dato al instante por las herramientas MCP de cada servicio (`docs/contratos/rest.md`, «Herramientas MCP»), y aprobar o rechazar una sugerencia solo registra la decisión en `ia_db` (no publica nada). Los reportes (503) leen el modelo de lectura de la capa 4. El servicio de IA sigue sin publicar eventos.
