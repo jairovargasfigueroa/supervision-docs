@@ -70,7 +70,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Obras | Spring Boot 4.1 · Java 21 | Ya creado |
 | Finanzas | Laravel 13 · PHP 8.3 o superior | Ya creado |
 | IA | Python 3.12 · FastAPI 0.162 · `uv` · XGBoost 3 · scikit-learn 1 | `xgboost` 3 y `numpy` 2.5 exigen Python 3.12; librerías en `docs/stack.md` (401) |
-| Capa 5: MCP | Especificación vigente 2026-07-28; versión común 2025-11-25. SDK oficiales: Java `io.modelcontextprotocol.sdk:mcp` 2.1.0 (por Spring AI 2.0.2), TypeScript `@modelcontextprotocol/server` 2.4.0 + `@modelcontextprotocol/express` 2.0.2, Python `mcp` 2.3.0; PHP: `laravel/mcp` 1.1.2 (oficial de Laravel; el SDK de la organización MCP, `mcp/sdk`, sigue en 0.9) | Verificado el 31/10/2026; detalle en la 501 |
+| Capa 5: MCP | Especificación vigente 2026-07-28; versión común 2025-11-25. SDK oficiales: Java `io.modelcontextprotocol.sdk:mcp` 2.1.0 (por Spring AI 2.0.2), TypeScript `@modelcontextprotocol/server` 2.4.0 (con su transporte `WebStandardStreamableHTTPServerTransport`; el adaptador `@modelcontextprotocol/express` no hizo falta), Python `mcp` 2.3.0; PHP: `laravel/mcp` 1.1.2 (oficial de Laravel; el SDK de la organización MCP, `mcp/sdk`, sigue en 0.9) | Verificado el 31/10/2026; detalle en la 501 |
 | Capa 5: modelo de lenguaje | `ollama` 0.6.3 (Python) con `qwen3:8b` · `anthropic` 2.3.0 (Python) con `claude-sonnet-5-5` | Verificado el 31/10/2026; detalle en la 503. En desarrollo, imagen `ollama/ollama:0.40.4` (`docs/entorno-local.md`) |
 | Capa 5: navegador (mf-supervision) | `@huggingface/transformers` 4 (Whisper `onnx-community/whisper-base` `q8`, 302) · SheetJS `xlsx` 0.20.3 desde `cdn.sheetjs.com` (503) | Detalle en la 302 y la 503; librerías en `docs/stack.md` |
 

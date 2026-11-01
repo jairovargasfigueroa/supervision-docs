@@ -152,7 +152,7 @@ Creado por la 401 (llenado en la 401, 402 y 403; la capa 5 suma la 503, 501, 502
 | ML: consumos atípicos (403) | `scikit-learn` (`IsolationForest`, también en el servicio), `joblib` (`modelo.joblib`) | 1 · 1 |
 | Cálculo | `numpy` | 2 |
 | Modelo de lenguaje (503; lo reutiliza la 502), solo en `src/ia/lenguaje/infraestructura/` | `ollama` (`AsyncClient`) y `anthropic` (`AsyncAnthropic`, Messages API), según `IA_LLM_PROVEEDOR` | 0.6 · 2 |
-| MCP (501): servidor `MCPServer` en `ia-api` y cliente `Client` en `ia-worker`, solo en `src/ia/mcp/` | `mcp` (SDK oficial de MCP para Python) y `httpx2` (su cliente HTTP, para mandar `Authorization` y `X-Request-Id`) | 2.3 · 2 |
+| MCP (501): servidor `MCPServer` en `ia-api` y cliente `Client` en `ia-worker`, solo en `src/ia/mcp/` | `mcp` (SDK oficial de MCP para Python) y `httpx2` (su cliente HTTP, para mandar `Authorization` y `X-Request-Id`; lo exige el SDK y solo se usa en el cliente MCP: el resto del servicio sigue con `httpx`) | 2.3 · 2 |
 | Pruebas | `pytest` + `pytest-asyncio`, `testcontainers[postgres]` (PostgreSQL y MongoDB reales) | 9 · 1 · 4 |
 | Lint, formato y tipos | `ruff`, `mypy --strict` | — |
 | Gráficos del notebook (opcional, grupo `notebook`) | `matplotlib`, `ipykernel` | — |

@@ -508,7 +508,7 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 
 | Funcionalidad | Qué agrega a la semilla |
 |---|---|
-| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). |
+| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). Las carga `infra/semilla/agentes.mjs` por la API de Obras (como lo haría Sincronización), no la semilla de Obras: el diario se registra solo por la API (decisión de la implementación de la 502). |
 | 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
 | 301 y 303 (capa 3) | `personas_detectadas`, `sin_casco` y `clave_archivo_cliente` de las fotos (las imágenes generadas no tienen personas). |
 | 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
