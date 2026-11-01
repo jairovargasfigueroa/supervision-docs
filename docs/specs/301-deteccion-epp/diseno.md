@@ -47,7 +47,8 @@ Foto tomada → compresión 1600 px / JPEG 80 (005)
   - `analizarFoto(uri): Promise<ResultadoEpp>` con `{ personas, sinCasco, sinChaleco, versionModelo, cajas[] }`.
   - Funciones puras probadas sin modelo: conversión RGBA → RGB, filtro de cajas, conteo con umbrales, escalado de cajas a la foto original.
 - Pantalla `obras/[id]/foto` (005): después de la compresión muestra «Analizando…», luego el resumen y el aviso con recuadros sobre la vista previa. «Enviar» siempre habilitado.
-- El resultado se guarda junto con el `fotoId` y el archivo hasta confirmar el registro (para reintentar sin volver a analizar).
+- El resultado se guarda junto con el `fotoId` y el archivo hasta confirmar el registro (para reintentar sin volver a analizar). Sin señal, la operación `FOTO_AVANCE` de la cola (102) lleva `deteccion` en `datos` y Sincronización la reenvía a Obras.
+- Pantalla `obras/[id]/control-seguridad` (decisión de Jairo, 01/11/2026): botón «Control de seguridad» en el detalle de la obra de la app, visible para `maestro`. Tomar o elegir una foto → compresión de la 005 → `analizarFoto` → mismo resumen, aviso y recuadros que la foto de avance, con el botón «Otro control». La foto y el resultado se descartan al salir (no se envían, no entran a la cola ni se guardan). Reutiliza el módulo `src/avance/epp/` y el componente de resumen y recuadros de la foto de avance.
 - `versionModelo` = `epp-<versión del clasificador>` (por ejemplo `epp-1.0.0`), leído de `epp.json`.
 
 ## Obras (`services/obras`)
@@ -79,11 +80,11 @@ extend type Foto { deteccion: DeteccionEpp }
 
 ## mf-obras
 
-- Pestaña «Fotos» del detalle de obra: etiqueta sobre cada miniatura según el criterio 9 (color de advertencia si hay alertas, neutro si no). Texto de ayuda al pasar el cursor: «Detectado en el celular con el modelo epp-1.0.0».
+- Pestaña «Fotos» del detalle de obra: etiqueta sobre cada miniatura según el criterio 12 (color de advertencia si hay alertas, neutro si no). Texto de ayuda al pasar el cursor: «Detectado en el celular con el modelo epp-1.0.0».
 
 ## Entrenamiento (`services/ia/entrenamiento/epp/`)
 
-- Entorno aparte del servicio (el servicio de la capa 4 no instala TensorFlow): `requirements-entrenamiento.txt` con `tensorflow` 2.21, `keras` 3, `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `pillow`. Python 3.12. Se puede ejecutar en Google Colab con GPU o en local.
+- Entorno aparte del servicio (el servicio de la capa 4 no instala TensorFlow): `requirements-entrenamiento.txt` con `tensorflow` 2.21, `keras` 3, `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `pillow`. Python 3.12. Se ejecuta en local (la guía pide confirmar con el ingeniero si se entrena en la nube; con un clasificador pequeño sobre recortes, el procesador alcanza).
 - Archivos:
   - `preparar_recortes.py`: lee las anotaciones del dataset, recorta personas y les asigna etiquetas.
   - `entrenar_clasificador_epp.ipynb`: entrenamiento, evaluación, elección de umbrales y exportación.
@@ -114,7 +115,7 @@ Sobre el conjunto de prueba (15 %), por atributo, tomando como clase positiva la
 | Precisión de «sin casco» y de «sin chaleco» | ≥ 0,75 |
 | Exactitud global por atributo | ≥ 0,85 |
 | Tamaño de los dos `.tflite` juntos | ≤ 10 MB |
-| Tiempo de análisis en el celular (criterio 13) | ≤ 2 s con hasta 5 personas |
+| Tiempo de análisis en el celular (criterio 16) | ≤ 2 s con hasta 5 personas |
 
 Se prioriza la sensibilidad: es peor no avisar de alguien sin casco que avisar de más. Si hay fotos propias de obra (20 a 50, tomadas con permiso), se reporta además el error absoluto medio del conteo por foto (objetivo ≤ 1), solo como referencia.
 
