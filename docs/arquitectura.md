@@ -13,7 +13,8 @@
 | Materiales | Microservicio | NestJS | MongoDB |
 | Finanzas | Microservicio | Laravel | PostgreSQL |
 | Sincronización | Microservicio (capa 1) | NestJS | DynamoDB |
-| IA | Microservicio (capa 4; luego 3 y 5) | Python 3.12 · FastAPI: procesos `ia-api` (REST, 8085) e `ia-worker` (cola `ia` y tareas programadas) y el comando `ia-carga-inicial`, de la misma imagen; ML clásico en la capa 4 (XGBoost e Isolation Forest, en CPU); el modelo de lenguaje se decide en la capa 5 | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, agentes) |
+| IA | Microservicio (capas 4 y 5) | Python 3.12 · FastAPI: procesos `ia-api` (REST y servidor MCP en `/mcp`, 8085) e `ia-worker` (cola `ia`, tareas programadas y **host de los agentes** con el cliente MCP) y el comando `ia-carga-inicial`, de la misma imagen; ML clásico en la capa 4 (XGBoost e Isolation Forest, en CPU); en la capa 5, **modelo de lenguaje por un puerto** (`ModeloLenguaje`) con dos adaptadores, Ollama local (`qwen3:8b`) o la API de Anthropic (`claude-sonnet-5-5`), elegido con `IA_LLM_PROVEEDOR` | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, ejecuciones de agentes, sugerencias, consultas de reportes y límite por minuto) |
+| Ollama | Modelo de lenguaje local (capa 5, opcional) | `ollama/ollama` con `qwen3:8b`; solo si `IA_LLM_PROVEEDOR=ollama` | — |
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización (capa 2) | n8n | — |
 | Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
@@ -34,11 +35,12 @@
 | Obras, Materiales, Finanzas | RabbitMQ | AMQP | Eventos y comandos de la saga |
 | RabbitMQ | IA (capa 4) | AMQP | Eventos para el modelo de lectura (`reportes_db`, 401) |
 | IA (capa 4) | Obras, Materiales, Finanzas | REST (solo `GET`) | Carga inicial del modelo de lectura, una vez, con el cliente `ia-reportes` (401) |
-| Gateway | IA (capa 4) | REST | Riesgo de retraso (402) y consumos atípicos (403), en lotes de hasta 100 obras para el tablero |
+| Gateway | IA (capas 4 y 5) | REST | Riesgo de retraso (402) y consumos atípicos (403), en lotes de hasta 100 obras para el tablero; reportes de las personas (503: con el directorio de clientes) y agentes (502) |
+| IA (capa 5) | Materiales | REST (`GET /materiales`, con el token del usuario) | Nombres y unidades de los materiales en los reportes (503) |
 | RabbitMQ | n8n (capa 2) | AMQP / webhook | Eventos «stock bajo» e «ingreso» |
 | n8n | Finanzas, correo | REST, SMTP | Crear orden de compra y cuenta por pagar; avisar al proveedor |
-| IA | Obras, Materiales, Finanzas | **MCP** (HTTP, solo lectura) | Herramientas para los agentes |
-| IA | Ollama | HTTP | Modelo de lenguaje local (capa 5; se decide en esa capa) |
+| IA (`ia-worker`, host de los agentes) | Obras, Materiales, Finanzas e IA (`ia-api`) | **MCP** (HTTP «streamable» sin estado en `POST /mcp`, solo lectura, token de `ia-agentes`, privados: solo los llama IA; versión común 2025-11-25) | Herramientas para los agentes: el dato al instante de cada dueño y, en IA, `consultar_reporte` (motor de la 503), riesgo de retraso y consumos atípicos (501) |
+| IA | Ollama **o** API de Anthropic | HTTP / HTTPS | Modelo de lenguaje de la capa 5 (uno u otro, según `IA_LLM_PROVEEDOR`) |
 
 ## Microfrontends del ERP
 
@@ -68,10 +70,12 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Obras | Spring Boot 4.1 · Java 21 | Ya creado |
 | Finanzas | Laravel 13 · PHP 8.3 o superior | Ya creado |
 | IA | Python 3.12 · FastAPI 0.162 · `uv` · XGBoost 3 · scikit-learn 1 | `xgboost` 3 y `numpy` 2.5 exigen Python 3.12; librerías en `docs/stack.md` (401) |
+| Capa 5: MCP | Especificación vigente 2026-07-28; versión común 2025-11-25. SDK oficiales: Java `io.modelcontextprotocol.sdk:mcp` 2.1.0 (por Spring AI 2.0.2), TypeScript `@modelcontextprotocol/server` 2.4.0 + `@modelcontextprotocol/express` 2.0.2, Python `mcp` 2.3.0; PHP: `laravel/mcp` 1.1.2 (oficial de Laravel; el SDK de la organización MCP, `mcp/sdk`, sigue en 0.9) | Verificado el 31/10/2026; detalle en la 501 |
+| Capa 5: modelo de lenguaje | `ollama` 0.6.3 (Python) con `qwen3:8b` · `anthropic` 2.3.0 (Python) con `claude-sonnet-5-5` | Verificado el 31/10/2026; detalle en la 503 |
 
 ## Los 4 niveles
 
-- **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales y Sincronización; hexagonal ligera por módulo en IA (`reportes`, `riesgo`, `atipicos`).
+- **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales y Sincronización; hexagonal ligera por módulo en IA (`reportes`, `riesgo`, `atipicos` y, en la capa 5, `lenguaje`, `constructor_reportes`, `mcp`, `agentes` y `seguridad`). En la capa 5, MCP: el servicio de IA es el **host** de los agentes y los cuatro servicios (Obras, Materiales, Finanzas e IA) son **servidores MCP** internos de solo lectura; las personas usan REST por el gateway.
 - **Frontend:** shell + microfrontends en el ERP; portal y app como aplicaciones separadas.
 - **Datos:** una base por servicio; sin JOIN entre servicios. Para los reportes que cruzan servicios (el ingeniero pidió «algún mecanismo», no un microservicio), **CQRS: modelo de lectura alimentado por eventos**, solo para lo que cruza servicios: cada microservicio sigue escribiendo y leyendo lo suyo, y las proyecciones de sus eventos de RabbitMQ arman `reportes_db` (tablas `rpt_*`) dentro del servicio de IA, que es quien lo usa (predicciones de la capa 4 y reportes por voz de la capa 5). Sin *event sourcing*. Lo que existía antes se trae una vez con una carga inicial por REST (401). Decisión de Jairo, 31/10/2026.
 - **Despliegue:** cada proyecto produce su propia imagen de contenedor y se despliega por separado.
@@ -88,7 +92,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Nube | Qué aloja | Por qué |
 |---|---|---|
 | AWS | Sincronización, DynamoDB, S3 | DynamoDB es de AWS |
-| Google Cloud | IA + Ollama (máquina virtual), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje necesita memoria |
+| Google Cloud | IA (+ Ollama en máquina virtual si se usa `IA_LLM_PROVEEDOR=ollama`; con `anthropic` no hace falta), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje local necesita memoria |
 | Azure | Gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n, apps web, PostgreSQL de Obras y Finanzas | Obras y Finanzas comparten la saga |
 
 En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo.

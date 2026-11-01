@@ -1,12 +1,14 @@
 # 302 · Dictado por voz en el navegador
 
-**Estado:** borrador · **Capa:** 3 (IA en el dispositivo) · **Punto:** 6 · **Proyectos:** frontend/mf-supervision
+**Estado:** aprobado (31/10/2026) · **Capa:** 5 (antes 3; se hace junto a la 503) · **Punto:** 6 (IA local en el navegador) · **Proyectos:** frontend/mf-supervision · **Depende de:** 009
+
+**Decisión de Jairo (31/10/2026):** la capa 3 se salta por ahora y el dictado pasa a la capa 5, junto a los reportes por voz (503), que lo usan. Modelo **Whisper base** (`onnx-community/whisper-base`, pesos `q8`) corriendo en el navegador, dentro de mf-supervision (confirmado: ya estaba diseñado así).
 
 ## Historia
 
 Como **gerente, residente o administración** quiero dictar texto con la voz en el ERP y que se transcriba en mi propio navegador, para escribir notas y consultas sin teclear y sin que mi audio salga de mi computadora.
 
-Esta spec construye el **componente de dictado reutilizable** de mf-supervision. La consulta de reportes por voz de la capa 5 lo usa tal cual.
+Esta spec construye el **componente de dictado reutilizable** de mf-supervision. La pantalla «Reportes» de la 503 lo usa tal cual; por eso se implementa antes que la 503.
 
 ## Criterios de aceptación
 
@@ -20,10 +22,10 @@ Esta spec construye el **componente de dictado reutilizable** de mf-supervision.
 8. SI el navegador no tiene lo necesario (micrófono, WebAssembly o Web Workers) o el modelo no se puede descargar, ENTONCES el botón de micrófono se desactiva con el motivo y el campo sigue funcionando para escribir.
 9. SI la grabación dura menos de 1 segundo o no se reconoce texto, ENTONCES se muestra «No se entendió el audio, intenta de nuevo» sin borrar lo que ya había en el campo.
 10. Cada nuevo dictado se agrega al final del texto existente (no lo reemplaza).
-11. Mientras no exista la capa 5, el componente se puede probar en la pantalla «Dictado» de Supervisión, con un campo de texto y el botón «Copiar texto» (decisión del equipo).
+11. El componente se puede probar solo en la pantalla «Dictado» de Supervisión, con un campo de texto y el botón «Copiar texto» (decisión del equipo). Al terminar la 503 esa pantalla se puede quitar del menú (el dictado queda dentro de «Reportes»).
 
 ## Fuera del alcance
 
 - Dictado en la app móvil (diario de obra) y en el portal.
-- Enviar el texto al servicio de IA o interpretarlo (capa 5).
+- Enviar el texto al servicio de IA o interpretarlo (lo hace la 503).
 - Comandos de voz, otros idiomas, transcripción en vivo palabra por palabra, identificar quién habla.

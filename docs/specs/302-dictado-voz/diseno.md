@@ -2,8 +2,8 @@
 
 ## Tecnología
 
-- Librería: `@huggingface/transformers` 4 (transformers.js; corre modelos ONNX en el navegador con WebAssembly o WebGPU).
-- Modelo (decisión del equipo): `onnx-community/whisper-base` (multilingüe), pesos cuantizados `q8` (`encoder_model_quantized.onnx` ≈ 23 MB + `decoder_model_merged_quantized.onnx` ≈ 54 MB; tamaños verificados en Hugging Face el 28/10/2026). Se elige *base* y no *tiny* porque *tiny* reconoce peor el español; *small* pesa demasiado para descargarlo en el navegador.
+- Librería: `@huggingface/transformers` 4 (transformers.js; corre modelos ONNX en el navegador con WebAssembly o WebGPU). Última estable en npm el 31/10/2026: 4.3.2.
+- Modelo (decisión del equipo): `onnx-community/whisper-base` (multilingüe), pesos cuantizados `q8` (`encoder_model_quantized.onnx` ≈ 23 MB + `decoder_model_merged_quantized.onnx` ≈ 54 MB; tamaños verificados en Hugging Face el 28/10/2026 y de nuevo el 31/10/2026: 23 201 314 y 53 693 315 bytes). Se elige *base* y no *tiny* porque *tiny* reconoce peor el español; *small* pesa demasiado para descargarlo en el navegador.
 - Alternativa configurable: `onnx-community/whisper-tiny` (`q8`, ≈ 41 MB) para equipos lentos.
 - Los modelos `.en` no sirven: solo transcriben inglés.
 
@@ -35,7 +35,7 @@ Componente: agrega el texto al campo → evento onTexto(texto)
   - `soporte.ts`: comprueba `navigator.mediaDevices`, `MediaRecorder`, `WebAssembly` y `Worker` (criterio 8).
 - El worker se compila como una entrada aparte en `build.mjs` (esbuild) y se crea con `new Worker(new URL("./whisper.worker.js", import.meta.url), { type: "module" })`. Como el microfrontend se carga desde otro origen (4203) dentro del shell (4200), la URL del worker se resuelve contra la URL del propio microfrontend y el servidor de desarrollo ya tiene CORS abierto (`build.mjs --dev`).
 - Estilos dentro del Shadow DOM, como el resto del microfrontend.
-- Pantalla `/supervision/dictado` (criterio 11): `CampoDictado` + botón «Copiar texto» (`navigator.clipboard.writeText`). Enlace en el menú interno de Supervisión. Roles: `admin`, `gerente`, `residente`. En la capa 5 esta pantalla se puede quitar.
+- Pantalla `/supervision/dictado` (criterio 11): `CampoDictado` + botón «Copiar texto» (`navigator.clipboard.writeText`). Enlace en el menú interno de Supervisión. Roles: `admin`, `gerente`, `residente`. Al terminar la 503 esta pantalla se puede quitar del menú.
 - El micrófono requiere contexto seguro: `http://localhost` en desarrollo y HTTPS en despliegue (capa 6).
 
 ## Gateway y servicios
@@ -62,13 +62,13 @@ Sin cambios: el texto no sale del navegador en esta spec.
 ### `frontend/mf-supervision/docs/contratos.md`
 
 - Consume: modelo Whisper `onnx-community/whisper-base` desde Hugging Face (o la ruta de `DICTADO_MODELO_URL`), descargado por el navegador.
-- Expone (dentro del microfrontend): componente `CampoDictado` en `src/dictado/`, para la consulta por voz de la capa 5.
+- Expone (dentro del microfrontend): componente `CampoDictado` en `src/dictado/`, para la pantalla «Reportes» de la 503.
 
 ### `frontend/mf-supervision/docs/app.md`
 
 | Pantalla | Quién | Caso de uso | Etapa |
 |---|---|---|---|
-| Dictado (prueba del componente de voz a texto) | Gerente, residente, administración | Voz a texto en el navegador | Capa 3 |
+| Dictado (prueba del componente de voz a texto; se puede quitar al terminar la 503) | Gerente, residente, administración | Voz a texto en el navegador | Capa 5 (302) |
 
 ### GraphQL, REST, eventos y datos
 

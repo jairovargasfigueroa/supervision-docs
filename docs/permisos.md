@@ -35,7 +35,7 @@ Un usuario sin un rol permitido en esa aplicación ve «No tienes acceso a esta 
 |---|---|---|---|
 | `view-users` y `view-realm` (roles del cliente `realm-management`, solo lectura) | *Service account* del cliente confidencial `gateway` | Listar usuarios por rol para los formularios de asignación (`view-realm` lo exige Keycloak para `GET /roles/{rol}/users`) y resolver nombres | convenciones, 002, 006 |
 | `automatizacion` (rol de realm) | *Service account* del cliente confidencial `n8n` | Solo las rutas de Finanzas que llama n8n (órdenes de compra y cuentas por pagar) | 201 |
-| `agente_ia` (rol de realm) | *Service account* del cliente confidencial `ia-agentes` | Solo `POST /mcp` (herramientas de solo lectura); ve todas las obras como `gerente`; ningún endpoint REST lo acepta | 501 |
+| `agente_ia` (rol de realm) | *Service account* del cliente confidencial `ia-agentes` (la usa `ia-worker`, host de los agentes) | Solo `POST /mcp` de Obras, Materiales, Finanzas e IA (herramientas de solo lectura); ve todas las obras como `gerente`; ningún endpoint REST lo acepta | 501 |
 | `gerente` (rol de realm de personas, asignado también a una *service account*) | *Service account* del cliente confidencial `ia-reportes` (solo *client credentials*) | Carga inicial del modelo de lectura: solo `GET` a Obras (`/obras`, `/obras/{id}`, `/obras/{obraId}/planillas`, `/planillas/{id}`), Materiales (`/materiales`, `/obras/{obraId}/movimientos`) y Finanzas (`/cobros`); ve todas las obras como cualquier `gerente`. Se eligió un rol existente para no cambiar los tres servicios; el secreto solo lo usa el comando de carga | 401 |
 
 Sincronización (capa 1) y Notificaciones (010) no tienen cliente propio: Sincronización reenvía el token del usuario a Obras y Materiales; Notificaciones conoce los roles por los tokens que recibe (`usuario_conocido`).
@@ -141,8 +141,8 @@ Ningún rol del ERP registra ingresos ni salidas: eso lo hace solo el almacenero
 | «Ejecutar ahora» un agente | ✔ | | ✔ | | | | 502 |
 | Historial de ejecuciones y detalle de pasos | ✔ | | ✔ | | | | 502 |
 | «Aprobar» / «Rechazar» sugerencias | ✔ | propias (sin Control de cobros) | ✔ | | | | 502 |
-| «Reportes por voz»: dictar, «Consultar», ver historial de sus consultas | ✔ | | ✔ | | | | 503 |
-| «Exportar a Excel» | ✔ | | ✔ | | | | 503 |
+| «Reportes»: dictar o escribir, «Consultar», reportes comunes (atajos), ver historial de sus consultas | ✔ | | ✔ | | | | 503 |
+| «Exportar a Excel» y «Exportar a CSV» | ✔ | | ✔ | | | | 503 |
 
 ### Portal del cliente
 
@@ -266,7 +266,7 @@ Todas las rutas, salvo `/salud`, piden además el encabezado `X-Dispositivo-Id`.
 
 ### IA (puerto 8085, capas 4 y 5)
 
-Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `agente_ia` reciben `403 SIN_PERMISO` en todo el servicio (401). Visibilidad del residente: `rpt_obra_resumen.residente_id = sub` (401); la cola `ia` existe desde la fase 1 y la carga inicial (401) trae lo que ya existía, así que la base de reportes conoce todas las obras. El servicio de IA **llama** a Obras, Materiales y Finanzas solo en la carga inicial (cliente `ia-reportes`).
+Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `agente_ia` reciben `403 SIN_PERMISO` en todas las rutas REST (401). Excepción: `POST /mcp` (501) acepta **solo** `agente_ia`. Visibilidad del residente: `rpt_obra_resumen.residente_id = sub` (401); la cola `ia` existe desde la fase 1 y la carga inicial (401) trae lo que ya existía, así que la base de reportes conoce todas las obras. El servicio de IA **llama** a Obras, Materiales y Finanzas solo en la carga inicial (cliente `ia-reportes`).
 
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
@@ -286,9 +286,10 @@ Atiende solo al ERP: `maestro`, `almacenero`, `cliente`, `automatizacion` y `age
 | `GET /sugerencias?estado=&agente=&obraId=&limite=` | 502 | `admin`, `gerente`, `residente` | Residente: sus obras, sin `CONTROL_COBROS` |
 | `POST /sugerencias/{id}/aprobar` | 502 | `admin`, `gerente`, `residente` | Residente: sus obras, sin `CONTROL_COBROS` (si no, `404 SUGERENCIA_NO_ENCONTRADA`) |
 | `POST /sugerencias/{id}/rechazar` | 502 | `admin`, `gerente`, `residente` | Ídem |
-| `POST /reportes-voz/consultas` | 503 | `admin`, `gerente` | Residente → `403` |
-| `GET /reportes-voz/consultas?limite=` | 503 | `admin`, `gerente` | Solo las consultas del usuario del token |
-| `GET /reportes-voz/catalogo` | 503 | `admin`, `gerente` | — |
+| `POST /consultas-reporte` | 503 | `admin`, `gerente` | Residente → `403`; 10 por minuto por usuario |
+| `GET /consultas-reporte?limite=` | 503 | `admin`, `gerente` | Solo las consultas del usuario del token |
+| `GET /catalogo-reportes` | 503 | `admin`, `gerente` | — |
+| `POST /mcp` (MCP) | 501 | `agente_ia` | Todas las obras; personas → `403` |
 
 ### Notificaciones (puerto 8086, 010)
 
@@ -308,7 +309,7 @@ Quién llama: gateway (ERP), portal y app.
 
 ### Herramientas MCP (capa 5, solo lectura)
 
-Ruta `POST /mcp` de cada servicio. Rol único: `agente_ia` (*service account* de `ia-agentes`). Un token de `gerente` o `admin` recibe `403`; el token de `agente_ia` en un endpoint REST también recibe `403` (504, M2 y M6).
+Ruta `POST /mcp` de Obras, Materiales, Finanzas e IA. Rol único: `agente_ia` (*service account* de `ia-agentes`; el host es `ia-worker`). Un token de `gerente` o `admin` recibe `403`; el token de `agente_ia` en un endpoint REST (también los de IA) recibe `403` (504, M2 y M6).
 
 | Herramienta | Servicio | Origen | La usa el agente |
 |---|---|---|---|
@@ -318,8 +319,11 @@ Ruta `POST /mcp` de cada servicio. Rol único: `agente_ia` (*service account* de
 | `stock_obra` | Materiales | 501 | Control de materiales |
 | `consumos_partida` | Materiales | 501 | Control de materiales |
 | `cobros_por_vencer` | Finanzas | 501 | Control de cobros |
+| `riesgo_retraso` | IA | 501 | Seguimiento de obras |
+| `consumos_atipicos` | IA | 501 | Control de materiales |
+| `consultar_reporte` | IA | 501, 503 | Los tres, cada uno con sus conjuntos: Seguimiento de obras `OBRAS` y `PLANILLAS`; Control de materiales `CONSUMO_MATERIAL` y `MOVIMIENTOS`; Control de cobros `COBROS` y `PLANILLAS` |
 
-Herramientas locales del servicio de IA (no MCP, solo lectura): `riesgo_retraso` (Seguimiento de obras) y `consumos_atipicos` (Control de materiales) (502). Cada agente solo puede usar las suyas; otra → `HERRAMIENTA_NO_PERMITIDA`.
+Cada agente solo ve y usa las suyas (mínimo privilegio, lo aplica el host, 502); otra herramienta → `HERRAMIENTA_NO_PERMITIDA`; otro conjunto en `consultar_reporte` → `ARGUMENTO_INVALIDO`.
 
 ### Gateway · GraphQL del ERP (puerto 4000)
 
@@ -356,7 +360,7 @@ El gateway valida el token y el rol con `RolesGuard` (001); cada servicio vuelve
 | `agentes` | 502 | `admin`, `gerente`, `residente` | Residente: sin `CONTROL_COBROS` |
 | `ejecucionesAgente(...)`, `ejecucionAgente(id)` | 502 | `admin`, `gerente` | — |
 | `hallazgos(agente, obraId)`, `sugerencias(...)` | 502 | `admin`, `gerente`, `residente` | Residente: sus obras, sin `CONTROL_COBROS` |
-| `reportesVozDisponibles`, `consultasVoz(limite)` | 503 | `admin`, `gerente` | Solo las consultas del usuario |
+| `catalogoReportes`, `consultasReporte(limite)` | 503 | `admin`, `gerente` | Solo las consultas del usuario |
 | `notificaciones(...)`, `notificacionesNoLeidas` | 010 | `admin`, `gerente`, `residente` | Solo sus avisos |
 
 **Mutaciones**
@@ -374,7 +378,7 @@ El gateway valida el token y el rol con `RolesGuard` (001); cada servicio vuelve
 | `revisarConsumoAtipico(id, estado, comentario)` | 403 | `admin`, `residente` | Residente asignado a la obra |
 | `ejecutarAgente(agente)` | 502 | `admin`, `gerente` | — |
 | `aprobarSugerencia(id, comentario)`, `rechazarSugerencia(id, motivo)` | 502 | `admin`, `gerente`, `residente` | Residente: sus obras, sin `CONTROL_COBROS` |
-| `consultarReporteVoz(texto)` | 503 | `admin`, `gerente` | — |
+| `consultarReporte(texto, atajo)` | 503 | `admin`, `gerente` | El gateway agrega el directorio de clientes |
 | `marcarNotificacionLeida(id)`, `marcarNotificacionesLeidas`, `registrarDispositivo(entrada)`, `darDeBajaDispositivo(token)` | 010 | `admin`, `gerente`, `residente` | Solo sus avisos y dispositivos (`aplicacion = "erp"`) |
 
 ### Paneles técnicos (602)
@@ -397,4 +401,6 @@ Todas las que se encontraron al armar esta matriz quedaron resueltas en las spec
 10. **Faltaban los roles técnicos en las convenciones.** `automatizacion` (201) y `agente_ia` (501) figuran como «se crean con su capa».
 11. **`admin` podía registrar movimientos sin tener dónde.** `POST /movimientos` es solo para el `almacenero` asignado (004, contratos de Materiales); por coherencia, también los dos endpoints de la nota de remisión que tenía la 102 (quitados al simplificarla el 30/10/2026).
 
-Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010, la 201 y la 501 se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye.
+12. **Capa 5 (31/10/2026): las «herramientas locales» de IA no pasaban por MCP ni por su validación.** Ahora `riesgo_retraso`, `consumos_atipicos` y `consultar_reporte` son herramientas del servidor MCP de IA (`POST /mcp`, solo `agente_ia`), y el host limita por agente las herramientas y los conjuntos de `consultar_reporte` (501, 502). Las rutas de reportes pasaron a `/consultas-reporte` y `/catalogo-reportes` (503).
+
+Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010, la 201 y la capa 5 (501, 502, 503 y 504) se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye.

@@ -23,7 +23,7 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 | `infra` | Docker Compose · realm de Keycloak | Entorno de desarrollo (RabbitMQ, Keycloak, bases) y pruebas de punta a punta | Fase 1 |
 | `services/notificaciones` | NestJS · MongoDB · Firebase | Notificaciones *push* y bandeja | Funcionalidad 010 (todavía no existe) |
 | `services/sincronizacion` | NestJS 12 · TypeScript · DynamoDB | Recibe lo del celular sin duplicar y arma sus datos para trabajar sin señal | Capa 1 |
-| `services/ia` | Python 3.12 · FastAPI · PostgreSQL (`reportes_db`) · MongoDB (`ia_db`) | Base de reportes (CQRS), riesgo de retraso y consumos atípicos; luego agentes y reportes por voz | Capa 4 (luego 3 y 5) |
+| `services/ia` | Python 3.12 · FastAPI · PostgreSQL (`reportes_db`) · MongoDB (`ia_db`) | Base de reportes (CQRS), riesgo de retraso y consumos atípicos; en la capa 5, host de los agentes, servidor MCP y reportes por voz | Capa 4 (luego 5) |
 
 Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `ms-sincronizacion`, `ms-ia`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal`, `app-obra` e `infra` (y `ms-notificaciones` cuando se cree), más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
 
@@ -76,7 +76,7 @@ Si algo de lo pedido no está especificado o es ambiguo, pregunta antes de progr
 
 ## Cómo trabajar en cada chat
 
-Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; las de las capas (101–602) están en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
+Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; de las capas, las de la capa 1, la 4 y la 5 (302 y 501–504) están **aprobadas** y las demás (201, 301, 303, 601 y 602) en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
 
 1. Lee `docs/plan.md` y toma la **siguiente tarea `pendiente`** (fase 1) o la **siguiente funcionalidad `pendiente`** (fases 2 en adelante).
 2. Para una funcionalidad, lee su `docs/specs/NNN-nombre/requisitos.md` y `diseno.md`, los contratos y datos de cada proyecto afectado, y sus `tareas.md` (`<proyecto>/docs/specs/NNN-nombre/tareas.md`; las de proyectos que todavía no existen están en `docs/specs/NNN-nombre/tareas-<proyecto>.md`).
@@ -100,7 +100,7 @@ En las capas, cada `diseno.md` termina con «Cambios a contratos y datos»: apl�
 - Todo registro creado en el celular lleva un identificador único generado en el celular; el servidor no lo procesa dos veces.
 - Los eventos se publican con el patrón outbox y se procesan una sola vez (tabla de mensajes procesados).
 - La autenticación es con Keycloak (OIDC). Los roles viajan en el token; las reglas finas (qué obras ve cada usuario) las valida cada servicio.
-- La IA nunca escribe SQL ni ejecuta acciones: elige reportes de una lista y propone acciones que una persona aprueba.
+- La IA nunca escribe SQL ni ejecuta acciones: arma una receta de reporte que el código valida contra un catálogo (y convierte en SQL parametrizado) y propone acciones de una lista que una persona aprueba.
 
 ## Commits
 

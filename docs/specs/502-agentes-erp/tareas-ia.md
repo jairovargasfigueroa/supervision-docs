@@ -1,17 +1,17 @@
 # 502 · Agentes en el ERP · tareas de `services/ia`
 
-Requisitos y diseño: `docs/specs/502-agentes-erp/` de la carpeta que agrupa los proyectos. Requiere 401 (procesos `ia-api` e `ia-worker`, conexión a `ia_db`, visibilidad), 402 y 403 (repositorios de predicciones y consumos atípicos) y 501 (cliente MCP).
+Requisitos y diseño: `docs/specs/502-agentes-erp/` de la carpeta que agrupa los proyectos. Requiere 401 (procesos `ia-api` e `ia-worker`, conexión a `ia_db`, visibilidad), 402 y 403 (predicciones y consumos atípicos), 503 (puerto `ModeloLenguaje` con sus adaptadores y motor de reportes) y 501 (servidor MCP de IA y cliente MCP).
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] Agregar `ollama` 0.6; variables `IA_OLLAMA_URL`, `IA_OLLAMA_MODELO`, `IA_AGENTES_CRON`, `IA_AGENTES_PROGRAMADOS_ACTIVOS` en `config.py` (Mongo y APScheduler ya vienen de la 401)
-- [ ] Repositorios de `ejecucion_agente` y `sugerencia` en `ia_db` con sus índices (incluido el único parcial de sugerencias pendientes)
-- [ ] `src/ia/agentes/dominio/definiciones.py`: los tres agentes (misión, herramientas MCP y locales, pasos iniciales, tipos de hallazgo, acciones con su texto)
-- [ ] Herramientas locales `riesgo_retraso` (repositorio de `prediccion`, 402) y `consumos_atipicos` (repositorio de `consumo_atipico`, 403), de solo lectura
+- [ ] Aplicar «Cambios a contratos y datos» del diseño en los documentos de este proyecto (`docs/contratos.md`, `docs/datos.md`, `docs/estructura.md`)
+- [ ] Variables `IA_AGENTES_CRON` e `IA_AGENTES_PROGRAMADOS_ACTIVOS` en `config.py` y `.env.example` (el modelo de lenguaje y el cliente MCP ya vienen de la 503 y la 501)
+- [ ] Repositorios de `ejecucion_agente` (con `proveedor_llm`, `modelo` y pasos con `servidor`) y `sugerencia` en `ia_db` con sus índices (incluido el único parcial de sugerencias pendientes)
+- [ ] `src/ia/agentes/dominio/definiciones.py`: los tres agentes (misión, herramientas MCP por servidor, conjuntos permitidos en `consultar_reporte`, pasos iniciales, tipos de hallazgo, acciones con su texto)
 - [ ] `src/ia/agentes/dominio/reporte.py`: modelos Pydantic del reporte, generación del JSON Schema por agente y validación adicional (obras vistas, evidencias, índices)
-- [ ] Puerto `ModeloLenguaje` con adaptador Ollama y un adaptador simulado para pruebas
-- [ ] Ejecutor: pasos iniciales, bucle con herramientas (lista permitida, esquema de argumentos, delimitación de resultados), límites de 8 llamadas y 3 minutos, reporte con un reintento
+- [ ] Ejecutor: descubrimiento en los cuatro servidores, pasos iniciales, bucle con `ModeloLenguaje.conversar` (lista permitida, esquema de argumentos, conjunto por agente, delimitación de resultados, `isError` como paso), límites de 8 llamadas y 3 minutos, reporte con `generar_json` y un reintento
 - [ ] En `ia-worker`: toma de ejecuciones desde `ejecucion_agente` (`tomada_en`, una a la vez), programación diaria sin repetir y recuperación de ejecuciones `EN_CURSO` al iniciar
 - [ ] Filtros de visibilidad del residente con la utilidad de la 401 (`rpt_obra_resumen.residente_id`) y exclusión de `CONTROL_COBROS`
 - [ ] Endpoints en `ia-api`: `GET /agentes`, `POST /agentes/{agente}/ejecuciones`, `GET /ejecuciones`, `GET /ejecuciones/{id}`, `GET /hallazgos`, `GET /sugerencias`, `POST /sugerencias/{id}/aprobar` y `/rechazar`, con roles y errores
-- [ ] Pruebas del diseño con el LLM simulado; prueba manual con el modelo real documentada en el README
+- [ ] Pruebas del diseño con `ModeloSimulado` y servidores MCP de prueba (incluido el mismo guion con los dos adaptadores simulados a nivel HTTP)
+- [ ] Prueba manual con el modelo real, con cada proveedor (Ollama y Anthropic), documentada en el README
