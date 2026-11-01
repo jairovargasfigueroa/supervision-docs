@@ -2,7 +2,7 @@
 
 Orden de trabajo y estado. Estados: `pendiente`, `en curso`, `hecho`. Al terminar una tarea, cambia su estado aquí.
 
-**Siguiente:** la **capa 5** (antes se reevalúa y se aprueba; suma el dictado por voz de la 302). La capa 4 (401, 402 y 403) se terminó el 31/10/2026 y la capa 3 se salta por ahora (sección «Fases 3 a 8»). La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
+**Siguiente:** la **capa 5**, aprobada el 31/10/2026 (incluye el dictado por voz de la 302): se empieza por la **302** y sigue en el orden de la tabla (302 → 503 → 501 → 502 → 504). La capa 4 (401, 402 y 403) se terminó el 31/10/2026 y la capa 3 se salta por ahora (sección «Fases 3 a 8»). La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
 
 Ramas, *pull requests* y definición de terminado: `docs/flujo-trabajo.md`. Solo se empieza algo cuyas dependencias están `hecho`.
 
@@ -75,12 +75,12 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 
 ## Fases 3 a 8. Capas
 
-Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026 y la capa 4 el 31/10/2026; las dos están hechas). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
+Las specs de las capas son una **base**: al llegar a cada capa se reevalúan como arquitectura desde lo que pidió el ingeniero, se ajustan y se aprueban (la capa 1 se aprobó el 30/10/2026 y la capa 4 el 31/10/2026, y las dos están hechas; la capa 5 se aprobó el 31/10/2026). Las demás están escritas pero en **borrador**: Jairo las revisa (y puede cambiar la forma de aplicar cada punto) antes de empezar cada capa. **No se implementa una funcionalidad de capa mientras su `requisitos.md` diga «borrador»**; al aprobarla se cambia a «aprobado».
 
-**Orden de las capas (decisión de Jairo, 31/10/2026): 4 → 3 → 5 → 2 → 6.** Los números de las funcionalidades no cambian (la 401 sigue siendo la 401); solo cambia el orden en que se hacen. La tabla está en ese orden. La capa 4 está **hecha** (31/10/2026) y la capa 3 se salta por ahora (abajo), así que **la siguiente es la capa 5.** Dentro de cada capa, se hacen en el orden de la tabla.
+**Orden de las capas (decisión de Jairo, 31/10/2026): 4 → 3 → 5 → 2 → 6.** Los números de las funcionalidades no cambian (la 401 sigue siendo la 401); solo cambia el orden en que se hacen. La tabla está en ese orden. La capa 4 está **hecha** (31/10/2026) y la capa 3 se salta por ahora (abajo), así que **la siguiente es la capa 5.** Dentro de cada capa, se hacen en el orden de la tabla (en la capa 5 el orden sigue las dependencias, no los números).
 
 - Capa 3: **se salta por ahora** (decisión de Jairo, 31/10/2026). El dictado por voz (302) pasa a hacerse en la capa 5, junto a los reportes por voz (503). Queda pendiente el deep learning con TensorFlow sobre fotos en el celular (301), con el uso **por decidir**, antes del 10/11/2026. Los rostros difuminados (303) quedan **opcionales**. El repositorio `services/ia` (`supervision-ms-ia`) ya existe: lo llenó la 401.
-- Capa 5: el modelo de lenguaje se decide al reevaluar esa capa; la capa 4 no usa ninguno.
+- Capa 5 (aprobada el 31/10/2026, decisiones de Jairo): la 302 pasa a esta capa (Whisper base en el navegador, mf-supervision). Reportes con **constructor** (catálogo de conjuntos + receta del LLM validada por el código + SQL parametrizado) y atajos; tabla, resumen y exportación a Excel y CSV (503). **Host** de los agentes = servicio de IA; servidores MCP internos (HTTP «streamable» en `/mcp`) en Obras, Materiales, Finanzas **y en IA** (`consultar_reporte`, `riesgo_retraso`, `consumos_atipicos`) (501). Los 3 agentes como estaban, con herramientas MCP (502). **Modelo de lenguaje por un puerto** con dos adaptadores: Ollama local (`qwen3:8b`) o la API de Anthropic (`claude-sonnet-5-5`), por `IA_LLM_PROVEEDOR`; las pruebas usan un modelo simulado. Todo lo de la capa 5 en MongoDB `ia_db` (sin DynamoDB). Las pruebas maliciosas (504) corren con las pruebas normales de IA (sin CI todavía). Si se usa `anthropic`, Jairo pone la clave en `services/ia/.env` (o `infra/.env`); nunca en el repositorio.
 
 Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambios a contratos y datos»: **la primera tarea al implementar la funcionalidad es aplicar esos cambios** a `docs/contratos/`, `docs/convenciones.md` o `docs/reglas-negocio.md` (si los menciona) y a los `docs/contratos.md` y `docs/datos.md` de cada proyecto afectado (lo que la spec marca como «ya aplicado» ya está en los documentos de esta carpeta).
 
@@ -94,12 +94,12 @@ Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambio
 | 402 | Riesgo de retraso (ML supervisado, XGBoost, datos sintéticos) | 4 | 401 | hecho (ia, gateway, mf-obras, mf-supervision; aprobada el 31/10/2026) |
 | 403 | Consumos atípicos (ML no supervisado, Isolation Forest, datos sintéticos) | 4 | 401 (402 opcional: recálculo del riesgo) | hecho (ia, gateway, mf-obras, mf-supervision; aprobada el 31/10/2026) |
 | 301 | Detección de casco y chaleco en la app (TensorFlow → TF Lite; el uso del deep learning está por decidir) | 3 | 005, 401 (repositorio `services/ia`) | pendiente (uso por decidir antes del 10/11/2026) |
-| 302 | Dictado por voz en el navegador (Whisper) | 3 | 009 | pendiente (se hace en la capa 5, junto a la 503) |
 | 303 | Rostros difuminados en las fotos del cliente (**opcional**) | 3 | 007, 008 | pendiente (opcional) |
-| 501 | Servidores MCP de solo lectura en cada microservicio | 5 | 401 | pendiente |
-| 502 | Agentes del ERP (Seguimiento de obras, Control de materiales, Control de cobros) | 5 | 501, 402, 403 | pendiente |
-| 503 | Reportes por voz con exportación a Excel | 5 | 302, 401 | pendiente |
-| 504 | Seguridad de la IA (inyección SQL y de instrucciones) | 5 | 502, 503 | pendiente |
+| 302 | Dictado por voz en el navegador (Whisper base, `q8`, en mf-supervision) | 5 (antes 3) | 009 | pendiente (aprobada el 31/10/2026) |
+| 503 | Reportes generativos por voz: constructor de reportes (catálogo + receta validada), atajos, tabla, resumen y exportación a Excel y CSV; crea el puerto `ModeloLenguaje` (Ollama o Anthropic) | 5 | 302, 401, 402, 403 | pendiente (aprobada el 31/10/2026) |
+| 501 | Servidores MCP de solo lectura en Obras, Materiales, Finanzas e IA; cliente MCP en el host (IA) | 5 | 401, 402, 403, 503 | pendiente (aprobada el 31/10/2026) |
+| 502 | Agentes del ERP (Seguimiento de obras, Control de materiales, Control de cobros) | 5 | 501, 402, 403, 503 | pendiente (aprobada el 31/10/2026) |
+| 504 | Seguridad de la IA (inyección SQL y de instrucciones; pruebas con las de IA, sin CI) | 5 | 501, 502, 503 | pendiente (aprobada el 31/10/2026) |
 | 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
 | 601 | Contenedores y CI (Dockerfile y GitHub Actions por proyecto) | 6 | — (se puede adelantar) | pendiente |
 | 602 | Despliegue en tres nubes (AWS, Google Cloud, Azure) | 6 | 601 | pendiente |

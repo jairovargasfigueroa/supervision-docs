@@ -48,9 +48,9 @@ Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiale
 |---|---|
 | 1. Terreno sin señal | App offline, mala conexión, sincronización sin duplicados (DynamoDB); ERP como PWA para el borrador de planilla |
 | 2. Automatización | Stock bajo → orden de compra → correo al proveedor → cuenta por pagar (n8n) |
-| 3. IA en el dispositivo | Detección de casco y chaleco (TensorFlow Lite); voz a texto y rostros difuminados en el navegador |
+| 3. IA en el dispositivo | Detección de casco y chaleco (TensorFlow Lite); rostros difuminados en el navegador (opcional) |
 | 4. Datos y predicciones | Servicio de IA: riesgo de retraso (supervisado), consumos raros (no supervisado), base de reportes |
-| 5. Inteligencia en el ERP | Reportes por voz con exportación a Excel; 3 agentes; servidores MCP |
+| 5. Inteligencia en el ERP | Voz a texto en el navegador (Whisper); reportes generativos por voz con constructor de reportes, exportación a Excel y CSV; 3 agentes; servidores MCP en Obras, Materiales, Finanzas e IA |
 | 6. Despliegue | Contenedores repartidos en AWS, Google Cloud y Azure |
 
 ## Fuera del alcance

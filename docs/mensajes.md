@@ -40,7 +40,7 @@ Todo error lleva `codigo`; sin uno propio, el servicio usa el genérico de su es
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
-| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporteVoz`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). En la bandeja de notificaciones: «No disponible por el momento · Reintentar» (la campana queda sin número) | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 010 (criterio 16), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporte`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). En la bandeja de notificaciones: «No disponible por el momento · Reintentar» (la campana queda sin número) | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 010 (criterio 16), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
 
 Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los mismos códigos: `NO_AUTENTICADO`, `SIN_PERMISO`, `DATOS_INVALIDOS`.
 
@@ -157,14 +157,14 @@ Si `POST /fotos/url-subida` devuelve un `400`, `403`, `404` o `422` de Obras (po
 | `SUGERENCIA_NO_ENCONTRADA` | 404 | La sugerencia no existe o el usuario no puede verla (residente: obra ajena o Control de cobros) | «No encontramos esa sugerencia o no tienes acceso a ella.» | Recargar la lista | ERP (las tres áreas) | 502 · catálogo |
 | `SUGERENCIA_YA_DECIDIDA` | 409 | Otra persona ya aprobó o rechazó la sugerencia | «Esta sugerencia ya fue aprobada o rechazada. Recarga la lista.» | Recargar | ERP (las tres áreas) | 502 (criterio 14) · catálogo |
 | `MOTIVO_INVALIDO` | 422 | Rechazo de sugerencia con motivo fuera de 10 a 500 caracteres | Ver «Obras» | — | ERP | 502 |
-| `TEXTO_INVALIDO` | 400 | Pedido de reporte por voz con menos de 3 o más de 500 caracteres | «El pedido debe tener entre 3 y 500 caracteres.» | Ajustar el texto | ERP · Supervisión | 503 (criterio 4) · catálogo |
-| `INTENCION_NO_RECONOCIDA` | 422 | El pedido no corresponde a ningún reporte de la lista | «No encontré un reporte para tu pedido» (con la lista de reportes y ejemplos) | Reformular con un ejemplo | ERP · Supervisión | 503 (criterio 6) · texto de la spec |
-| `FILTROS_INVALIDOS` | 422 | La intención trae filtros que el reporte no acepta o valores fuera de rango | «No encontré un reporte para tu pedido» (con la lista de reportes y ejemplos) | Reformular con un ejemplo | ERP · Supervisión | 503 (criterio 7) · texto de la spec |
-| `DEMASIADAS_CONSULTAS` | 429 | Más de 10 consultas por minuto del mismo usuario | «Demasiadas consultas; espera un momento» | Esperar un minuto | ERP · Supervisión | 503 (criterio 15) · texto de la spec |
-| `LLM_NO_DISPONIBLE` | 503 | El modelo de lenguaje no responde al interpretar el pedido | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `REPORTES_NO_DISPONIBLES` | 503 | No responde la base de reportes (o la consulta pasa de 5 s) | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `SERVICIO_NO_DISPONIBLE` | 503 | Materiales no responde y el pedido filtra por material | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar o pedir sin material | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `TIEMPO_AGOTADO` | 504 | El reporte por voz tardó más de 50 s dentro de IA | «El reporte tardó demasiado; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (criterio 11) · texto de la spec |
+| `TEXTO_INVALIDO` | 400 | Pedido de reporte con menos de 3 o más de 500 caracteres | «El pedido debe tener entre 3 y 500 caracteres.» | Ajustar el texto | ERP · Supervisión | 503 (criterio 3) · catálogo |
+| `INTENCION_NO_RECONOCIDA` | 422 | El pedido no corresponde a ningún conjunto del catálogo, o el modelo no devolvió una receta con el formato pedido | «No encontré un reporte para tu pedido» (con los conjuntos, ejemplos y los reportes comunes) | Reformular con un ejemplo o usar un reporte común | ERP · Supervisión | 503 (criterio 6) · texto de la spec |
+| `RECETA_INVALIDA` | 422 | La receta trae columnas, filtros, agrupaciones, métricas u orden que el conjunto no permite, o valores fuera de rango (`errores[]` con la ruta y la regla; reemplaza a `FILTROS_INVALIDOS` del borrador) | «No encontré un reporte para tu pedido» (con los conjuntos, ejemplos y los reportes comunes) | Reformular con un ejemplo o usar un reporte común | ERP · Supervisión | 503 (criterio 7) · texto de la spec |
+| `DEMASIADAS_CONSULTAS` | 429 | Más de 10 consultas por minuto del mismo usuario (también con reportes comunes) | «Demasiadas consultas; espera un momento» | Esperar un minuto | ERP · Supervisión | 503 (criterio 17) · texto de la spec |
+| `LLM_NO_DISPONIBLE` | 503 | El modelo de lenguaje (Ollama o Anthropic) no responde al interpretar el pedido | «El servicio de reportes no está disponible; intenta de nuevo» (con la sugerencia de usar un reporte común) | Reintentar o usar un reporte común | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `REPORTES_NO_DISPONIBLES` | 503 | No responde la base de reportes o `ia_db` (o la consulta pasa de 5 s) | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 | Materiales no responde y el pedido filtra por material, o falta el directorio de clientes y el pedido filtra por cliente | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar o pedir sin ese filtro | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `TIEMPO_AGOTADO` | 504 | La consulta de reporte tardó más de 50 s dentro de IA | «El reporte tardó demasiado; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (criterio 11) · texto de la spec |
 
 ### Errores de la ejecución de un agente
 
@@ -177,7 +177,7 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 | `EJECUCION_TIEMPO_AGOTADO` | Ejecución | La ejecución pasó los 3 minutos | «El agente superó el tiempo máximo de 3 minutos.» | Volver a ejecutar | 502 · catálogo |
 | `INTERRUMPIDA` | Ejecución | El servicio se reinició con la ejecución en curso | «La ejecución se interrumpió porque el servicio se reinició.» | Volver a ejecutar | 502 · catálogo |
 | `HERRAMIENTA_NO_PERMITIDA` | Paso | El modelo pidió una herramienta que no es de ese agente | «El agente pidió una herramienta que no le corresponde; se ignoró.» | Ninguna | 502, 504 · catálogo |
-| `ARGUMENTO_INVALIDO` | Paso (y error de herramienta MCP) | El modelo pidió datos con parámetros no válidos | «El agente pidió datos con parámetros no válidos; se ignoró.» | Ninguna | 501, 502 · catálogo |
+| `ARGUMENTO_INVALIDO` | Paso (y error de herramienta MCP) | El modelo pidió datos con parámetros no válidos (también una receta inválida o un conjunto que no es del agente en `consultar_reporte`) | «El agente pidió datos con parámetros no válidos; se ignoró.» | Ninguna | 501, 502 · catálogo |
 | `OBRA_NO_ENCONTRADA` | Paso (error de herramienta MCP) | La herramienta no encontró la obra pedida | «La obra pedida no existe.» | Ninguna | 501 · catálogo |
 | `ERROR_INTERNO` | Paso (error de herramienta MCP) | La herramienta falló en el servicio | «La consulta falló en el servicio.» | Volver a ejecutar si el reporte quedó incompleto | 501 · catálogo |
 
@@ -358,14 +358,17 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «En curso…» | ERP · Supervisión (agentes) | Ejecución en curso (consulta cada 3 s, máx. 5 min) | 502 (criterio 2) · texto de la spec |
 | «No disponible por el momento» | ERP (secciones de agentes) | IA no responde | 502 (criterio 21) · texto de la spec |
 
-### Reportes por voz (503)
+### Reportes (503)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Preparando el reporte…» | ERP · Supervisión | Mientras se consulta (hasta 60 s) | 503 (criterio 11) · texto de la spec |
 | «Se muestran las primeras 100 filas» | ERP · Supervisión | Resultado truncado | 503 (criterio 8) · texto de la spec |
 | «Nombres de materiales no disponibles» | ERP · Supervisión (avisos) | Materiales no responde y no se filtró por material | 503 (criterio 8) · texto de la spec |
-| «Se encontraron {N} filas para el reporte «{título}» con los filtros: {filtros}.» | ERP · Supervisión | La redacción con el modelo falla o tarda | 503 (diseño) · texto de la spec |
+| «Nombres de clientes no disponibles» | ERP · Supervisión (avisos) | El gateway no pudo armar el directorio de clientes y no se filtró por cliente | 503 (criterio 8) · texto de la spec |
+| «Las planillas sin periodo no se incluyen al filtrar por periodo» | ERP · Supervisión (avisos) | Conjunto Planillas con filtro de periodo y estado que incluye observadas | 503 (diseño) · catálogo |
+| «Se encontraron {N} filas para «{título}» con los filtros: {filtros}.» | ERP · Supervisión | El resumen con el modelo falla o tarda | 503 (criterio 10) · texto de la spec |
+| «Reportes comunes» (botones de los atajos) · «Exportar a Excel» · «Exportar a CSV» | ERP · Supervisión | Siempre | 503 (criterios 4, 12 y 13) · texto de la spec |
 
 ### Notificaciones (010)
 
@@ -407,5 +410,7 @@ Las que se encontraron al armar este catálogo quedaron resueltas en las specs, 
 10. **No estaba definido qué hacer con `SUBIDA_DISTINTA`.** La app descarta la subida y empieza otra con un `idSubida` nuevo y el mismo `fotoId` (102: diseño y tareas de la app). Ya no aplica: la 102 se simplificó el 30/10/2026 y no tiene subida por partes.
 11. **El tablero podía pasar el límite de 100 obras de IA.** El gateway parte las llamadas en lotes de 100 (402 y 403: diseño y tareas del gateway).
 12. **Faltaban textos de interfaz y `PERIODO_INVALIDO` cubría dos causas.** Los textos están en este catálogo; el código se separó en `PERIODO_NO_POSTERIOR` y `PERIODO_FUTURO` (007: requisitos y diseño; contratos de Obras).
+
+13. **Capa 5 (31/10/2026): `FILTROS_INVALIDOS` ya no alcanzaba.** Con el constructor de reportes, la receta puede fallar en columnas, agrupación, métricas u orden, no solo en filtros: el código pasó a `RECETA_INVALIDA` (503, con `errores[]`). Los criterios de la 503 se renumeraron: el largo del texto es el criterio 3 y el límite por minuto, el 17.
 
 Resuelto: una `deteccion` inválida ya no rechaza la foto; se guarda sin detección con el aviso `DETECCION_DESCARTADA` (301).
