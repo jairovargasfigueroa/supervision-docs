@@ -1,6 +1,6 @@
 # 201 · Cobranza automática
 
-**Estado:** borrador (por aprobar) · **Capa:** 2 · **Punto del ingeniero:** 13 · **Proyectos:** infra (n8n, Mailpit, Keycloak, RabbitMQ), services/finanzas, services/ia, gateway, mf-obras (services/obras solo da datos, sin cambios de código) · **Depende de:** 006, 008 y 401
+**Estado:** aprobado (01/11/2026) · **Capa:** 2 · **Punto del ingeniero:** 13 · **Proyectos:** infra (n8n, Mailpit, Keycloak, RabbitMQ), services/finanzas, services/ia, gateway, mf-obras (services/obras solo da datos, sin cambios de código) · **Depende de:** 006, 008 y 401
 
 **Decisiones de Jairo (01/11/2026):** reemplaza a la compra automática por stock bajo (comprar sin que nadie revise no es realista). La automatización del punto 13 es la **cobranza**: lo que pasa con el cobro después de que la saga lo emite. El ingeniero describe flujos 100 % automáticos que pasan por varios servicios y terminan en una salida para el usuario, con n8n; aquí el disparador es la aprobación de la planilla (o la hora), los servicios son Obras, Finanzas y Keycloak, y la salida son los correos al cliente. Se agrega un **registro de pago mínimo** (antes fuera del alcance desde el recorte del 26/10/2026): sin él, un cobro pagado termina `VENCIDO` y el sistema le recordaría la deuda a un cliente que ya pagó.
 
