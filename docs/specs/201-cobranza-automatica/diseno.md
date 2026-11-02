@@ -155,7 +155,7 @@ Roles: `automatizacion`. Devuelve el PDF de la nota de cobro (`application/pdf`,
 
 ### Semilla (011)
 
-Los 3 cobros cargados tienen su envío `NOTA_COBRO` a su cliente (enviado el día de emisión a las 08:05 de La Paz). Sin recordatorios ni pagos: en la demostración, «Recordar cobros» envía el recordatorio del cobro vencido de la obra 1 y el pago se registra en vivo.
+Los 3 cobros cargados tienen su envío `NOTA_COBRO` a su cliente (enviado el día de emisión a las 10:05 de La Paz, después de la emisión de las 10:00; id fijo `c3000000-0000-4000-8000-000000000ONN`, mismo `ONN` que el cobro). Sin recordatorios ni pagos: en la demostración, «Recordar cobros» envía el recordatorio del cobro vencido de la obra 1 y el pago se registra en vivo.
 
 ## Obras
 
@@ -205,14 +205,14 @@ Pestaña «Cobros» del detalle de obra (006; `admin` y `gerente`):
 
 ### Variables de los flujos (`.env` de infra)
 
-`FINANZAS_URL`, `OBRAS_URL`, `KEYCLOAK_URL` (`http://localhost:8080`), `EMPRESA_NOMBRE` («Constructora Andina»), `COBRANZA_REMITENTE` (`cobranzas@constructora-andina.test`), `COBRANZA_CORREO` (copia oculta y resumen; el mismo en desarrollo).
+`FINANZAS_URL`, `OBRAS_URL`, `KEYCLOAK_URL` (`http://localhost:8080`), `EMPRESA_NOMBRE` («Constructora Andina»; Finanzas tiene la misma variable en su `.env` para el PDF), `COBRANZA_REMITENTE` (`cobranzas@constructora-andina.test`), `COBRANZA_CORREO` (copia oculta y resumen; el mismo en desarrollo).
 
 ### Credenciales de n8n
 
 Se importan desde `n8n/credenciales/` **sin secretos** y los secretos se inyectan con `CREDENTIALS_OVERWRITE_DATA` desde el `.env` (nunca en el repo):
 
 - **OAuth2 API** con *Grant Type* «Client Credentials» (URL de token `…/realms/supervision/protocol/openid-connect/token`, cliente `n8n`). n8n pide el token y lo vuelve a pedir cuando un servicio responde `401`. La usan todos los nodos HTTP (Finanzas, Obras y la API de administración de Keycloak).
-- **RabbitMQ** (usuario del `.env`).
+- **RabbitMQ**: usuario `n8n` que crea `rabbitmq-init` (como los de cada servicio), con permiso de lectura sobre sus dos colas; su clave en el `.env`.
 - **SMTP** (Mailpit, sin autenticación en desarrollo).
 
 ### Colas (definiciones de RabbitMQ de infra)
@@ -233,7 +233,7 @@ Durables, sobre el exchange `plataforma`: `n8n.cobro-emitido` (clave `evento.fin
 
 1. **Schedule Trigger** todos los días a las 08:00 (zona del flujo `America/La_Paz`).
 2. `GET {FINANZAS_URL}/cobros/recordatorios`; une `porVencer` (tipo `RECORDATORIO_POR_VENCER`) y `vencidos` (`RECORDATORIO_VENCIDO`) en una lista.
-3. Por cada cobro: `GET` obra → Keycloak (cliente) → **Send Email** con el texto del criterio 12 → `POST …/envios`. Un cliente sin correo deja ese cobro como error y sigue con los demás («Continue On Fail» en ese tramo; la ejecución queda con error visible).
+3. Por cada cobro: `GET` obra → Keycloak (cliente) → **Send Email** con el texto del criterio 12 y el asunto «Recordatorio: su cobro {numero} vence el {fecha}» (por vencer) o «Cobro vencido: {numero} · {obra}» (vencido) → `POST …/envios`. Un cliente sin correo deja ese cobro como error y sigue con los demás («Continue On Fail» en ese tramo; la ejecución queda con error visible).
 4. Si la lista no estaba vacía: **Send Email** a `COBRANZA_CORREO` «Resumen de cobranza del {fecha}» con una tabla (número, obra, monto, vencimiento, tipo).
 
 ### Flujo «Enviar constancia de pago»

@@ -281,8 +281,8 @@ Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Con
 |---|---|---|---|
 | Nota de cobro (al cliente, con el PDF adjunto) | «Nota de cobro {numero} · {obra} · {periodo}» | «Estimado/a {nombre}: le enviamos la nota de cobro {numero} por la planilla N.º {n} de {periodo} de la obra {obra}. Neto a cobrar: Bs {neto}. Vence el {venceEn}. {EMPRESA_NOMBRE}» | 201 (criterio 7; diseño) · texto de la spec |
 | Nota de cobro (PDF) | — | Leyenda «Este documento no es una factura» | 201 (criterio 8) · texto de la spec |
-| Recordatorio por vencer (al cliente) | (la spec no lo fija) | «Su cobro {numero} de Bs {monto} por la obra {obra} vence el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
-| Recordatorio de vencido (al cliente) | (la spec no lo fija) | «Su cobro {numero} de Bs {monto} por la obra {obra} venció el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Recordatorio por vencer (al cliente) | «Recordatorio: su cobro {numero} vence el {fecha}» | «Su cobro {numero} de Bs {monto} por la obra {obra} vence el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Recordatorio de vencido (al cliente) | «Cobro vencido: {numero} · {obra}» | «Su cobro {numero} de Bs {monto} por la obra {obra} venció el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
 | Resumen del día (a cobranzas, solo si hubo recordatorios) | «Resumen de cobranza del {fecha}» | Tabla con número, obra, monto, vencimiento y tipo de cada cobro recordado | 201 (criterio 13; diseño) · texto de la spec |
 | Constancia de pago (al cliente) | «Constancia de pago {numero} · {obra}» | «Registramos el pago del cobro {numero} de la obra {obra} por Bs {monto}, pagado el {pagadoEn}{, comprobante {comprobante}}. Gracias. {EMPRESA_NOMBRE}» (la parte del comprobante solo si lo hay) | 201 (criterio 15; diseño) · texto de la spec |
 

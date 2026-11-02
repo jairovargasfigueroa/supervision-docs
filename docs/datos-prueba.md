@@ -55,6 +55,7 @@ Todos son UUID válidos (versión 4 en su forma; no son aleatorios) con un prefi
 | Contrato | Finanzas | `c0000000-0000-4000-8000-00000000000O` | `c0000000-0000-4000-8000-000000000002` |
 | Reserva de saldo | Finanzas | `c1000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c1000000-0000-4000-8000-000000000101` |
 | Cobro | Finanzas | `c2000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c2000000-0000-4000-8000-000000000101` |
+| Envío de cobranza (201) | Finanzas | `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro) | `c3000000-0000-4000-8000-000000000101` |
 | Proveedor (sin uso desde la 201; solo como valor de `proveedor_habitual_id`) | Materiales (campo del material) | los de la sección 4 | `7b1e5c1a-0001-4c3e-9a10-000000000001` |
 | Material | Materiales | `e0000000-0000-4000-8000-0000000000NN` | `e0000000-0000-4000-8000-000000000001` (cemento) |
 | Movimiento | Materiales | `f0000000-0000-4000-8000-0000000ONNNN` | `f0000000-0000-4000-8000-000000010033` |
@@ -285,13 +286,13 @@ Una por planilla aprobada, en estado `CONSUMIDA` (la consumió el cobro): `c1000
 
 ### Envíos de la cobranza (`envio_cobro`, 201)
 
-Cada cobro tiene su envío `NOTA_COBRO` al correo de su cliente (sección 3), enviado el día de emisión a las 08:05 de La Paz. Sin recordatorios ni constancias: en la demostración, «Recordar cobros» envía el recordatorio «vencido» del `COB-AAAA-0001` (obra 1) y ninguno «por vencer» (los otros dos vencen en D + 10 y D + 18, fuera de hoy + 3).
+Cada cobro tiene su envío `NOTA_COBRO` al correo de su cliente (sección 3), enviado el día de emisión a las 10:05 de La Paz (el cobro se emite a las 10:00, sección 1). Id fijo `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro). Sin recordatorios ni constancias: en la demostración, «Recordar cobros» envía el recordatorio «vencido» del `COB-AAAA-0001` (obra 1) y ninguno «por vencer» (los otros dos vencen en D + 10 y D + 18, fuera de hoy + 3).
 
-| Cobro | Tipo | Destinatario | Enviado | `ejecucion_n8n` |
-|---|---|---|---|---|
-| `c2000000-…-000000000101` (`COB-AAAA-0001`) | `NOTA_COBRO` | cliente1@correo.test | D − 40, 08:05 | `null` |
-| `c2000000-…-000000000201` (`COB-AAAA-0002`) | `NOTA_COBRO` | demo1@constructora-andina.test | D − 20, 08:05 | `null` |
-| `c2000000-…-000000000102` (`COB-AAAA-0003`) | `NOTA_COBRO` | cliente1@correo.test | D − 12, 08:05 | `null` |
+| `id` | Cobro | Tipo | Destinatario | Enviado | `ejecucion_n8n` |
+|---|---|---|---|---|---|
+| `c3000000-…-000000000101` | `c2000000-…-000000000101` (`COB-AAAA-0001`) | `NOTA_COBRO` | cliente1@correo.test | D − 40, 10:05 | `null` |
+| `c3000000-…-000000000201` | `c2000000-…-000000000201` (`COB-AAAA-0002`) | `NOTA_COBRO` | demo1@constructora-andina.test | D − 20, 10:05 | `null` |
+| `c3000000-…-000000000102` | `c2000000-…-000000000102` (`COB-AAAA-0003`) | `NOTA_COBRO` | cliente1@correo.test | D − 12, 10:05 | `null` |
 
 ## 9. Materiales
 
