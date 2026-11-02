@@ -63,6 +63,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Formato | Laravel Pint (ya incluido) | — |
 | Pruebas | PHPUnit 12 (ya instalado; no migrar a Pest) | 12 |
 | Servidor MCP (capa 5, 501) | `laravel/mcp` (paquete oficial de Laravel; `Mcp::web('/mcp', …)` en `routes/ai.php`) | 1.1 |
+| Nota de cobro en PDF (capa 2, 201) | `barryvdh/laravel-dompdf` (admite Laravel 13; PHP puro, sin navegador). Vista Blade `resources/views/pdf/nota-cobro.blade.php` maquetada con tablas (dompdf no admite flexbox ni grid) | 3.1.2 |
 
 ## frontend/erp-shell y frontend/mf-obras (Angular 22)
 
@@ -160,4 +161,4 @@ Creado por la 401 (llenado en la 401, 402 y 403; la capa 5 suma la 503, 501, 502
 
 ## infra
 
-Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`). Capa 5 (503 y 502): la imagen oficial `ollama/ollama:0.40.4` (servicio `ollama`, perfil `ollama`; GPU opcional con `docker-compose.gpu.yml`) y `mongo:8.0` como `mongo-cli` (perfil `herramientas`) para vaciar `ia_db.consumo_atipico` en `recargar`.
+Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`). Capa 5 (503 y 502): la imagen oficial `ollama/ollama:0.40.4` (servicio `ollama`, perfil `ollama`; GPU opcional con `docker-compose.gpu.yml`) y `mongo:8.0` como `mongo-cli` (perfil `herramientas`) para vaciar `ia_db.consumo_atipico` en `recargar`. Capa 2 (201, perfil `automatizacion`): las imágenes oficiales `n8nio/n8n:2.43.7` (flujos de la cobranza en `n8n/flujos/`, en JSON) y `axllent/mailpit:v1.31.6` (buzón de prueba).

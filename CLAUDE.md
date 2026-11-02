@@ -12,7 +12,7 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 |---|---|---|---|
 | `services/obras` | Java 21 · Spring Boot 4.1 · PostgreSQL | Obras, presupuesto, avance, planillas; orquesta la saga | Base |
 | `services/materiales` | NestJS 12 · TypeScript · MongoDB | Catálogo, stock, ingresos y salidas | Base |
-| `services/finanzas` | PHP 8.3 · Laravel 13 · PostgreSQL | Contratos, cobros, órdenes de compra, cuentas por pagar | Base |
+| `services/finanzas` | PHP 8.3 · Laravel 13 · PostgreSQL | Contratos, cobros y registro de pagos; nota de cobro en PDF (capa 2) | Base |
 | `gateway` | NestJS 12 · GraphQL (Apollo Server 5) | Única entrada del ERP (BFF) | Base |
 | `frontend/erp-shell` | Angular 22 · Native Federation (host) | Contenedor del ERP: sesión, menú, carga microfrontends | Base |
 | `frontend/mf-obras` | Angular 22 · Native Federation (remoto) | Microfrontend de Obras | Base |
@@ -112,4 +112,4 @@ En las capas, cada `diseno.md` termina con «Cambios a contratos y datos»: apl�
 
 ## Fuera del alcance
 
-Registro de usuarios (se gestionan en el panel de Keycloak), alta de trabajadores y proveedores (vienen como datos iniciales), registro de pagos, aprobación de compras de monto alto, incidentes, planos, órdenes de cambio, contabilidad y facturación ante Impuestos Nacionales.
+Registro de usuarios (se gestionan en el panel de Keycloak), alta de trabajadores y proveedores (vienen como datos iniciales), pagos parciales y a proveedores, aprobación de compras de monto alto, incidentes, planos, órdenes de cambio, contabilidad y facturación ante Impuestos Nacionales.
