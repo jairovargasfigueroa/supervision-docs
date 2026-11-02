@@ -47,7 +47,7 @@ Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiale
 | Capa | Qué agrega |
 |---|---|
 | 1. Terreno sin señal | App offline, mala conexión, sincronización sin duplicados (DynamoDB); ERP como PWA para el borrador de planilla |
-| 2. Automatización | Stock bajo → orden de compra → correo al proveedor → cuenta por pagar (n8n) |
+| 2. Automatización | Cobranza automática (n8n): nota de cobro al cliente al aprobarse la planilla, recordatorios de cobros por vencer y vencidos, registro de pago y constancia (201) |
 | 3. IA en el dispositivo | Detección de casco y chaleco (TensorFlow Lite); rostros difuminados en el navegador (opcional) |
 | 4. Datos y predicciones | Servicio de IA: riesgo de retraso (supervisado), consumos raros (no supervisado), base de reportes |
 | 5. Inteligencia en el ERP | Voz a texto en el navegador (Whisper); reportes generativos por voz con constructor de reportes, exportación a Excel y CSV; 3 agentes; servidores MCP en Obras, Materiales, Finanzas e IA |
