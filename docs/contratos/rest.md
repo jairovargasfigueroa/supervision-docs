@@ -47,8 +47,8 @@ Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway; S
 ```
 `ultimaPlanilla` es `null` si no hay planillas; `zona` (401) es `null` si la obra no tiene zona.
 
-### GET /obras/{id} · 002, 004, 006, 101, 401
-Roles: los que pueden ver la obra. Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (partidas del paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
+### GET /obras/{id} · 002, 004, 006, 101, 401, 201
+Roles: los que pueden ver la obra. Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (partidas del paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`); n8n (201, flujos de cobranza: nombre y `asignaciones.clienteId`), con el token de *service account* del cliente `n8n` (`gerente`).
 ```json
 {
   "id": "uuid", "nombre": "…", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
@@ -107,8 +107,8 @@ Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es post
 Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`. Quién llama: el gateway, el portal y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 
-### GET /planillas/{id} · 007, 008, 401
-Roles: los que pueden ver la obra. Quién llama: el gateway, el portal y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`). `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
+### GET /planillas/{id} · 007, 008, 401, 201
+Roles: los que pueden ver la obra. Quién llama: el gateway, el portal, el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`), y n8n (201, flujo «Enviar nota de cobro»), con el token de *service account* del cliente `n8n` (`gerente`). `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
 ```json
 {
   "id": "uuid", "obraId": "uuid", "numero": 3, "periodo": "2027-03", "estado": "BORRADOR", "version": 2,
@@ -222,22 +222,76 @@ Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versi�
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
-### GET /contratos?obraId= · 006
+### GET /contratos?obraId= · 006, 201
 Roles: `admin`, `gerente`.
 `[{ "id", "obraId", "monto": 1250000.00, "plazoDias": 300, "anticipoPct": 10, "retencionPct": 7, "firmadoEn": "2026-10-20", "saldoDisponible": 1180000.00, "totalCobrado": 41881.80, "totalReservado": 0.00 }]`
-(lista con 0 o 1 elemento).
+(lista con 0 o 1 elemento). `totalCobrado` suma los cobros emitidos: `PENDIENTE`, `VENCIDO` y `PAGADO` (201); el saldo disponible no cambia al registrar un pago.
 
-### GET /cobros?obraId=&estado= · 006, 008, 401
-Roles: `admin`, `gerente`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `venceEn asc`. Cada elemento:
-`[{ "id", "numero": "COB-2027-0003", "obraId", "planillaId", "montoNeto": 41881.80, "emitidoEn": "2027-04-02", "venceEn": "2027-05-02", "estado": "PENDIENTE" }]`
+### GET /cobros?obraId=&estado= · 006, 008, 401, 201
+Roles: `admin`, `gerente`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100; lee `estado` y `pagadoEn`). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `venceEn asc`. `estado` (también como filtro): `PENDIENTE`, `VENCIDO` o `PAGADO` (201). Cada elemento:
+`[{ "id", "numero": "COB-2027-0003", "obraId", "planillaId", "montoNeto": 41881.80, "emitidoEn": "2027-04-02", "venceEn": "2027-05-02", "estado": "PENDIENTE", "pagadoEn": null, "comprobante": null, "envios": [{ "tipo": "NOTA_COBRO", "destinatario": "cliente1@correo.test", "enviadoEn": "2027-04-02T12:00:41Z" }] }]`
+- `pagadoEn` (`AAAA-MM-DD`, La Paz) y `comprobante`: `null` si no está `PAGADO` (201).
+- `envios` (201): correos de la cobranza que anotó n8n, ordenados por `enviadoEn`. `tipo`: `NOTA_COBRO`, `RECORDATORIO_POR_VENCER`, `RECORDATORIO_VENCIDO` o `CONSTANCIA_PAGO`; como máximo uno de cada tipo.
 
-### GET /cobros/{id} · 008
-Roles: `admin`, `gerente`. Mismo objeto que en la lista. (El gateway lo usa para el detalle del cobro de una planilla, solo para `admin` y `gerente`; el número del cobro lo guarda Obras en la planilla y lo ven todos los que ven la planilla.)
+### GET /cobros/{id} · 008, 201
+Roles: `admin`, `gerente`. Mismo objeto que en la lista. (El gateway lo usa para el detalle del cobro de una planilla, solo para `admin` y `gerente`; el número del cobro lo guarda Obras en la planilla y lo ven todos los que ven la planilla.) También lo llama n8n (201), con el token de *service account* del cliente `n8n` (`gerente`), para saber por `envios` si un correo ya salió.
 
 ### GET /cobros/resumen · 009
 Roles: `admin`, `gerente`.
 `{ "vencidos": { "cantidad": 1, "monto": 41881.80 }, "porVencer30Dias": { "cantidad": 2, "monto": 90000.00 } }`
-Vencidos: estado `VENCIDO` y también `PENDIENTE` con vencimiento anterior a hoy (hora de La Paz), por si todavía no se marcó. Por vencer: `PENDIENTE` con vencimiento entre hoy y hoy + 30, ambos incluidos. Cada cobro cuenta en un solo grupo.
+Vencidos: estado `VENCIDO` y también `PENDIENTE` con vencimiento anterior a hoy (hora de La Paz), por si todavía no se marcó. Por vencer: `PENDIENTE` con vencimiento entre hoy y hoy + 30, ambos incluidos. Cada cobro cuenta en un solo grupo; los `PAGADO` (201) no cuentan.
+
+### POST /cobros/{id}/pago · 201
+Roles: `admin`. Quién llama: el gateway, con el token del usuario (`registrarPagoCobro`). Se paga el cobro completo.
+```json
+{ "pagadoEn": "2027-04-28", "comprobante": "TRF-883412" }
+```
+1. `pagadoEn` obligatorio (`AAAA-MM-DD`); `comprobante` opcional, de 1 a 50 caracteres (vacío se guarda como `null`).
+2. En una transacción, bloquea la fila del cobro (`FOR UPDATE`). Si no existe → `404 COBRO_NO_ENCONTRADO`; si está `PAGADO` → `409 COBRO_YA_PAGADO`.
+3. `pagadoEn` posterior a hoy (La Paz) o anterior a la emisión del cobro → `422 FECHA_PAGO_INVALIDA`.
+4. Guarda `PAGADO`, la fecha, el comprobante, quién lo registró (`sub`) y cuándo; agrega `CobroPagado` al outbox. Un `PAGADO` no cambia más: no se vence, no se paga otra vez ni se deshace.
+
+Devuelve `200` con el cobro (mismo objeto que `GET /cobros/{id}`). Errores: `400 DATOS_INVALIDOS` · `401` · `403` · `404 COBRO_NO_ENCONTRADO` · `409 COBRO_YA_PAGADO` · `422 FECHA_PAGO_INVALIDA`.
+
+Las tres rutas que siguen (capa 2, 201) las llama solo n8n: rol `automatizacion` (*service account* del cliente confidencial `n8n`), con el middleware `rol:automatizacion`; `automatizacion` no entra en ninguna otra ruta y cualquier otro rol recibe `403`. `GET /cobros/recordatorios` se registra antes de `GET /cobros/{id}` (como `resumen`).
+
+### GET /cobros/recordatorios · 201
+Roles: `automatizacion`. Quién llama: n8n (flujo «Recordar cobros», todos los días a las 08:00 de La Paz). «Hoy» = fecha actual en `America/La_Paz`.
+```json
+{
+  "hoy": "2027-04-29",
+  "porVencer": [{ "id", "numero", "obraId", "planillaId", "montoNeto", "emitidoEn", "venceEn", "estado", "diasParaVencer": 3 }],
+  "vencidos":  [{ "id", "numero", "obraId", "planillaId", "montoNeto", "emitidoEn", "venceEn", "estado", "diasVencido": 1 }]
+}
+```
+- `porVencer`: `PENDIENTE` con `venceEn` entre hoy y hoy + 3 (ambos incluidos) y sin envío `RECORDATORIO_POR_VENCER`.
+- `vencidos`: `VENCIDO`, o `PENDIENTE` con `venceEn` anterior a hoy, sin envío `RECORDATORIO_VENCIDO`.
+- Un cobro aparece en un solo grupo; un `PAGADO`, en ninguno. Orden por `venceEn` y `numero`. Sin paginar (pocos por día).
+
+### POST /cobros/{id}/envios · 201
+Roles: `automatizacion`. Quién llama: n8n, después de enviar cada correo. Recibe `{ "tipo": "NOTA_COBRO", "destinatario": "cliente1@correo.test", "ejecucionN8n": "1532" }` (`ejecucionN8n`, opcional: id de la ejecución de n8n, para buscarla en su panel).
+- Si ya existe un envío de ese `tipo` para el cobro → `200` con el existente (no lo cambia). Si no → lo crea con `enviadoEn` = ahora → `201`.
+- Errores: `400 DATOS_INVALIDOS` (tipo desconocido, destinatario vacío) · `404 COBRO_NO_ENCONTRADO`.
+
+### POST /cobros/{id}/nota-cobro · 201
+Roles: `automatizacion`. Quién llama: n8n (flujo «Enviar nota de cobro»). Recibe los datos que n8n leyó de Obras y Keycloak y devuelve el PDF de la nota de cobro (`application/pdf`, `Content-Disposition: attachment; filename="nota-cobro-COB-2027-0003.pdf"`). No se guarda: se genera en cada llamada.
+```json
+{
+  "cliente": { "nombre": "Roberto Justiniano Paz" },
+  "obra": { "id": "uuid", "nombre": "Edificio Residencial Las Palmeras" },
+  "planilla": {
+    "id": "uuid", "numero": 3, "periodo": "2026-09",
+    "lineas": [{ "codigo": "P-03", "nombre": "Hormigón armado en columnas", "unidad": "m3", "cantidadPeriodo": 40, "precioUnitario": 3365.00, "monto": 134600.00 }],
+    "subtotal": 397770.00, "descuentoAnticipo": 39777.00, "retencion": 27843.90, "neto": 330149.10,
+    "anticipoPct": 10, "retencionPct": 7
+  }
+}
+```
+1. Cobro inexistente → `404 COBRO_NO_ENCONTRADO`.
+2. Coherencia → `422 NOTA_COBRO_INCONSISTENTE` si `planilla.id` no es la del cobro, si `obra.id` no es la del contrato, si `neto` difiere del neto del cobro (más de 0,005) o si los totales no cuadran (suma de líneas = subtotal; subtotal − anticipo − retención = neto).
+3. Contenido: empresa (`EMPRESA_NOMBRE`, «Constructora Andina»), cliente, obra, planilla N.º y periodo («septiembre 2026»), líneas con `cantidadPeriodo` > 0, totales, número de cobro, emisión, vencimiento y la leyenda «Este documento no es una factura». Montos como `Bs 330.149,10` y fechas `dd/mm/aaaa` (convenciones).
+
+Errores: `401` · `403` · `404 COBRO_NO_ENCONTRADO` · `422 NOTA_COBRO_INCONSISTENTE`.
 
 ### Herramientas MCP (capa 5, solo lectura) · 501
 Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versión común 2025-11-25) · Rol: `agente_ia` (*service account* de `ia-agentes`) · Solo lo llama el servicio de IA (`ia-worker`, host de los agentes)
@@ -250,11 +304,7 @@ Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versi�
 
 | Herramienta | Entrada | Salida | Reglas |
 |---|---|---|---|
-| `cobros_por_vencer` | `{dias?, incluirVencidos?, obraId?}` | `{hoy, cobros[{cobroId, numero, obraId, planillaId, montoNeto, emitidoEn, venceEn, estado, diasParaVencer}], totales{vencidos{cantidad, monto}, porVencer{cantidad, monto}}, truncado}` | `dias` 1 a 90 (por defecto 15); `incluirVencidos` por defecto `true`. Por vencer: `PENDIENTE` con `venceEn` entre hoy y hoy + `dias`; vencidos: como en `GET /cobros/resumen`. `diasParaVencer` = `venceEn − hoy` (negativo si venció). Por `venceEn`, máximo 50; los totales cuentan todos. Finanzas no guarda el nombre de la obra (el agente lo toma de Obras) |
-
-### Capa 2
-
-Crear orden de compra y cuenta por pagar (las llama n8n). Se especifican en la capa 2.
+| `cobros_por_vencer` | `{dias?, incluirVencidos?, obraId?}` | `{hoy, cobros[{cobroId, numero, obraId, planillaId, montoNeto, emitidoEn, venceEn, estado, diasParaVencer}], totales{vencidos{cantidad, monto}, porVencer{cantidad, monto}}, truncado}` | `dias` 1 a 90 (por defecto 15); `incluirVencidos` por defecto `true`. Por vencer: `PENDIENTE` con `venceEn` entre hoy y hoy + `dias`; vencidos: como en `GET /cobros/resumen` (sin los `PAGADO`, 201). `diasParaVencer` = `venceEn − hoy` (negativo si venció). Por `venceEn`, máximo 50; los totales cuentan todos. Finanzas no guarda el nombre de la obra (el agente lo toma de Obras) |
 
 ## Sincronización (puerto 8084)
 

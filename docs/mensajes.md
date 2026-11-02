@@ -107,19 +107,17 @@ Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detall
 | `MATERIAL_INACTIVO` | 422 | Fijar mínimo (003) o registrar un movimiento (004) con un material desactivado | «El material está desactivado; no se puede usar en movimientos ni fijarle un mínimo.» | Elegir otro material o pedir a administración que lo active | ERP · Materiales, app | 003, 004 · catálogo |
 | `OBRA_NO_ENCONTRADA` | 404 | La obra no está en `obra_acceso` o el usuario no la ve | Ver «Obras» | — | ERP · Materiales, app | 003, 004 |
 | `PERIODO_CERRADO` | 409 | El periodo del movimiento ya lo cerró una planilla aprobada | «El periodo {periodo} ya está cerrado» | Consultar al residente; el registro queda «Rechazado» | App | 004 (criterio 7) · texto de la spec |
-| `ORDEN_COMPRA_NO_PENDIENTE` | 422 | El ingreso indica una orden ya recibida, de otra obra o de otro material | «La orden de compra no está pendiente para este material» | Volver a registrar el ingreso sin orden | App | 201 (criterio 16) · texto de la spec |
 
 ## Finanzas
 
-Los cinco códigos de la capa 2 los recibe n8n, no una persona en pantalla: quedan en la ejecución fallida del flujo, en el panel de n8n (201, criterio 9). El texto sirve para quien revisa las ejecuciones.
+Los cuatro códigos de la capa 2 (201). `NOTA_COBRO_INCONSISTENTE` lo recibe solo n8n, no una persona en pantalla: queda en la ejecución fallida del flujo, en el panel de n8n (201, criterio 19), y el texto sirve para quien revisa las ejecuciones. `COBRO_NO_ENCONTRADO` puede llegar al ERP (registrar pago) o a n8n.
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
-| `MATERIAL_SIN_PROVEEDOR` | 422 | Stock bajo de un material sin proveedor habitual | «El material no tiene proveedor habitual; no se generó la orden de compra.» | Elegir el proveedor habitual en el catálogo | n8n | 201 · catálogo |
-| `PROVEEDOR_NO_ENCONTRADO` | 422 | El proveedor habitual no existe en Finanzas | «El proveedor habitual del material no está en la lista de proveedores.» | Elegir otro proveedor en el catálogo | n8n | 201 · catálogo |
-| `PRECIO_INVALIDO` | 422 | Precio referencial del material ≤ 0 | «El material tiene precio referencial 0; no se puede generar la orden.» | Corregir el precio referencial | n8n | 201 · catálogo |
-| `ORDEN_COMPRA_NO_ENCONTRADA` | 404 | Se marca enviada o se registra la cuenta por pagar de una orden inexistente | «No se encontró la orden de compra.» | Revisar la ejecución en n8n | n8n | 201 · catálogo |
-| `ORDEN_YA_RECIBIDA` | 409 | La orden ya tiene cuenta por pagar de otro ingreso | «La orden de compra ya fue recibida con otro ingreso.» | Ninguna (no se duplica) | n8n | 201 · catálogo |
+| `COBRO_NO_ENCONTRADO` | 404 | El cobro no existe (registrar pago, anotar un envío o generar la nota de cobro) | «No se encontró el cobro.» | Recargar la pestaña «Cobros» (en n8n: revisar la ejecución) | ERP · Obras, n8n | 201 (diseño) · catálogo |
+| `COBRO_YA_PAGADO` | 409 | Se intenta registrar el pago de un cobro ya `PAGADO` | «El cobro ya está pagado.» | Recargar la pestaña «Cobros» | ERP · Obras | 201 (criterio 4) · texto de la spec |
+| `FECHA_PAGO_INVALIDA` | 422 | La fecha de pago es posterior a hoy (La Paz) o anterior a la emisión del cobro | «La fecha de pago no puede ser futura ni anterior a la emisión del cobro.» | Elegir otra fecha de pago | ERP · Obras | 201 (criterio 2) · catálogo |
+| `NOTA_COBRO_INCONSISTENTE` | 422 | Los datos de la planilla que manda n8n no coinciden con el cobro (otra planilla u obra, otro neto o totales que no cuadran) | «Los datos de la planilla no coinciden con el cobro.» | Revisar la ejecución en n8n | n8n | 201 (diseño) · catálogo |
 
 ## Sincronización (app de obra, capa 1)
 
@@ -258,16 +256,35 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Cobro {numero}» y columna «Cobro» («—» sin cobro) | ERP · Obras (editor y pestaña «Planillas») | Planilla `APROBADA` | 008 (criterio 14) · catálogo |
 | «Los rostros se difuminan para proteger la privacidad del personal» | Portal | Bajo la galería de la obra y de la planilla | 303 (criterio 11) · texto de la spec |
 
-### Materiales y compras (003, 004, 201)
+### Materiales (003, 004)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Registrado» | App | El servidor confirmó el movimiento | 004 (criterio 4) · texto de la spec |
 | «La salida supera el stock registrado (stock: {stock}). Queda como alerta para revisión» | App | Salida mayor al stock (`superaStock`) | 004 (criterio 5), 101 (criterio 10) · texto de la spec |
-| «Sin proveedor habitual: no se generarán órdenes automáticas» | ERP · Materiales (catálogo) | Material sin proveedor habitual | 201 (criterio 3) · texto de la spec |
-| «Correo no enviado» (ámbar) · `ENVIADA` (azul) · `RECIBIDA` (verde) | ERP · Materiales (órdenes de compra) | Estado de la orden | 201 (criterio 11; diseño) · texto de la spec |
-| «Todavía no hay órdenes de compra» | ERP · Materiales | Lista vacía | 201 (diseño) · texto de la spec |
-| «Orden de compra (opcional)» con «{numero} · {proveedor} · {cantidad} {unidadPlural}» | App (ingreso) | Hay órdenes pendientes del material | 201 (diseño) · texto de la spec |
+
+### Cobranza (201)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| Estado del cobro con color: «Pendiente» (neutro) · «Vencido» (rojo) · «Pagado el {dd/mm/aaaa}» (verde, con el comprobante debajo si lo hay) | ERP · detalle · Cobros | Cada cobro | 201 (criterio 3; diseño) · texto de la spec |
+| «Registrar pago» | ERP · detalle · Cobros | Cobro `PENDIENTE` o `VENCIDO`, solo `admin` | 201 (criterio 1) · texto de la spec |
+| Diálogo con «Fecha de pago» (por defecto hoy) y «N.º de comprobante (opcional)», botón «Registrar» | ERP · detalle · Cobros | Al pulsar «Registrar pago» | 201 (criterio 2; diseño) · texto de la spec |
+| «Pago registrado» | ERP · detalle · Cobros | El pago quedó registrado | 201 (diseño) · texto de la spec |
+| Columna «Correos»: «Nota enviada» · «Recordatorio por vencer» · «Recordatorio de vencido» · «Constancia enviada» (fecha y hora al pasar el cursor) | ERP · detalle · Cobros | Un envío anotado de ese tipo | 201 (criterio 17; diseño) · texto de la spec |
+| «Nota sin enviar» (ámbar) | ERP · detalle · Cobros | El cobro no tiene envío `NOTA_COBRO` | 201 (criterio 17; diseño) · texto de la spec |
+| «El cliente no tiene correo registrado» | n8n (motivo de la ejecución fallida) | El cliente de la obra no tiene correo en Keycloak | 201 (criterio 20) · texto de la spec |
+
+Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Constructora Andina»; montos `Bs 330.149,10` y fechas `dd/mm/aaaa`):
+
+| Correo | Asunto | Cuerpo | Origen |
+|---|---|---|---|
+| Nota de cobro (al cliente, con el PDF adjunto) | «Nota de cobro {numero} · {obra} · {periodo}» | «Estimado/a {nombre}: le enviamos la nota de cobro {numero} por la planilla N.º {n} de {periodo} de la obra {obra}. Neto a cobrar: Bs {neto}. Vence el {venceEn}. {EMPRESA_NOMBRE}» | 201 (criterio 7; diseño) · texto de la spec |
+| Nota de cobro (PDF) | — | Leyenda «Este documento no es una factura» | 201 (criterio 8) · texto de la spec |
+| Recordatorio por vencer (al cliente) | «Recordatorio: su cobro {numero} vence el {fecha}» | «Su cobro {numero} de Bs {monto} por la obra {obra} vence el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Recordatorio de vencido (al cliente) | «Cobro vencido: {numero} · {obra}» | «Su cobro {numero} de Bs {monto} por la obra {obra} venció el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Resumen del día (a cobranzas, solo si hubo recordatorios) | «Resumen de cobranza del {fecha}» | Tabla con número, obra, monto, vencimiento y tipo de cada cobro recordado | 201 (criterio 13; diseño) · texto de la spec |
+| Constancia de pago (al cliente) | «Constancia de pago {numero} · {obra}» | «Registramos el pago del cobro {numero} de la obra {obra} por Bs {monto}, pagado el {pagadoEn}{, comprobante {comprobante}}. Gracias. {EMPRESA_NOMBRE}» (la parte del comprobante solo si lo hay) | 201 (criterio 15; diseño) · texto de la spec |
 
 ### App sin señal (005, 101, 102, 103)
 
@@ -433,7 +450,7 @@ Las que se encontraron al armar este catálogo quedaron resueltas en las specs, 
 2. **`MOTIVO_INVALIDO` tenía dos rangos.** Ahora es de 10 a 500 caracteres en todas partes (502: requisitos y diseño).
 3. **`COMENTARIO_INVALIDO` tenía dos reglas.** Se mantienen (son casos distintos), pero la regla concreta viaja en `errores[].mensaje` (403 y 502, convenciones).
 4. **El reporte por voz tenía dos textos para `TIEMPO_AGOTADO`.** Manda el requisito: «El reporte tardó demasiado; intenta de nuevo» (503, diseño corregido).
-5. **`ORDEN_COMPRA_NO_PENDIENTE` tenía dos textos.** Manda el requisito (201, diseño corregido).
+5. **`ORDEN_COMPRA_NO_PENDIENTE` tenía dos textos.** Manda el requisito (201, diseño corregido). Ya no aplica: la 201 dejó de ser la compra automática (01/11/2026) y el código se quitó con los demás de órdenes de compra.
 6. **La app mostraba el `detail` ante un código desconocido.** Ahora muestra el genérico del estado HTTP (101, diseño).
 7. **Los errores genéricos no tenían código y faltaba el motivo de `ContratoRechazado`.** Códigos genéricos en `convenciones.md` (`DATOS_INVALIDOS`, `NO_AUTENTICADO`, `SIN_PERMISO`, `ARCHIVO_DEMASIADO_GRANDE`, `DEMASIADAS_PETICIONES`, `ERROR_INTERNO`, `SERVICIO_NO_DISPONIBLE`); motivos del contrato en la 002 (diseño).
 8. **Faltaban los textos de `CierreFallido` y `CobroFallido`, y el portal dejaba de consultar a los 90 s.** Textos en la 008 (diseño); el portal consulta hasta 4 minutos y a los 90 s muestra el aviso de espera (008: requisitos, diseño y tareas del portal).

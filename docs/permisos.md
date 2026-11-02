@@ -34,7 +34,8 @@ Un usuario sin un rol permitido en esa aplicación ve «No tienes acceso a esta 
 | Rol o permiso | Lo tiene | Para qué | Origen |
 |---|---|---|---|
 | `view-users` y `view-realm` (roles del cliente `realm-management`, solo lectura) | *Service account* del cliente confidencial `gateway` | Listar usuarios por rol para los formularios de asignación (`view-realm` lo exige Keycloak para `GET /roles/{rol}/users`) y resolver nombres | convenciones, 002, 006 |
-| `automatizacion` (rol de realm) | *Service account* del cliente confidencial `n8n` | Solo las rutas de Finanzas que llama n8n (órdenes de compra y cuentas por pagar) | 201 |
+| `automatizacion` (rol de realm) | *Service account* del cliente confidencial `n8n` | Solo las rutas de Finanzas que llama n8n (recordatorios, envíos y nota de cobro) | 201 |
+| `gerente` (rol de realm de personas) y `view-users` (rol del cliente `realm-management`, solo lectura) | *Service account* del cliente confidencial `n8n` (solo *client credentials*) | Leer con los endpoints que ya existen (Obras `GET /obras/{id}` y `GET /planillas/{id}`, Finanzas `GET /cobros/{id}`), igual que `ia-reportes`, y el nombre y el correo del cliente (`GET /admin/realms/supervision/users/{id}`): segunda excepción a «ningún otro proyecto llama a la API de administración de Keycloak», junto al gateway | 201 |
 | `agente_ia` (rol de realm) | *Service account* del cliente confidencial `ia-agentes` (la usa `ia-worker`, host de los agentes) | Solo `POST /mcp` de Obras, Materiales, Finanzas e IA (herramientas de solo lectura); ve todas las obras como `gerente`; ningún endpoint REST lo acepta | 501 |
 | `gerente` (rol de realm de personas, asignado también a una *service account*) | *Service account* del cliente confidencial `ia-reportes` (solo *client credentials*) | Carga inicial del modelo de lectura: solo `GET` a Obras (`/obras`, `/obras/{id}`, `/obras/{obraId}/planillas`, `/planillas/{id}`), Materiales (`/materiales`, `/obras/{obraId}/movimientos`) y Finanzas (`/cobros`); ve todas las obras como cualquier `gerente`. Se eligió un rol existente para no cambiar los tres servicios; el secreto solo lo usa el comando de carga | 401 |
 
@@ -51,7 +52,7 @@ Resumen de `docs/convenciones.md` («Autenticación y permisos»):
   - `403 SIN_PERMISO`: el rol no permite esa acción (se comprueba primero, en el guardia del endpoint).
   - `404` con el código de «no encontrado» (por ejemplo `404 OBRA_NO_ENCONTRADA`): el rol sí puede, pero el usuario no ve esa obra. Se responde igual que si no existiera, para no revelar que existe; vale para lecturas y escrituras.
 - Para el `cliente`: no recibe planillas `BORRADOR` (`404` si pide una), solo recibe fotos publicadas (versión con rostros difuminados desde la 303) y nunca los datos de detección de EPP (301).
-- Campos de Finanzas en el ERP (`Obra.finanzas`, `Obra.cobros`, `IndicadoresTablero.cobrosVencidos`, `Material.proveedorHabitual` y el detalle de `Planilla.cobro`): llegan en `null` **sin error** si el rol no es `admin` ni `gerente`.
+- Campos de Finanzas en el ERP (`Obra.finanzas`, `Obra.cobros`, `IndicadoresTablero.cobrosVencidos` y el detalle de `Planilla.cobro`): llegan en `null` **sin error** si el rol no es `admin` ni `gerente`.
 - Residente en los agentes (502): solo hallazgos y sugerencias de sus obras y nunca los del agente Control de cobros.
 - Notificaciones (010): cada usuario ve y cambia solo sus avisos y sus dispositivos.
 
@@ -94,6 +95,8 @@ Resumen de `docs/convenciones.md` («Autenticación y permisos»):
 | Ver la etiqueta de casco y chaleco en cada foto | ✔ | propias | ✔ | | | | 301 |
 | Pestaña «Planillas» (número, periodo, estado, neto, número de cobro) | ✔ | propias | ✔ | | | | 006, 007, 008 |
 | Pestaña «Cobros» | ✔ | | ✔ | | | | 006 |
+| Ver en «Cobros» el estado `PAGADO` con la fecha y el comprobante, y los correos enviados de cada cobro («Nota enviada», recordatorios, «Constancia enviada», «Nota sin enviar») | ✔ | | ✔ | | | | 201 |
+| «Registrar pago» de un cobro `PENDIENTE` o `VENCIDO` (fecha de pago y n.º de comprobante) | ✔ | | | | | | 201 |
 | Ver el riesgo de retraso del modelo en el encabezado | ✔ | propias | ✔ | | | | 402 |
 | Ver la sección «Consumos atípicos» (pestaña «Material») | ✔ | propias | ✔ | | | | 403 |
 | «Es normal» / «Confirmar problema» en un consumo atípico `PENDIENTE` | ✔ | propias | | | | | 403 |
@@ -116,11 +119,8 @@ Resumen de `docs/convenciones.md` («Autenticación y permisos»):
 |---|---|---|---|---|---|---|---|
 | Ver el catálogo de materiales (búsqueda por código o nombre) | ✔ | ✔ | ✔ | | | | 003 |
 | «Nuevo material», «Editar», «Activar/Desactivar» | ✔ | | | | | | 003 |
-| Elegir el proveedor habitual del material | ✔ | | | | | | 201 |
-| Ver la etiqueta «Sin proveedor habitual» en el catálogo | ✔ | ✔ | ✔ | | | | 201 |
 | Ver el stock por obra (cantidad, mínimo, estado con color; también al abrirlo desde un aviso de stock bajo) | ✔ | propias | ✔ | | | | 003, 010 |
 | «Fijar mínimo» y «Agregar material» a la obra | ✔ | | | | | | 003 |
-| Ver «Órdenes de compra» (solo lectura, filtros por obra y estado) | ✔ | | ✔ | | | | 201 |
 | Panel «Control de materiales»: hallazgos y sugerencias de la obra | ✔ | propias | ✔ | | | | 502 |
 | «Aprobar» / «Rechazar» una sugerencia de Control de materiales | ✔ | propias | ✔ | | | | 502 |
 
@@ -166,7 +166,6 @@ El cliente no ve los datos de detección de EPP (301), ni el riesgo de retraso (
 | «Foto de avance» (partida, cámara o galería, «Enviar») | | | | propias | | | 005 |
 | Ver el aviso de casco y chaleco antes de enviar la foto | | | | propias | | | 301 |
 | «Ingreso» de material (con número de nota de remisión opcional) | | | | | propias | | 004 |
-| Elegir la orden de compra pendiente en el ingreso | | | | | propias | | 201 |
 | «Salida» de material (con partida de destino) | | | | | propias | | 004 |
 | «Stock» de la obra (también al abrirlo desde un aviso de stock bajo) | | | | | propias | | 004, 010 |
 | «Diario de obra» (registrar y corregir mientras no se envía) | | | | propias | | | 103 |
@@ -198,7 +197,7 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 | `GET /salud` | fase 1 | sin token | — |
 | `POST /obras` | 002, 401 | `admin` | — |
 | `GET /obras?estado=&busqueda=` | 006, 009, 401 | todos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`) | Filtra por visibilidad de obras |
-| `GET /obras/{id}` | 002, 004, 006, 008, 401 | los que pueden ver la obra | `404 OBRA_NO_ENCONTRADA` si no la ve |
+| `GET /obras/{id}` | 002, 004, 006, 008, 401, 201 | los que pueden ver la obra | `404 OBRA_NO_ENCONTRADA` si no la ve |
 | `GET /obras/{id}/material-previsto?periodo=` | 006 | `admin`, `gerente`, `residente` | Residente asignado; si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `POST /obras/{obraId}/fotos/url-subida` | 005, 102 | `maestro`, `residente` | Asignados a la obra |
 | `POST /obras/{obraId}/fotos` | 005, 102, 301 | `maestro`, `residente` | Asignados a la obra |
@@ -207,7 +206,7 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 | `PUT /obras/{obraId}/fotos/{fotoId}/version-cliente` | 303 | `residente` | Asignado a la obra |
 | `POST /obras/{obraId}/planillas` | 007 | `residente` | Asignado a la obra |
 | `GET /obras/{obraId}/planillas` | 006, 007, 008, 401 | los que pueden ver la obra | `cliente` no recibe `BORRADOR`; incluye `cobroNumero` |
-| `GET /planillas/{id}` | 007, 008, 401 | los que pueden ver la obra | `cliente` recibe `404` si es `BORRADOR`; incluye `cobroNumero` |
+| `GET /planillas/{id}` | 007, 008, 401, 201 | los que pueden ver la obra | `cliente` recibe `404` si es `BORRADOR`; incluye `cobroNumero` |
 | `PUT /planillas/{id}` | 007 | `residente` | Asignado a la obra |
 | `POST /planillas/{id}/presentar` | 007, 303 | `residente` | Asignado a la obra |
 | `POST /planillas/{id}/aprobar` | 008 | `cliente` | Dueño de la obra |
@@ -216,23 +215,22 @@ Todas las rutas exigen token salvo `GET /salud`. En la columna **Regla** se indi
 | `GET /obras/{obraId}/diario?desde=&hasta=` | 103 | `maestro`, `residente` asignados; `admin`, `gerente` | `cliente` → `404 OBRA_NO_ENCONTRADA` |
 | `POST /mcp` (MCP) | 501 | `agente_ia` | Ve todas las obras |
 
-Quién llama: gateway (ERP), portal (`GET /obras`, `GET /obras/{id}`, fotos, planillas, aprobar, observar), Sincronización con el token del usuario (101, 102, 103), el servicio de IA en la carga inicial con el token de `ia-reportes` (`gerente`; solo los `GET` marcados con 401) y el servicio de IA por MCP (501).
+Quién llama: gateway (ERP), portal (`GET /obras`, `GET /obras/{id}`, fotos, planillas, aprobar, observar), Sincronización con el token del usuario (101, 102, 103), el servicio de IA en la carga inicial con el token de `ia-reportes` (`gerente`; solo los `GET` marcados con 401), n8n con el token de su *service account* (`gerente`; solo `GET /obras/{id}` y `GET /planillas/{id}`, 201) y el servicio de IA por MCP (501).
 
 ### Materiales (puerto 8082)
 
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
 | `GET /salud` | fase 1 | sin token | — |
-| `GET /materiales?busqueda=&soloActivos=` | 002, 003, 006, 201, 401, 503 | `admin`, `residente`, `gerente`, `maestro`, `almacenero` | — (también lo llaman Sincronización e IA con el token del usuario, y la carga inicial de IA con el token de `ia-reportes`) |
-| `POST /materiales` | 003, 201 | `admin` | — |
-| `PUT /materiales/{id}` | 003, 201 | `admin` | — |
+| `GET /materiales?busqueda=&soloActivos=` | 002, 003, 006, 401, 503 | `admin`, `residente`, `gerente`, `maestro`, `almacenero` | — (también lo llaman Sincronización e IA con el token del usuario, y la carga inicial de IA con el token de `ia-reportes`) |
+| `POST /materiales` | 003 | `admin` | — |
+| `PUT /materiales/{id}` | 003 | `admin` | — |
 | `GET /obras/{obraId}/stock` | 003, 004 | internos que pueden ver la obra | Según `obra_acceso`; `404 OBRA_NO_ENCONTRADA` si no la ve |
 | `PUT /obras/{obraId}/stock/{materialId}/minimo` | 003 | `admin` | — |
-| `POST /movimientos` | 004, 201 | `almacenero` | Asignado (`obra_acceso`); si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
+| `POST /movimientos` | 004 | `almacenero` | Asignado (`obra_acceso`); si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `GET /obras/{obraId}/movimientos?periodo=` | 004, 102, 401 | internos que pueden ver la obra | Según `obra_acceso` (la carga inicial de IA, como `gerente`, ve todas) |
 | `GET /obras/{obraId}/consumos?periodo=` | 006 | `admin`, `gerente`, `residente` | Residente asignado; si no ve la obra, `404 OBRA_NO_ENCONTRADA` |
 | `GET /stock/resumen?obraIds=` | 009 | `admin`, `residente`, `gerente` | Solo devuelve obras visibles |
-| `GET /obras/{obraId}/ordenes-compra?estado=` | 201 | internos que pueden ver la obra | Según `obra_acceso`; `404 OBRA_NO_ENCONTRADA` |
 | `POST /mcp` (MCP) | 501 | `agente_ia` | Tratado como `gerente` (todas las obras) |
 
 ### Finanzas (puerto 8083)
@@ -242,15 +240,14 @@ Finanzas no guarda asignaciones de obras: sus endpoints de consulta son solo par
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
 | `GET /salud` | fase 1 | sin token | — |
-| `GET /contratos?obraId=` | 006 | `admin`, `gerente` | — |
-| `GET /cobros?obraId=&estado=` | 006, 008, 401 | `admin`, `gerente` | — (también la carga inicial de IA con el token de `ia-reportes`) |
-| `GET /cobros/{id}` | 008 | `admin`, `gerente` | — (el residente ve solo el número del cobro, que guarda Obras) |
+| `GET /contratos?obraId=` | 006, 201 | `admin`, `gerente` | — (`totalCobrado` incluye los `PAGADO`) |
+| `GET /cobros?obraId=&estado=` | 006, 008, 401, 201 | `admin`, `gerente` | — (también la carga inicial de IA con el token de `ia-reportes`) |
+| `GET /cobros/{id}` | 008, 201 | `admin`, `gerente` | — (el residente ve solo el número del cobro, que guarda Obras; también n8n con su `gerente`) |
 | `GET /cobros/resumen` | 009 | `admin`, `gerente` | — |
-| `GET /proveedores` | 201 | `admin`, `gerente` | — |
-| `POST /ordenes-compra` | 201 | `automatizacion` | Solo n8n |
-| `POST /ordenes-compra/{id}/enviada` | 201 | `automatizacion` | Solo n8n |
-| `GET /ordenes-compra?obraId=&estado=` | 201 | `admin`, `gerente` | — |
-| `POST /cuentas-por-pagar` | 201 | `automatizacion` | Solo n8n |
+| `POST /cobros/{id}/pago` | 201 | `admin` | — (lo llama el gateway con el token del usuario) |
+| `GET /cobros/recordatorios` | 201 | `automatizacion` | Solo n8n |
+| `POST /cobros/{id}/envios` | 201 | `automatizacion` | Solo n8n |
+| `POST /cobros/{id}/nota-cobro` | 201 | `automatizacion` | Solo n8n |
 | `POST /mcp` (MCP) | 501 | `agente_ia` | Todas las obras |
 
 ### Sincronización (puerto 8084, capa 1)
@@ -260,7 +257,7 @@ Todas las rutas, salvo `/salud`, piden además el encabezado `X-Dispositivo-Id`.
 | Método y ruta | Origen | Roles | Regla |
 |---|---|---|---|
 | `GET /salud` | 101 | sin token | — |
-| `GET /paquete-datos?obraActivaId=` | 101, 103, 201 | `maestro`, `almacenero` | Los datos los filtran Obras y Materiales con el token del usuario. El diario por obra solo se agrega si el token tiene `maestro` (103) |
+| `GET /paquete-datos?obraActivaId=` | 101, 103 | `maestro`, `almacenero` | Los datos los filtran Obras y Materiales con el token del usuario. El diario por obra solo se agrega si el token tiene `maestro` (103) |
 | `POST /lotes` | 101, 102, 103 | `maestro`, `almacenero` | Cada operación se reenvía con el token del usuario; una operación guardada por otro usuario → `OPERACION_AJENA` |
 | `POST /fotos/url-subida` | 102 | `maestro` | La reenvía a Obras `POST /obras/{obraId}/fotos/url-subida` con el token del usuario; Obras aplica sus reglas (asignado) |
 
@@ -337,7 +334,7 @@ El gateway valida el token y el rol con `RolesGuard` (001); cada servicio vuelve
 | `usuarios(rol)` | 002 | `admin` | Keycloak con el cliente `gateway` |
 | `obras(estado, busqueda)` | 006, 401 | `admin`, `gerente`, `residente` | Residente: sus obras |
 | `obra(id)` | 006 | `admin`, `gerente`, `residente` | `404 OBRA_NO_ENCONTRADA` si no la ve |
-| `Obra.finanzas`, `Obra.cobros` | 006 | `admin`, `gerente` | `null` sin error para otros roles |
+| `Obra.finanzas`, `Obra.cobros` (con `pagadoEn`, `comprobante` y `envios`, 201) | 006, 201 | `admin`, `gerente` | `null` sin error para otros roles |
 | `Obra.materialComparado(periodo)` | 006 | `admin`, `gerente`, `residente` | Residente: sus obras |
 | `Obra.fotos(partidaId)` (con `deteccion`, `urlDescargaCliente`, `rostrosDifuminados`) | 005, 301, 303 | `admin`, `gerente`, `residente` | Visibilidad de Obras |
 | `Obra.planillas` | 007 | `admin`, `gerente`, `residente` | Visibilidad de Obras |
@@ -348,14 +345,11 @@ El gateway valida el token y el rol con `RolesGuard` (001); cada servicio vuelve
 | `Planilla.cobro` → `id` y `numero` | 008 | `admin`, `gerente`, `residente` | Desde Obras (`cobroId`, `cobroNumero`) |
 | `Planilla.cobro` → `montoNeto`, `emitidoEn`, `venceEn`, `estado` | 008 | `admin`, `gerente` | Finanzas `GET /cobros/{id}`; `null` sin error para el residente |
 | `materiales(...)` | 003 | `admin`, `gerente`, `residente` | — |
-| `Material.proveedorHabitual` | 201 | `admin`, `gerente` | `null` sin error para otros roles |
 | `stockObra(obraId)` | 003 | `admin`, `gerente`, `residente` | Residente: sus obras |
 | `tablero` | 009 | `admin`, `gerente`, `residente` | Residente: sus obras |
 | `IndicadoresTablero.cobrosVencidos` | 009 | `admin`, `gerente` | `null` sin error para otros roles |
 | `FilaTablero.riesgoRetraso`, `IndicadoresTablero.obrasRiesgoAlto` | 402 | `admin`, `gerente`, `residente` | Visibilidad de IA; lotes de 100 obras |
 | `FilaTablero.consumosAtipicosPendientes`, `IndicadoresTablero.consumosAtipicosPendientes` | 403 | `admin`, `gerente`, `residente` | Visibilidad de IA; lotes de 100 obras |
-| `proveedores` | 201 | `admin`, `gerente` | — |
-| `ordenesCompra(obraId, estado)` | 201 | `admin`, `gerente` | — |
 | `modeloRiesgo` | 402 | `admin`, `gerente`, `residente` | — |
 | `agentes` | 502 | `admin`, `gerente`, `residente` | Residente: sin `CONTROL_COBROS` |
 | `ejecucionesAgente(...)`, `ejecucionAgente(id)` | 502 | `admin`, `gerente` | — |
@@ -368,13 +362,14 @@ El gateway valida el token y el rol con `RolesGuard` (001); cada servicio vuelve
 | Operación | Origen | Roles | Regla |
 |---|---|---|---|
 | `registrarObra(entrada)` | 002, 401 | `admin` | — |
-| `crearMaterial(entrada)`, `actualizarMaterial(id, entrada)` | 003, 201 | `admin` | — |
+| `crearMaterial(entrada)`, `actualizarMaterial(id, entrada)` | 003 | `admin` | — |
 | `definirStockMinimo(obraId, materialId, minimo)` | 003 | `admin` | — |
 | `crearPlanilla(obraId, periodo)` | 007 | `residente` | Asignado a la obra |
 | `guardarPlanilla(id, entrada)` | 007, 104 | `residente` | Asignado a la obra |
 | `presentarPlanilla(id, version)` | 007, 303 | `residente` | Asignado a la obra |
 | `prepararSubidaFotoCliente(obraId, fotoId)` | 303 | `residente` | Asignado a la obra |
 | `registrarFotoCliente(obraId, fotoId, claveArchivoCliente, rostrosDifuminados)` | 303 | `residente` | Asignado a la obra |
+| `registrarPagoCobro(cobroId, pagadoEn, comprobante)` | 201 | `admin` | Finanzas `POST /cobros/{id}/pago` con el token del usuario |
 | `revisarConsumoAtipico(id, estado, comentario)` | 403 | `admin`, `residente` | Residente asignado a la obra |
 | `ejecutarAgente(agente)` | 502 | `admin`, `gerente` | — |
 | `aprobarSugerencia(id, comentario)`, `rechazarSugerencia(id, motivo)` | 502 | `admin`, `gerente`, `residente` | Residente: sus obras, sin `CONTROL_COBROS` |
@@ -403,4 +398,6 @@ Todas las que se encontraron al armar esta matriz quedaron resueltas en las spec
 
 12. **Capa 5 (31/10/2026): las «herramientas locales» de IA no pasaban por MCP ni por su validación.** Ahora `riesgo_retraso`, `consumos_atipicos` y `consultar_reporte` son herramientas del servidor MCP de IA (`POST /mcp`, solo `agente_ia`), y el host limita por agente las herramientas y los conjuntos de `consultar_reporte` (501, 502). Las rutas de reportes pasaron a `/consultas-reporte` y `/catalogo-reportes` (503).
 
-Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010 y la 201 se integran en `docs/contratos/` como primera tarea de cada una (`docs/plan.md`); esta matriz ya los incluye. Los de la capa 5 (501, 502, 503 y 504) ya están en `docs/contratos/` (01/11/2026).
+13. **La 201 dejó de ser la compra automática (01/11/2026).** Pasó a ser la cobranza automática: se quitaron las filas de proveedores, órdenes de compra y cuentas por pagar (catálogo, ingreso en la app, Materiales, Finanzas y gateway); `automatizacion` queda solo en las rutas de cobranza de Finanzas que llama n8n, y se agregaron el registro de pago (`admin`) y la lectura de n8n con `gerente` y `view-users`.
+
+Pendiente de aplicar, sin contradicción: los cambios a contratos de la 010 se integran en `docs/contratos/` como primera tarea (`docs/plan.md`); esta matriz ya los incluye. Los de la capa 5 (501, 502, 503 y 504) y los de la 201 ya están en `docs/contratos/` (01/11/2026).

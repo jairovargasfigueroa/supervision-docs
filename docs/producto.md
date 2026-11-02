@@ -57,7 +57,7 @@ Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiale
 
 - Registro de usuarios: se gestionan en el panel de Keycloak.
 - Alta de trabajadores y proveedores: vienen como datos iniciales.
-- Registro de pagos de clientes y a proveedores.
+- Pagos parciales de clientes y pagos a proveedores.
 - Aprobación de órdenes de compra de monto alto.
 - Incidentes, planos, órdenes de cambio, subcontratistas, control de calidad.
 - Contabilidad, facturación ante Impuestos Nacionales y trámites legales.

@@ -24,10 +24,10 @@ Un solo aspecto para el ERP (Angular y React), el portal y la app. Colores y tip
 
 | Estado | Color |
 |---|---|
-| Stock `OK` · Planilla `APROBADA` · Cobro `PENDIENTE` | éxito |
+| Stock `OK` · Planilla `APROBADA` · Cobro `PAGADO` (201) | éxito |
 | Stock `JUSTO` · Planilla `PRESENTADA` / `APROBANDO` · Obra «En riesgo» | atención |
 | Stock `BAJO` · Planilla `OBSERVADA` · Cobro `VENCIDO` · Consumo excedido | error |
-| Planilla `BORRADOR` · Obra `SIN_CONTRATO` | primario-suave con texto secundario |
+| Planilla `BORRADOR` · Obra `SIN_CONTRATO` · Cobro `PENDIENTE` (neutro desde la 201, para no confundirlo con `PAGADO`) | primario-suave con texto secundario |
 | Obra `EN_EJECUCION` | primario |
 
 Los estados se muestran como *chip* (Angular `mat-chip`, MUI `Chip`, Paper `Chip`) con fondo suave y texto del color fuerte.

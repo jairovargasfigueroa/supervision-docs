@@ -55,7 +55,8 @@ Todos son UUID válidos (versión 4 en su forma; no son aleatorios) con un prefi
 | Contrato | Finanzas | `c0000000-0000-4000-8000-00000000000O` | `c0000000-0000-4000-8000-000000000002` |
 | Reserva de saldo | Finanzas | `c1000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c1000000-0000-4000-8000-000000000101` |
 | Cobro | Finanzas | `c2000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c2000000-0000-4000-8000-000000000101` |
-| Proveedor (capa 2) | Finanzas | los de la 201 | `7b1e5c1a-0001-4c3e-9a10-000000000001` |
+| Envío de cobranza (201) | Finanzas | `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro) | `c3000000-0000-4000-8000-000000000101` |
+| Proveedor (sin uso desde la 201; solo como valor de `proveedor_habitual_id`) | Materiales (campo del material) | los de la sección 4 | `7b1e5c1a-0001-4c3e-9a10-000000000001` |
 | Material | Materiales | `e0000000-0000-4000-8000-0000000000NN` | `e0000000-0000-4000-8000-000000000001` (cemento) |
 | Movimiento | Materiales | `f0000000-0000-4000-8000-0000000ONNNN` | `f0000000-0000-4000-8000-000000010033` |
 
@@ -81,9 +82,9 @@ Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`,
 
 Los usuarios de servicio de las capas (`n8n`, `ia-agentes`) son clientes confidenciales, no usuarios: no van aquí.
 
-## 4. Proveedores (Finanzas, capa 2)
+## 4. Proveedores (sin uso)
 
-Los tres de la 201 (`ProveedorSeeder`), sin cambios: `7b1e5c1a-0001-4c3e-9a10-000000000001` Ferretería El Constructor, `7b1e5c1a-0002-4c3e-9a10-000000000002` Aceros del Oriente y `7b1e5c1a-0003-4c3e-9a10-000000000003` Agregados Santa Cruz. En el sistema base la tabla `proveedor` todavía no existe; los materiales ya guardan su `proveedor_habitual_id` (el campo está en el modelo de Materiales).
+Sin uso desde que la 201 dejó de ser la compra automática (01/11/2026): Finanzas no tiene tabla `proveedor` ni se cargan proveedores. Los materiales siguen guardando su `proveedor_habitual_id` (campo del modelo de Materiales que queda sin uso; no se borra para no tocar la semilla), con estos valores: `7b1e5c1a-0001-4c3e-9a10-000000000001` Ferretería El Constructor, `7b1e5c1a-0002-4c3e-9a10-000000000002` Aceros del Oriente y `7b1e5c1a-0003-4c3e-9a10-000000000003` Agregados Santa Cruz.
 
 ## 5. Catálogo de materiales (Materiales)
 
@@ -105,7 +106,7 @@ Los tres de la 201 (`ProveedorSeeder`), sin cambios: `7b1e5c1a-0001-4c3e-9a10-00
 | 14 | `TUB-PVC4` | Tubo PVC sanitario de 4" | `SANITARIO` | pieza / piezas | 95,00 | **sin proveedor** (`null`) | largo: 6 m | sí |
 | 15 | `LAD-18H` | Ladrillo de 18 huecos | `LADRILLO` | pieza / piezas | 2,10 | Ferretería El Constructor | — | **no** |
 
-- `TUB-PVC4` no tiene proveedor habitual (muestra la etiqueta «Sin proveedor habitual» de la 201) y `LAD-18H` está inactivo (criterio 5 de la 003).
+- La columna «Proveedor habitual» queda sin uso desde la 201 (sección 4); `TUB-PVC4` no tiene ninguno. `LAD-18H` está inactivo (criterio 5 de la 003).
 - `id` del material = `e0000000-0000-4000-8000-0000000000NN` con el N.º de la tabla.
 
 ## 6. Obras
@@ -281,6 +282,17 @@ Una por planilla aprobada, en estado `CONSUMIDA` (la consumió el cobro): `c1000
 - **Número:** `AAAA` = año de `emitido_en`; el correlativo se asigna por orden de emisión dentro de cada año. Con D = 2026-10-28: `COB-2026-0001`, `-0002` y `-0003`. Si D cae a inicios de año y algún cobro queda en el año anterior, el correlativo empieza de nuevo en el año nuevo (regla del número de cobro). La semilla no necesita dejar nada para el correlativo: la saga de la 008 toma el mayor número del año, así que el siguiente cobro continúa la serie (con D = 2026-10-28, `COB-2026-0004`).
 - **Estado:** `VENCIDO` si `vence_en` < D; si no, `PENDIENTE`.
 - **Resumen del tablero (`GET /cobros/resumen`):** vencidos 1 por 290.134,80; por vencer en 30 días 2 por 771.629,60.
+- **Pagos (201):** ninguno; los tres cobros tienen `pagado_en`, `comprobante`, `pago_registrado_por` y `pago_registrado_en` en `null`. El pago se registra en vivo en la demostración.
+
+### Envíos de la cobranza (`envio_cobro`, 201)
+
+Cada cobro tiene su envío `NOTA_COBRO` al correo de su cliente (sección 3), enviado el día de emisión a las 10:05 de La Paz (el cobro se emite a las 10:00, sección 1). Id fijo `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro). Sin recordatorios ni constancias: en la demostración, «Recordar cobros» envía el recordatorio «vencido» del `COB-AAAA-0001` (obra 1) y ninguno «por vencer» (los otros dos vencen en D + 10 y D + 18, fuera de hoy + 3).
+
+| `id` | Cobro | Tipo | Destinatario | Enviado | `ejecucion_n8n` |
+|---|---|---|---|---|---|
+| `c3000000-…-000000000101` | `c2000000-…-000000000101` (`COB-AAAA-0001`) | `NOTA_COBRO` | cliente1@correo.test | D − 40, 10:05 | `null` |
+| `c3000000-…-000000000201` | `c2000000-…-000000000201` (`COB-AAAA-0002`) | `NOTA_COBRO` | demo1@constructora-andina.test | D − 20, 10:05 | `null` |
+| `c3000000-…-000000000102` | `c2000000-…-000000000102` (`COB-AAAA-0003`) | `NOTA_COBRO` | cliente1@correo.test | D − 12, 10:05 | `null` |
 
 ## 9. Materiales
 
@@ -464,7 +476,7 @@ Todas las fotos adjuntas son del periodo de su planilla (regla `FOTO_FUERA_DEL_P
 La semilla escribe en cada servicio sus datos **ya coherentes** con los de los demás (mismos ids, mismos montos). No publica ningún evento ni comando, deja vacías las tablas `outbox_evento` y `mensaje_procesado`, y no arranca los consumidores. Motivos:
 
 1. **No hace falta:** lo que en uso real viaja por eventos (contrato creado por `ObraRegistrada`, copia `obra_acceso`, cobro emitido por la saga, cierre de periodo) ya se escribe directamente en el servicio dueño.
-2. **Publicar repetiría efectos:** `ObraRegistrada` haría que Finanzas intente crear el contrato otra vez y responda `ContratoRegistrado`; un `CobroEmitido` sin saga se registraría como incidente; un `StockBajo` dispararía en la capa 2 una orden de compra y un correo cada vez que se carga.
+2. **Publicar repetiría efectos:** `ObraRegistrada` haría que Finanzas intente crear el contrato otra vez y responda `ContratoRegistrado`; un `CobroEmitido` sin saga se registraría como incidente; un `StockBajo` generaría avisos de stock bajo (010) cada vez que se carga.
 3. **La carga dejaría de ser determinista e idempotente:** dependería del orden de llegada de los mensajes y de que todos los servicios estén corriendo.
 
 Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga del sistema base. Por eso cada capa que agrega una de esas piezas amplía la semilla (sección 13) o, como la base de reportes de la 401, la llena con su carga inicial por REST.
@@ -475,7 +487,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 |---|---|---|
 | Keycloak | (al iniciar el contenedor) | El JSON del realm (fase 1, 1.4) trae los 9 usuarios (los 8 de la 001 y `demo1`) con su `id` fijo, nombres y contraseña. |
 | Obras | `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,semilla` (en Windows `mvnw.cmd`) | Perfil `semilla`: arranca sin servidor web, sin consumidores de RabbitMQ y sin publicador del outbox, carga y termina. Opción `--semilla.modo=recargar` para vaciar antes. |
-| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder --force` | Contratos, reservas y cobros (y los proveedores de la 201 cuando exista). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
+| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder --force` | Contratos, reservas y cobros (y, desde la 201, el envío `NOTA_COBRO` de cada cobro). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
 | Materiales | `npm run semilla` | Script que crea un contexto de NestJS solo con Mongoose (sin HTTP ni RabbitMQ). Vaciar: `npm run semilla:vaciar`. |
 | Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. |
 
@@ -509,7 +521,7 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 | Funcionalidad | Qué agrega a la semilla |
 |---|---|
 | 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). Las carga `infra/semilla/agentes.mjs` por la API de Obras (como lo haría Sincronización), no la semilla de Obras: el diario se registra solo por la API (decisión de la implementación de la 502). |
-| 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
+| 201 Cobranza automática | `DatosPruebaSeeder` carga el envío `NOTA_COBRO` de los 3 cobros (sección 8); sin recordatorios ni pagos. (Antes, la compra automática cargaba proveedores; ya no: sección 4.) |
 | 301 y 303 (capa 3) | 301 (hecho): detección 0 / 0 / 0 con `epp-1.0.0` en las diez fotos (sección 10). 303: `clave_archivo_cliente` de las fotos. |
 | 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
 | 402 y 403 | Predicciones: no se siembran; las calcula el modelo al terminar la carga inicial (motivo `CARGA_INICIAL`). Consumos atípicos de prueba coherentes con el `FIE-12` excedido de la obra 1 (la carga inicial no evalúa salidas pasadas). |
