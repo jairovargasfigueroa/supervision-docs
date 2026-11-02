@@ -2,7 +2,7 @@
 
 Orden de trabajo y estado. Estados: `pendiente`, `en curso`, `hecho`. Al terminar una tarea, cambia su estado aquí.
 
-**Siguiente:** a decidir por Jairo: la capa 2 (201, compra automática con n8n, en **borrador**; en evaluación una versión recortada con la recepción desde el ERP) o mejorar el modelo de lenguaje local de la capa 5. La **301** (casco y chaleco en la app) se terminó el 01/11/2026, con la prueba en un celular Android pendiente (Jairo). La capa 5 (302, 503, 501, 502 y 504) se terminó el 01/11/2026, con las pruebas manuales con el modelo real pendientes (sección «Fases 3 a 8»); la capa 4 se terminó el 31/10/2026 y la capa 3 se salta por ahora. La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
+**Siguiente:** a decidir por Jairo: la capa 2 (201, **cobranza automática** con n8n, en **borrador** desde el 01/11/2026: reemplaza a la compra automática) o mejorar el modelo de lenguaje local de la capa 5. La **301** (casco y chaleco en la app) se terminó el 01/11/2026, con la prueba en un celular Android pendiente (Jairo). La capa 5 (302, 503, 501, 502 y 504) se terminó el 01/11/2026, con las pruebas manuales con el modelo real pendientes (sección «Fases 3 a 8»); la capa 4 se terminó el 31/10/2026 y la capa 3 se salta por ahora. La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
 
 Ramas, *pull requests* y definición de terminado: `docs/flujo-trabajo.md`. Solo se empieza algo cuyas dependencias están `hecho`.
 
@@ -105,6 +105,6 @@ Mismo formato que el sistema base. Cada `diseno.md` de capa termina con «Cambio
 | 501 | Servidores MCP de solo lectura en Obras, Materiales, Finanzas e IA; cliente MCP en el host (IA) | 5 | 401, 402, 403, 503 | hecho (obras, materiales, finanzas, ia, infra; aprobada el 31/10/2026) |
 | 502 | Agentes del ERP (Seguimiento de obras, Control de materiales, Control de cobros) | 5 | 501, 402, 403, 503 | hecho (ia, infra, gateway, mf-supervision, mf-obras, mf-materiales; aprobada el 31/10/2026; prueba manual con el modelo real pendiente) |
 | 504 | Seguridad de la IA (inyección SQL y de instrucciones; pruebas con las de IA, sin CI) | 5 | 501, 502, 503 | hecho (ia; aprobada el 31/10/2026; prueba manual con el modelo real pendiente) |
-| 201 | Compra automática por stock bajo (n8n) | 2 | 003, 004, 101 | pendiente |
+| 201 | Cobranza automática (n8n): nota de cobro al cliente, recordatorios, registro de pago y constancia | 2 | 006, 008, 401 | pendiente (borrador del 01/11/2026, reemplaza a la compra automática; falta la aprobación de Jairo) |
 | 601 | Contenedores y CI (Dockerfile y GitHub Actions por proyecto) | 6 | — (se puede adelantar) | pendiente |
 | 602 | Despliegue en tres nubes (AWS, Google Cloud, Azure) | 6 | 601 | pendiente |
