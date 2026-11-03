@@ -21,11 +21,10 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 | `frontend/portal` | React 19 · Vite 8 | Portal del cliente | Base |
 | `mobile/app-obra` | Expo SDK 58 · React Native 0.88 | App de obra (maestro de obra y almacenero) | Base y capa 1 |
 | `infra` | Docker Compose · realm de Keycloak | Entorno de desarrollo (RabbitMQ, Keycloak, bases) y pruebas de punta a punta | Fase 1 |
-| `services/notificaciones` | NestJS · MongoDB · Firebase | Notificaciones *push* y bandeja | Funcionalidad 010 (todavía no existe) |
 | `services/sincronizacion` | NestJS 12 · TypeScript · DynamoDB | Recibe lo del celular sin duplicar y arma sus datos para trabajar sin señal | Capa 1 |
 | `services/ia` | Python 3.12 · FastAPI · PostgreSQL (`reportes_db`) · MongoDB (`ia_db`) | Base de reportes (CQRS), riesgo de retraso y consumos atípicos; en la capa 5, host de los agentes, servidor MCP y reportes por voz | Capas 4 y 5 |
 
-Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `ms-sincronizacion`, `ms-ia`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal`, `app-obra` e `infra` (y `ms-notificaciones` cuando se cree), más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
+Repositorios (públicos): `https://github.com/jairovargasfigueroa/supervision-<nombre>`, con `ms-obras`, `ms-materiales`, `ms-finanzas`, `ms-sincronizacion`, `ms-ia`, `gateway`, `erp-shell`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal`, `app-obra` e `infra`, más `supervision-docs` para esta carpeta. Ramas `main` (estable) y `develop` (integración), protegidas: todo entra por *pull request* (Git Flow, `docs/flujo-trabajo.md`). Al ser públicos, revisa que nada con contraseñas entre en un commit.
 
 Herramientas: **Node 24 LTS** para todos los proyectos JavaScript (activar con `nvm use 24`; en la terminal Bash de esta máquina aparece primero un Node 20 viejo de `~/.nvm`: antepón `export PATH="/c/nvm4w/nodejs:$PATH"` o usa PowerShell, y comprueba con `node -v`), Java 21, PHP 8.5 de Herd (ejecutar Laravel desde PowerShell; el PHP 8.2 de XAMPP no sirve). Las versiones elegidas y el porqué están en `docs/arquitectura.md` («Versiones»).
 
@@ -76,7 +75,7 @@ Si algo de lo pedido no está especificado o es ambiguo, pregunta antes de progr
 
 ## Cómo trabajar en cada chat
 
-Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; de las capas, las de la capa 1, la 4, la 5 (302 y 501–504), la 301 y la 201 están **aprobadas** y las demás (303, 601 y 602) en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
+Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; de las capas, las de la capa 1, la 4, la 5 (302 y 501–504), la 301, la 201 y la nueva 010 están **aprobadas** y las demás (303, 601 y 602) en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
 
 1. Lee `docs/plan.md` y toma la **siguiente tarea `pendiente`** (fase 1) o la **siguiente funcionalidad `pendiente`** (fases 2 en adelante).
 2. Para una funcionalidad, lee su `docs/specs/NNN-nombre/requisitos.md` y `diseno.md`, los contratos y datos de cada proyecto afectado, y sus `tareas.md` (`<proyecto>/docs/specs/NNN-nombre/tareas.md`; las de proyectos que todavía no existen están en `docs/specs/NNN-nombre/tareas-<proyecto>.md`).
@@ -88,7 +87,7 @@ Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) 
 
 Un chat avanza una funcionalidad (o varias tareas de la fase 1). Cuando el chat se hace largo, el usuario abre otro y este vuelve a empezar por el paso 1: el estado vive en `docs/plan.md` y en las casillas de los `tareas.md`.
 
-GitHub CLI está en `C:\Program Files\GitHub CLI\gh.exe` (con sesión iniciada); úsalo para crear los repos nuevos como públicos (`supervision-ms-notificaciones`), agregarlos a `scripts/repos.ps1`, y configurarlos con `scripts/configurar-repos.ps1`.
+GitHub CLI está en `C:\Program Files\GitHub CLI\gh.exe` (con sesión iniciada); úsalo para crear los repos nuevos como públicos, agregarlos a `scripts/repos.ps1`, y configurarlos con `scripts/configurar-repos.ps1`.
 
 En las capas, cada `diseno.md` termina con «Cambios a contratos y datos»: aplícalos como primera tarea de esa funcionalidad, antes de programar.
 

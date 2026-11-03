@@ -1,6 +1,6 @@
 # 010 · Avisos al celular y al cliente
 
-**Estado:** borrador (por aprobar) · **Etapa:** sistema base (se hace después de la 201) · **Proyectos:** services/obras, mobile/app-obra, infra (n8n, Firebase) · **Depende de:** 003, 004, 007, 103 y 201
+**Estado:** aprobado (02/11/2026) · **Etapa:** sistema base (se hace después de la 201) · **Proyectos:** services/obras, mobile/app-obra, infra (n8n, Firebase) · **Depende de:** 003, 004, 007, 103 y 201
 
 **Decisiones de Jairo (02/11/2026):** reemplaza a la versión anterior (servicio `services/notificaciones` nuevo, bandeja con campanita en el ERP, el portal y la app, *push* web y seis tipos de aviso), que era grande para lo que aporta y no la pidió el ingeniero. Cada usuario recibe pocos avisos, solo los importantes y por el canal que usa de verdad: el **cliente** usa el portal web, así que se le avisa por **correo** (como la cobranza de la 201); el **maestro** y el **almacenero** usan la app, así que se les avisa con *push* al **celular**. Sin bandeja ni historial.
 

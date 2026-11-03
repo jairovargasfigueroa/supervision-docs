@@ -62,7 +62,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | hecho (la galería de fotos necesita el bucket S3) |
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, gateway, mf-obras, portal, infra | 007 | hecho |
 | 009 | Consultar tablero | materiales, finanzas, gateway, mf-supervision | 006 | hecho |
-| 010 | Avisos al celular y al cliente: *push* de stock bajo al almacenero y recordatorio del diario al maestro (Firebase, desde n8n), y correo «planilla para revisar» al cliente | obras, app-obra, infra | 003, 004, 007, 103, 201 | pendiente (borrador del 02/11/2026: reemplaza a la versión con servicio de notificaciones y bandeja; falta la aprobación de Jairo) |
+| 010 | Avisos al celular y al cliente: *push* de stock bajo al almacenero y recordatorio del diario al maestro (Firebase, desde n8n), y correo «planilla para revisar» al cliente | obras, app-obra, infra | 003, 004, 007, 103, 201 | pendiente (aprobada el 02/11/2026: reemplaza a la versión con servicio de notificaciones y bandeja) |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | hecho (las fotos se suben al bucket S3 cuando exista: completar `infra/.env` y correr `semilla`) |
 
 ### Pendientes conocidos del sistema base
