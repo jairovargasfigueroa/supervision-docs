@@ -433,6 +433,8 @@ Correo (solo al cliente, sin copia a cobranzas; Mailpit en desarrollo):
 |---|---|---|---|
 | Planilla para revisar (al cliente de la obra, al presentarse la planilla) | «Planilla para revisar: N.º {numero} · {obra} · {periodo}» (si se vuelve a presentar después de una observación: «Planilla corregida para revisar: N.º {numero} · {obra} · {periodo}») | «Estimado/a {nombre}: le presentamos la planilla N.º {numero} de {periodo} de la obra {obra}, con un neto de Bs {neto}. Puede revisarla y aprobarla u observarla en el portal: {PORTAL_URL}/planillas/{planillaId}. {EMPRESA_NOMBRE}» | 010 (criterio 11; diseño) · texto de la spec |
 
+En los correos de n8n (201 y 010), `{periodo}` va con el mes en letras y el año («octubre 2026»), como en la nota de cobro.
+
 Si el cliente no tiene correo, la ejecución queda fallida en n8n con «El cliente no tiene correo registrado» (como en la 201, arriba).
 
 ## Inconsistencias encontradas
