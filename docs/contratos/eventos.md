@@ -9,7 +9,7 @@ Sobre común, exchange `plataforma` (topic), colas por servicio, outbox, inbox y
 | `evento.obras.ObraRegistrada` | Obras | Finanzas, Materiales, IA | `obraId, nombre, ubicacion, zona, fechaInicio, asignaciones{residenteId, maestroId, almaceneroId, clienteId}, contrato{monto, plazoDias, anticipoPct, retencionPct, firmadoEn}` (`ubicacion` y `zona` desde la 401; `zona` es `null` sin zona) | 002, 401 |
 | `evento.finanzas.ContratoRegistrado` | Finanzas | Obras, IA | `obraId, contratoId` | 002, 401 |
 | `evento.finanzas.ContratoRechazado` | Finanzas | Obras | `obraId, motivo` | 002 |
-| `evento.materiales.StockBajo` | Materiales | (Notificaciones en la 010) | `obraId, materialId, cantidad, minimo` | 003, 004 |
+| `evento.materiales.StockBajo` | Materiales | n8n (010) | `obraId, materialId, cantidad, minimo` | 003, 004, 010 |
 | `evento.materiales.MovimientoRegistrado` | Materiales | IA | `movimientoId, obraId, materialId, tipo, cantidad, precioReferencial, partidaId, periodo, superaStock, registradoEn` (`precioReferencial` desde la 401: el precio del material al registrar el movimiento) | 004, 401, 403 |
 | `comando.finanzas.ReservarSaldo` | Obras | Finanzas | `planillaId, obraId, monto` | 008 |
 | `evento.finanzas.SaldoReservado` | Finanzas | Obras | `planillaId, reservaId` | 008 |
@@ -26,6 +26,13 @@ Sobre común, exchange `plataforma` (topic), colas por servicio, outbox, inbox y
 | `evento.materiales.ConsumosReabiertos` | Materiales | (nadie; queda en el log) | `planillaId, obraId, periodo` | 008 |
 | `evento.obras.PlanillaAprobada` | Obras | IA | `planillaId, obraId, periodo, neto, cobroId, lineas[{partidaId, cantidadPeriodo, monto}]` | 008, 401 |
 | `evento.obras.PlanillaObservada` | Obras | IA | `planillaId, obraId, motivo, origen` | 008, 401 |
+| `evento.obras.PlanillaPresentada` | Obras | n8n (010) | `planillaId, obraId, numero, periodo ("2026-10"), neto, reenvio (true si venía de OBSERVADA), presentadaEn` | 010 |
+
+### Avisos (010)
+
+- `PlanillaPresentada` usa el sobre común y el outbox de las convenciones (`version: 1`); Obras lo agrega al outbox en la misma transacción que el cambio a `PRESENTADA` (`POST /planillas/{id}/presentar`), con `reenvio` según el estado anterior. Es lo único que cambia en Obras; `StockBajo` sigue igual (Materiales lo publica cada vez que el material cruza el mínimo).
+- n8n escucha en dos colas durables propias más (definiciones de RabbitMQ de infra, con el usuario `n8n` de solo lectura de la 201): `n8n.stock-bajo` (`evento.materiales.StockBajo`, flujo «Avisar stock bajo»: *push* al tema `obra-{obraId}-almacenero`) y `n8n.planilla-presentada` (`evento.obras.PlanillaPresentada`, flujo «Avisar planilla para revisar»: correo al cliente). Confirma al terminar y de a uno, como en la 201; los repetidos los descarta el propio flujo (guarda el `id` del sobre en sus datos estáticos, los últimos 500), porque estos avisos no anotan nada en otro servicio. No publica eventos.
+- El recordatorio del diario no usa eventos: lo dispara la hora (18:00 de La Paz) en n8n.
 
 ## Saga «aprobar planilla»: secuencia
 
@@ -54,7 +61,7 @@ Los eventos de las capas (sincronización, automatización, reportes, agentes) s
 - `CobroPagado` usa el sobre común, outbox e inbox de las convenciones (`version: 1`); Finanzas lo agrega al outbox en la misma transacción que registra el pago (`POST /cobros/{id}/pago`).
 - n8n escucha en dos colas durables propias sobre el exchange `plataforma` (definiciones de RabbitMQ de infra): `n8n.cobro-emitido` (`evento.finanzas.CobroEmitido`, flujo «Enviar nota de cobro») y `n8n.cobro-pagado` (`evento.finanzas.CobroPagado`, flujo «Enviar constancia de pago»). El mensaje se confirma al terminar la ejecución, haya salido bien o mal; no publica eventos. La idempotencia la da Finanzas (`envio_cobro`, único por cobro y tipo): un aviso repetido no envía un segundo correo.
 - IA suma a su cola `ia` el enlace `evento.finanzas.CobroPagado`: `rpt_cobro.estado = PAGADO` y `pagado_en` (si el cobro todavía no está en `rpt_cobro`, falla y se reintenta).
-- `StockBajo` se queda sin consumidor hasta la 010 (ya no lo escucha n8n: la 201 dejó de ser la compra automática).
+- La 201 ya no escucha `StockBajo` (dejó de ser la compra automática); desde la 010 lo escucha n8n para el aviso de stock bajo al almacenero (cola `n8n.stock-bajo`, «Avisos (010)» arriba).
 
 ### Capa 4: el servicio de IA como consumidor (401, 402, 403)
 

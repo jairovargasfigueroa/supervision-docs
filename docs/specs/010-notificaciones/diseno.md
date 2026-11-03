@@ -88,7 +88,8 @@ Sin cambios: el evento `StockBajo` ya se publica al cruzar el mínimo (003 y 004
 ### Flujo «Avisar planilla para revisar»
 
 1. **RabbitMQ Trigger** (`n8n.planilla-presentada`); repetidos como en «Avisar stock bajo».
-2. `GET {OBRAS_URL}/planillas/{planillaId}`, `GET {OBRAS_URL}/obras/{obraId}` y Keycloak (cliente). Sin correo → **Stop and Error** «El cliente no tiene correo registrado».
+2. `GET {OBRAS_URL}/planillas/{planillaId}`; si su `estado` ya no es `PRESENTADA` (el cliente la aprobó u observó antes de que n8n leyera el aviso) → fin sin correo (decisión de la implementación). Después `GET {OBRAS_URL}/obras/{obraId}` y Keycloak (cliente). Sin correo → **Stop and Error** «El cliente no tiene correo registrado».
+   Las colas de la 010 vencen sus mensajes con una política de RabbitMQ: `n8n.stock-bajo` a 1 día y `n8n.planilla-presentada` a 7 días (si n8n estuvo apagado, no llegan avisos viejos).
 3. **Send Email** al cliente, desde `COBRANZA_REMITENTE` con el nombre `EMPRESA_NOMBRE` (201). Asunto: «Planilla para revisar: N.º {numero} · {obra} · {periodo}» (o «Planilla corregida para revisar: …» si `reenvio`). Cuerpo: «Estimado/a {nombre}: le presentamos la planilla N.º {numero} de {periodo} de la obra {obra}, con un neto de Bs {neto}. Puede revisarla y aprobarla u observarla en el portal: {PORTAL_URL}/planillas/{planillaId}. {EMPRESA_NOMBRE}».
 4. Variable nueva `PORTAL_URL` (`http://localhost:4300` en desarrollo).
 

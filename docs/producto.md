@@ -40,7 +40,7 @@ El ciclo completo de una obra, con conexión a internet:
 4. **Cobrar:** elaborar y presentar la planilla del mes; el cliente la aprueba (saga) o la observa.
 5. **Supervisar:** tablero simple de obras.
 
-Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiales, consultar obra, registrar ingreso de material, registrar salida de material, registrar foto de avance, elaborar y presentar planilla, revisar planilla (portal), consultar tablero.
+Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiales, consultar obra, registrar ingreso de material, registrar salida de material, registrar foto de avance, elaborar y presentar planilla, revisar planilla (portal), consultar tablero y avisos al celular y al cliente (010: *push* de stock bajo al almacenero y recordatorio del diario al maestro, y correo «planilla para revisar» al cliente; los envía n8n, sin bandeja).
 
 ## Capas (se agregan sobre el sistema base)
 

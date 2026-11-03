@@ -36,8 +36,8 @@ Devuelve `201` con el detalle de la obra (como `GET /obras/{id}`), `estado: "SIN
 Errores: `400` formato · `422 PRESUPUESTO_NO_COINCIDE` · `422 CODIGO_PARTIDA_REPETIDO` · `422 INSUMO_REPETIDO` · `422 CONTRATO_INVALIDO` · `403`.
 Publica `ObraRegistrada` (desde la 401, con `ubicacion` y `zona`).
 
-### GET /obras?estado=&busqueda= · 006, 009, 101, 401
-Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`estado=EN_EJECUCION`, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
+### GET /obras?estado=&busqueda= · 006, 009, 101, 401, 010
+Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`estado=EN_EJECUCION`, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`); n8n (010, flujo «Recordar diario»: `estado=EN_EJECUCION`), con el token de *service account* del cliente `n8n` (`gerente`).
 ```json
 [{
   "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
@@ -47,8 +47,8 @@ Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway; S
 ```
 `ultimaPlanilla` es `null` si no hay planillas; `zona` (401) es `null` si la obra no tiene zona.
 
-### GET /obras/{id} · 002, 004, 006, 101, 401, 201
-Roles: los que pueden ver la obra. Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (partidas del paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`); n8n (201, flujos de cobranza: nombre y `asignaciones.clienteId`), con el token de *service account* del cliente `n8n` (`gerente`).
+### GET /obras/{id} · 002, 004, 006, 101, 401, 201, 010
+Roles: los que pueden ver la obra. Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (partidas del paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`); n8n (201, flujos de cobranza: nombre y `asignaciones.clienteId`; 010, flujos «Avisar stock bajo» y «Avisar planilla para revisar»: nombre y, en el segundo, `asignaciones.clienteId`), con el token de *service account* del cliente `n8n` (`gerente`).
 ```json
 {
   "id": "uuid", "nombre": "…", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
@@ -93,8 +93,8 @@ Errores: `400 DATOS_INVALIDOS` (`errores[]` con `clima` o `texto`) · `403 SIN_P
 - `clima`: `SOLEADO`, `NUBLADO`, `LLUVIA_LEVE` o `LLUVIA_FUERTE`. `texto`: de 10 a 2000 caracteres sin contar los espacios de los extremos (se guarda sin ellos). `registradoPor` = `sub` del token; `registradoEn` = momento en que Obras la recibió.
 - Una entrada por obra y día (único `obra_id`, `fecha`): si dos llegan a la vez con distinto `id`, la segunda recibe `409 DIARIO_DIA_YA_REGISTRADO`. Un `id` que ya existe en otra obra también responde `409 DIARIO_DIA_YA_REGISTRADO`.
 
-### GET /obras/{obraId}/diario?desde=&hasta= · 103
-Roles: `maestro` y `residente` asignados, `admin`, `gerente`. Quién llama: Sincronización (capa 1), con el token del usuario (`diario` del paquete de datos, solo para el `maestro`).
+### GET /obras/{obraId}/diario?desde=&hasta= · 103, 010
+Roles: `maestro` y `residente` asignados, `admin`, `gerente`. Quién llama: Sincronización (capa 1), con el token del usuario (`diario` del paquete de datos, solo para el `maestro`); n8n (010, flujo «Recordar diario»: `desde` y `hasta` = hoy en La Paz, para saber si hay entrada), con el token de *service account* del cliente `n8n` (`gerente`).
 `[{ "id", "obraId", "fecha", "clima", "texto", "registradoPor", "registradoEn" }]`, de la fecha más reciente a la más antigua.
 - `desde` y `hasta` (`AAAA-MM-DD`, incluidas). Sin ninguna: los últimos 30 días hasta hoy (La Paz); sin `hasta`: hoy; sin `desde`: `hasta` − 29 días.
 - Errores: `400 DATOS_INVALIDOS` (fecha mal formada o `desde` posterior a `hasta`) · `400 RANGO_INVALIDO` (más de 366 días) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o la ve solo como `cliente`) · `403 SIN_PERMISO` (la ve con otro papel, por ejemplo el almacenero asignado).
@@ -107,8 +107,8 @@ Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es post
 Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`. Quién llama: el gateway, el portal y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 
-### GET /planillas/{id} · 007, 008, 401, 201
-Roles: los que pueden ver la obra. Quién llama: el gateway, el portal, el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`), y n8n (201, flujo «Enviar nota de cobro»), con el token de *service account* del cliente `n8n` (`gerente`). `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
+### GET /planillas/{id} · 007, 008, 401, 201, 010
+Roles: los que pueden ver la obra. Quién llama: el gateway, el portal, el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`), y n8n (201, flujo «Enviar nota de cobro»; 010, flujo «Avisar planilla para revisar»), con el token de *service account* del cliente `n8n` (`gerente`). `404 PLANILLA_NO_ENCONTRADA` si no existe, es de una obra que no ve o, para el `cliente`, si es `BORRADOR`.
 ```json
 {
   "id": "uuid", "obraId": "uuid", "numero": 3, "periodo": "2027-03", "estado": "BORRADOR", "version": 2,
@@ -127,9 +127,10 @@ Roles: los que pueden ver la obra. Quién llama: el gateway, el portal, el servi
 Roles: `residente` asignado. Recibe `{ "version": 2, "lineas": [{ "partidaId": "uuid", "cantidadPeriodo": 120 }], "fotoIds": ["uuid"] }`.
 Devuelve `200` con el detalle. Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUPERA_CANTIDAD_CONTRATADA` (con `errores[]`, `campo` = `partidaId`) · `422 FOTO_FUERA_DEL_PERIODO`.
 
-### POST /planillas/{id}/presentar · 007
+### POST /planillas/{id}/presentar · 007, 010
 Roles: `residente` asignado. Recibe `{ "version": 3 }`. Devuelve `200` con el detalle (`PRESENTADA`).
 Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUBTOTAL_CERO`.
+Publica `PlanillaPresentada` (010) en la misma transacción que el cambio a `PRESENTADA`; `reenvio` es `true` si venía de `OBSERVADA`.
 
 ### POST /planillas/{id}/aprobar · 008
 Roles: `cliente` dueño de la obra. Sin cuerpo. Devuelve `202 { "estado": "APROBANDO" }`.
@@ -159,8 +160,8 @@ Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versi�
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
-### GET /materiales?busqueda=&soloActivos= · 002, 003, 006, 101, 401, 503
-Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`soloActivos=true`, todas las páginas de a 100, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100, para el `precioReferencial`); el servicio de IA en los reportes (503), con el token del usuario que reenvía el gateway (todas las páginas de a 100, para los nombres y unidades de los materiales; caché de 5 minutos). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
+### GET /materiales?busqueda=&soloActivos= · 002, 003, 006, 101, 401, 503, 010
+Roles: todos los internos (`admin`, `residente`, `gerente`, `maestro`, `almacenero`). Quién llama: el gateway; Sincronización (capa 1), con el token del usuario (`soloActivos=true`, todas las páginas de a 100, para el paquete de datos); el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`) (todas las páginas de a 100, para el `precioReferencial`); el servicio de IA en los reportes (503), con el token del usuario que reenvía el gateway (todas las páginas de a 100, para los nombres y unidades de los materiales; caché de 5 minutos); n8n (010, flujo «Avisar stock bajo»: nombre y `unidadPlural` del material del aviso), con el token de *service account* del cliente `n8n` (`gerente`). Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `codigo asc`. Cada elemento:
 `[{ "id", "codigo": "CEM-IP30", "nombre": "Cemento IP-30", "tipo": "CEMENTO", "unidad": "bolsa", "unidadPlural": "bolsas", "precioReferencial": 62.00, "activo": true, "atributos": [{ "nombre": "peso", "valor": "50 kg" }] }]`
 
 ### POST /materiales · 003
