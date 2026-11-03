@@ -134,7 +134,6 @@ Ningún rol del ERP registra ingresos ni salidas: eso lo hace solo el almacenero
 | Indicador «Riesgo alto (modelo)» y columna «Riesgo (modelo)» | ✔ | propias | ✔ | | | | 402 |
 | Pantalla «Riesgo de retraso» (lista, historial, «Sobre el modelo») | ✔ | propias | ✔ | | | | 402 |
 | Indicador «Consumos atípicos por revisar» y columna «Atípicos» | ✔ | propias | ✔ | | | | 403 |
-| Pantalla «Dictado» (voz a texto en el navegador, «Copiar texto») | ✔ | ✔ | ✔ | | | | 302 |
 | Vista «Agentes»: tarjetas de agentes y lista de sugerencias | ✔ | propias (sin Control de cobros) | ✔ | | | | 502 |
 | «Ejecutar ahora» un agente | ✔ | | ✔ | | | | 502 |
 | Historial de ejecuciones y detalle de pasos | ✔ | | ✔ | | | | 502 |
