@@ -349,7 +349,6 @@ Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Con
 | «No se pudo descargar el modelo de dictado; puedes escribir el texto.» (ayuda del micrófono desactivado) | ERP · Supervisión | El modelo no se puede descargar | 302 (criterio 8) · catálogo |
 | «No se entendió el audio, intenta de nuevo» | ERP · Supervisión | Grabación < 1 s o sin texto | 302 (criterio 9) · texto de la spec |
 | «Dictar con la voz» · «Detener la grabación» (ayuda del botón del micrófono) | ERP · Supervisión (campo de dictado) | Siempre, según si está grabando | 302 (diseño) · catálogo |
-| «Dictado» (menú interno y título) · «Pulsa el micrófono y habla en español. La voz se transcribe en tu navegador: el audio no sale de tu computadora.» · «Escribe o dicta el texto» (campo) · «Copiar texto» | ERP · Supervisión (pantalla `/supervision/dictado`) | Siempre | 302 (criterio 11) · catálogo |
 | «Texto copiado» · «No se pudo copiar el texto» | ERP · Supervisión (dictado) | Tras «Copiar texto» | 302 (criterio 11) · catálogo |
 | «Preparando fotos para el cliente: {X} de {Y}» | ERP · Obras (presentar) | Preparación de versiones para el cliente | 303 (criterio 1) · texto de la spec |
 | «No se pudo cargar el detector de rostros. Reintenta o quita las fotos de la planilla.» | ERP · Obras | El modelo de rostros no carga | 303 (criterio 8) · catálogo |
