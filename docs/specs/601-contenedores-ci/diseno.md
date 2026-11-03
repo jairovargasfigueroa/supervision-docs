@@ -1,183 +1,192 @@
 # 601 · Diseño
 
-> **Ajuste pendiente por la evaluación de la capa 1 (30/10/2026):** la 102 se simplificó. La app sube la foto completa y directo a S3 con la URL firmada de Obras (pedida a Sincronización), y ya no existen la subida por partes (`/subidas`), la tabla `subida_archivo`, el prefijo `temporal/subidas/`, el acceso de Sincronización a S3 ni la foto de la nota de remisión (`notas-remision/`, variables `MATERIALES_S3_*`). Al evaluar esta capa, quitar esas menciones de este documento.
+## Las tres etapas
 
-## Reglas comunes de los Dockerfile
+```
+1. EMPAQUETAR (esta spec)      2. ENSAYAR (esta spec)                 3. SUBIR (602, después)
+servicio ─Dockerfile─> imagen  imágenes + compose por grupo           crear recursos en cada nube,
+frontend ─build─> archivos     (6 imágenes + 5 frontends estáticos)         (azure / google / aws) en la laptop,   copiar el compose de cada grupo,
+                               HTTPS y TLS entre grupos, datos de     cambiar las variables y correr
+                               demo y prueba de humo                  la misma prueba de humo
+```
 
-- Imágenes base oficiales, con versión fija al menos hasta *major.minor* (verificadas en Docker Hub el 28/10/2026): `eclipse-temurin:21-jre-alpine`, `node:24-alpine`, `python:3.12-slim`, `dunglas/frankenphp:1-php8.3`, `nginxinc/nginx-unprivileged:1.29-alpine`.
-- Varias etapas: `construir` (dependencias y compilación) y `final` (solo lo necesario para correr).
-- Usuario sin privilegios (`USER` numérico, por ejemplo `10001`, o el usuario que trae la imagen: `node`, `nginx`).
+- **Imagen:** el servicio ya empaquetado; no cambia según dónde se despliegue. Los frontends no llevan imagen: son archivos estáticos.
+- **Compose:** qué imágenes corren juntas en un servidor y con qué variables. Cambiar el reparto entre nubes es mover bloques de un compose a otro y cambiar variables.
+
+## Imágenes
+
+### Reglas comunes
+
+- Imágenes base oficiales con versión fija al menos hasta *major.minor*, publicadas hace al menos dos semanas; se verifican en Docker Hub al implementar (las del borrador anterior eran: `eclipse-temurin:21-jre-alpine`, `node:24-alpine`, `python:3.12-slim`, `dunglas/frankenphp:1-php8.3`, `nginxinc/nginx-unprivileged:1.29-alpine`).
+- Dos etapas: `construir` (dependencias y compilación) y `final` (solo lo necesario para correr).
+- Usuario sin privilegios (`USER` numérico, por ejemplo `10001`, o el que trae la imagen: `node`, `nginx`).
 - `EXPOSE` con el puerto de `convenciones.md`; el proceso lee el puerto de su variable.
-- `HEALTHCHECK` contra `GET /salud` (lo usa Docker Compose; en la nube se configuran las sondas propias de cada servicio).
+- `HEALTHCHECK` contra `GET /salud`.
 - Etiqueta OCI `org.opencontainers.image.source` con la URL del repositorio (GHCR la usa para enlazar el paquete).
-- `.dockerignore`: `.git`, `node_modules`, `vendor`, `target`, `dist`, `.env*`, `*.log`, `coverage`, `.venv`.
-- Las pruebas **no** corren dentro del `docker build`: corren antes, en el job `prueba` del workflow.
+- `.dockerignore`: `.git`, `node_modules`, `vendor`, `target`, `dist`, `.env*`, `*.log`, `coverage`, `.venv`, `android`, `datos`.
+- Las pruebas no corren dentro del `docker build`: corren antes, en el workflow.
 
-## Imagen por proyecto
+### Imagen por proyecto
 
-| Proyecto | Etapa de construcción | Imagen final y comando | Puerto | Registro (602) |
-|---|---|---|---|---|
-| services/obras | `eclipse-temurin:21-jdk-alpine`, `./mvnw -B package -DskipTests` | `eclipse-temurin:21-jre-alpine`, `java -XX:MaxRAMPercentage=75 -jar app.jar` | 8081 (`OBRAS_PORT`) | GHCR |
-| services/materiales | `node:24-alpine`, `npm ci`, `npm run build`, `npm prune --omit=dev` | `node:24-alpine`, `node dist/main.js`, usuario `node` | 8082 (`PORT`) | Artifact Registry (Google) |
-| services/finanzas | `composer:2` para `composer install --no-dev --optimize-autoloader` | `dunglas/frankenphp:1-php8.3` con extensiones `pdo_pgsql`, `bcmath`, `sockets`, `opcache`; `frankenphp php-server` sobre `public/` **(decisión del equipo:** FrankenPHP evita armar nginx + php-fpm en dos procesos) | 8083 | GHCR |
-| services/ia | `python:3.12-slim` con `uv` (`uv sync --frozen --no-dev` a partir de `pyproject.toml` y `uv.lock`, entorno en `/app/.venv`), como pide la 401 | `python:3.12-slim` con el entorno copiado. **Una imagen, dos comandos** (401): `ia-api` (FastAPI con Uvicorn en `IA_PUERTO`, 8085) e `ia-worker` (consumidor de RabbitMQ y tareas programadas, incluidos los agentes de la 502). Incluye `modelos/` (artefactos de la 402 y la 403); **no** incluye `entrenamiento/` (TensorFlow, 301) ni `ml/` | 8085 | Artifact Registry (Google) |
-| services/sincronizacion | `node:24-alpine` como Materiales | `node:24-alpine`, `node dist/main.js`, usuario `node`, más la extensión **AWS Lambda Web Adapter** `1.1.0`: `COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.1.0 /lambda-adapter /opt/extensions/lambda-adapter` (línea documentada en el repositorio `aws/aws-lambda-web-adapter`). Fuera de Lambda la extensión no se activa y la imagen corre igual | 8084 (`PORT`) | ECR (AWS) |
-| gateway | como Materiales | `node:24-alpine`, `node dist/main.js` | 4000 (`PORT`) | GHCR |
-| frontend/erp-shell, mf-obras | `node:24-alpine`, `npm ci`, `npm run build` (Angular: `dist/<proyecto>/browser`) | `nginxinc/nginx-unprivileged:1.29-alpine` con `nginx.conf` propio (SPA: `try_files … /index.html`; CORS en `remoteEntry.json` y archivos `.js` para los remotos; sin caché en `index.html`, `ngsw.json`, `ngsw-worker.js` y `federation.manifest.json`) | 8080 en el contenedor | GHCR |
-| frontend/mf-materiales, mf-supervision | `node:24-alpine`, `npm ci`, `npm run build` (`dist/`) | igual que arriba | 8080 | GHCR |
-| frontend/portal | `node:24-alpine`, `npm ci`, `npm run build` (`dist/`) | igual que arriba | 8080 | GHCR |
+| Proyecto | Etapa de construcción | Imagen final y comando | Puerto |
+|---|---|---|---|
+| services/obras | JDK 21: `./mvnw -B package -DskipTests` | JRE 21: `java -XX:MaxRAMPercentage=75 -jar app.jar` con el perfil `prod` | 8081 |
+| services/materiales | Node 24: `npm ci`, `npm run build`, `npm prune --omit=dev` | Node 24: `node dist/main.js`, usuario `node` | 8082 |
+| services/finanzas | `composer install --no-dev --optimize-autoloader` | FrankenPHP con PHP 8.3+ y las extensiones `pdo_pgsql`, `bcmath`, `sockets`, `opcache`; `php artisan migrate --force` y después `frankenphp php-server` sobre `public/` (decisión del equipo: un solo proceso, sin nginx + php-fpm). **La misma imagen** corre los procesos en segundo plano cambiando el comando: `mensajeria:consumir`, `mensajeria:publicar` y `schedule:work` | 8083 |
+| services/ia | Python 3.12 con `uv sync --frozen --no-dev` (entorno en `/app/.venv`) | Python 3.12 con el entorno copiado y `modelos/` (402 y 403); sin `entrenamiento/` ni `ml/`. **Una imagen, dos comandos:** `ia-api` (aplica `alembic upgrade head` y atiende en 8085) e `ia-worker`. La carga inicial (`ia-carga-inicial`) es un tercer comando de la misma imagen | 8085 |
+| services/sincronizacion | como Materiales | Node 24: `node dist/main.js`. Sin adaptador de Lambda: si la 602 la pone en Lambda, lo agrega allá | 8084 |
+| gateway | como Materiales | Node 24: `node dist/main.js` | 4000 |
 
-- **IA:** la 401 ya crea el `Dockerfile` con los dos comandos; esta spec lo completa (etapas, usuario sin privilegios, `HEALTHCHECK` solo en `ia-api`, `.dockerignore`). Si la 401 define los comandos como *scripts* de `pyproject.toml` (`ia-api`, `ia-worker`), el contenedor los ejecuta tal cual; si no, `uvicorn ia.main:app --host 0.0.0.0 --port ${IA_PUERTO}` y `python -m ia.worker`.
-- **Finanzas** usa la **misma imagen** para la API y para los procesos en segundo plano de 008 y 201 (consumidor de RabbitMQ, publicador del outbox y `schedule:work`); cambia solo el comando (602).
-- Obras, Materiales y Finanzas corren sus migraciones al iniciar (Flyway en Obras; en Finanzas, `php artisan migrate --force` antes de la API). IA corre `alembic upgrade head` al iniciar `ia-api` (las migraciones de `reportes_db` de la 401 y los permisos de la 503). **(decisión del equipo)**
-- Frontends: la configuración se fija **al compilar** con variables del entorno de GitHub (`vars`), porque los sitios estáticos no leen variables en tiempo de ejecución. Angular (shell, mf-obras) usa `environment.ts` / `environment.prod.ts` (001); los React con esbuild (mf-materiales, mf-supervision) reciben los valores con `define` en `build.mjs`; el portal usa variables `VITE_*`. En el shell, `public/federation.manifest.json` se genera en el workflow con las URL de producción de los remotos. **(decisión del equipo)**
+### Frontends: archivos estáticos con configuración al publicar
 
-## Configuración por variables de entorno
+Los frontends no llevan imagen (decisión de Jairo): se compilan una vez (`npm run build`) y se publican como archivos estáticos, como en Amplify. En el ensayo local los sirve Caddy desde las carpetas compiladas; en la nube, un *hosting* de estáticos (602). Al **publicar**, un script escribe con las variables del entorno los archivos que dependen de él:
 
-Nombres que ya figuran en las specs o en los proyectos; los que todavía no existen se marcan *(propuesto)* y siguen el prefijo que usa cada proyecto. Cada proyecto deja en su `.env.example` el valor de desarrollo.
-
-| Proyecto | Variables (fuente) |
-|---|---|
-| Obras | `OBRAS_PORT`, `OBRAS_DB_HOST`, `OBRAS_DB_PORT`, `OBRAS_DB_NAME`, `OBRAS_DB_USER`, `OBRAS_DB_PASSWORD` (`application.yml`); `OBRAS_S3_ENDPOINT`, `OBRAS_S3_ACCESS_KEY`, `OBRAS_S3_SECRET_KEY`, `OBRAS_S3_BUCKET` (005); *(propuesto)* `OBRAS_DB_SSLMODE`, `OBRAS_S3_REGION`, `OBRAS_KEYCLOAK_ISSUER`, `OBRAS_RABBITMQ_HOST`, `OBRAS_RABBITMQ_PORT`, `OBRAS_RABBITMQ_USER`, `OBRAS_RABBITMQ_PASSWORD`, `OBRAS_RABBITMQ_SSL`, `OBRAS_CORS_ORIGENES` |
-| Materiales | `PORT`, `MONGODB_URI` (`.env.example`); `MATERIALES_S3_ENDPOINT`, `MATERIALES_S3_ACCESS_KEY`, `MATERIALES_S3_SECRET_KEY`, `MATERIALES_S3_BUCKET` (102); `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `AUDIENCIA` (los mismos nombres que la 101 usa «igual que Materiales»); *(propuesto)* `MATERIALES_S3_REGION`, `RABBITMQ_URL` |
-| Finanzas | `APP_KEY`, `APP_ENV`, `APP_DEBUG`, `LOG_CHANNEL`, `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` (Laravel); *(propuesto)* `DB_SSLMODE`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `AUDIENCIA`, `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`, `RABBITMQ_SSL` |
-| IA (`ia-api` e `ia-worker`) | 401: `IA_PUERTO`, `IA_REPORTES_DB_URL`, `IA_MONGO_URL`, `IA_MONGO_DB`, `IA_RABBITMQ_URL`, `IA_KEYCLOAK_ISSUER`, `IA_AUDIENCIA`, `IA_ZONA_HORARIA`; 402 y 403: `IA_MODELO_RIESGO_VERSION`, `IA_MODELO_ATIPICOS_VERSION` (opcionales); 501: `IA_AGENTES_CLIENT_ID`, `IA_AGENTES_CLIENT_SECRET`, `IA_OBRAS_MCP_URL`, `IA_MATERIALES_MCP_URL`, `IA_FINANZAS_MCP_URL`, `IA_PROPIO_MCP_URL`, `IA_MCP_HOSTS_PERMITIDOS`; 502: `IA_AGENTES_CRON`, `IA_AGENTES_PROGRAMADOS_ACTIVOS`; 503: `IA_LLM_PROVEEDOR`, `IA_LLM_MODELO`, `IA_OLLAMA_URL`, `IA_ANTHROPIC_API_KEY` (secreto), `IA_REPORTES_DB_URL_LECTURA`, `IA_MATERIALES_URL` |
-| Sincronización | 101: `PORT`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `AUDIENCIA`, `OBRAS_URL`, `MATERIALES_URL`, `DYNAMODB_ENDPOINT`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `DYNAMODB_CREAR_TABLAS`, `TIEMPO_MAXIMO_LLAMADA_MS`, `TIEMPO_MAXIMO_LOTE_MS`; 102: `SINC_S3_ENDPOINT`, `SINC_S3_ACCESS_KEY`, `SINC_S3_SECRET_KEY`, `SINC_S3_BUCKET` |
-| Gateway | `PORT`, `OBRAS_URL`, `MATERIALES_URL`, `FINANZAS_URL`, `KEYCLOAK_URL`, `KEYCLOAK_GATEWAY_CLIENT_ID`, `KEYCLOAK_GATEWAY_CLIENT_SECRET` (contrato del gateway); `IA_URL` (402); *(propuesto)* `KEYCLOAK_REALM`, `AUDIENCIA`, `CORS_ORIGENES` |
-| erp-shell (al compilar) | `environment.prod.ts`: URL de Keycloak, del gateway y del portal (001); `federation.manifest.json` con las URL de los remotos |
-| mf-obras (al compilar) | `environment.prod.ts`: URL del gateway |
-| mf-materiales, mf-supervision (al compilar) | *(propuesto)* `GATEWAY_URL`; mf-supervision además `DICTADO_MODELO_URL` (302, opcional) |
-| portal (al compilar) | `VITE_OBRAS_URL` (008); *(propuesto)* `VITE_KEYCLOAK_URL` |
-| app-obra (al compilar) | *(propuesto)* `EXPO_PUBLIC_KEYCLOAK_URL`, `EXPO_PUBLIC_SINCRONIZACION_URL` (desde la 101 y la 102 la app solo llama a Keycloak y a Sincronización) |
-| n8n (infra) | 201: `GENERIC_TIMEZONE`, `N8N_ENCRYPTION_KEY`, y las variables de los flujos `FINANZAS_URL`, `COMPRAS_CORREO_REMITENTE`, `EMPRESA_NOMBRE` |
-
-- En Lambda, `AWS_REGION`, `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY` los pone el propio entorno de ejecución con las credenciales del rol: no se definen a mano. `SINC_S3_ACCESS_KEY` y `SINC_S3_SECRET_KEY` quedan vacías y el cliente S3 usa la cadena de credenciales por defecto del AWS SDK (tarea de Sincronización: no pasar credenciales al cliente si las variables están vacías). Lo mismo con `DYNAMODB_ENDPOINT` vacío (usa el DynamoDB real de la región).
-
-## Workflow `ci-cd.yml`
-
-Versiones mayores de las acciones (verificadas en GitHub el 28/10/2026): `actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-java@v6`, `actions/setup-python@v7`, `shivammathur/setup-php@v2`, `docker/setup-buildx-action@v4`, `docker/login-action@v4`, `docker/build-push-action@v7`, `azure/login@v3`, `google-github-actions/auth@v3`, `google-github-actions/deploy-cloudrun@v3`, `aws-actions/configure-aws-credentials@v6`, `aws-actions/amazon-ecr-login@v2`, `Azure/static-web-apps-deploy@v1`.
-
-### Estructura común
-
-```yaml
-name: ci-cd
-on:
-  pull_request: { branches: [main] }
-  push: { branches: [main] }
-  workflow_dispatch:
-    inputs:
-      etiqueta: { description: "Etiqueta a desplegar (vacío = este commit)", required: false }
-permissions:
-  contents: read
-  packages: write      # GHCR
-  id-token: write      # OIDC hacia la nube
-concurrency: { group: ci-cd-${{ github.ref }}, cancel-in-progress: true }
-jobs:
-  prueba:     # siempre: dependencias con caché, lint, pruebas, compilación
-  imagen:     # needs: prueba · en PR: build sin push · en main: build + push con etiquetas sha-<7> y main
-  desplegar:  # needs: imagen · solo en main o a mano · environment: produccion · login OIDC y despliegue de sha-<7> (o de la etiqueta pedida)
-```
-
-- Caché de capas con `cache-from/cache-to: type=gha`.
-- El job `desplegar` usa el entorno de GitHub `produccion` (secretos y variables de producción; opcionalmente, aprobación manual de un integrante). **(decisión del equipo)**
-
-### Ejemplo: Obras (Azure Container Apps)
-
-```yaml
-  prueba:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with: { distribution: temurin, java-version: '21', cache: maven }
-      - run: ./mvnw -B verify
-  imagen:
-    needs: prueba
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - id: etiqueta
-        run: echo "sha=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-buildx-action@v4
-      - if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
-        with: { registry: ghcr.io, username: ${{ github.actor }}, password: ${{ secrets.GITHUB_TOKEN }} }
-      - uses: docker/build-push-action@v7
-        with:
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ghcr.io/jairovargasfigueroa/supervision-ms-obras:${{ steps.etiqueta.outputs.sha }}
-            ghcr.io/jairovargasfigueroa/supervision-ms-obras:main
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-  desplegar:
-    if: github.ref == 'refs/heads/main'
-    needs: imagen
-    runs-on: ubuntu-latest
-    environment: produccion
-    steps:
-      - uses: azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - run: >
-          az containerapp update --name obras --resource-group rg-supervision
-          --image ghcr.io/jairovargasfigueroa/supervision-ms-obras:sha-${GITHUB_SHA::7}
-```
-
-### Diferencias por proyecto
-
-| Proyecto | Job `prueba` | Despliegue |
+| Proyecto | Archivo generado | Variables |
 |---|---|---|
-| Obras | `./mvnw -B verify` (Java 21) | `az containerapp update` (app `obras`) |
-| Finanzas | PHP 8.3 con `shivammathur/setup-php@v2` (extensiones `pdo_pgsql`, `bcmath`, `sockets`), `composer install`, `php artisan test` con PostgreSQL de servicio | `az containerapp update` de `finanzas-api` y `finanzas-worker` con la misma imagen |
-| Gateway | Node 24: `npm ci`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build` | `az containerapp update` (app `gateway`) |
-| Materiales | Node 24 y MongoDB de servicio en modo *replica set* para las pruebas de outbox | Artifact Registry + `google-github-actions/deploy-cloudrun@v3` (servicio `materiales`) |
-| IA | `astral-sh/setup-uv` (o `pip install uv`) con Python 3.12: `uv sync --frozen`, `uv run ruff check`, `uv run pytest` con PostgreSQL de servicio (proyecciones de la 401) e incluidas las pruebas de seguridad de la 504 | Artifact Registry + `gcloud compute ssh vm-ia --tunnel-through-iap --command "cd /opt/supervision && sudo docker compose pull ia-api ia-worker && sudo docker compose up -d ia-api ia-worker"` |
-| Sincronización | Node 24 con DynamoDB Local de servicio y un doble de S3 (101 y 102) | ECR + `aws lambda update-function-code --function-name sincronizacion --image-uri <ecr>/supervision-ms-sincronizacion:sha-…` y espera a `LastUpdateStatus = Successful` |
-| erp-shell, mf-obras | `npm ci`, `npm test`, `npm run build` con la configuración de producción; el shell genera `federation.manifest.json` | `Azure/static-web-apps-deploy@v1` con `skip_app_build: true` y la carpeta `dist/…/browser`; la imagen nginx se publica en GHCR |
-| mf-materiales, mf-supervision | `npm ci`, `npm run typecheck`, pruebas, `npm run build` | igual (carpeta `dist/`) |
-| portal | `npm ci`, `npm run lint`, `npm run build` | igual (carpeta `dist/`) |
-| app-obra | `npx tsc --noEmit`, pruebas, `npx expo-doctor` (sin imagen ni despliegue) | Workflow aparte `version-instalable.yml` (`workflow_dispatch`) con `eas build --platform android --profile preview` y el secreto `EXPO_TOKEN` **(decisión del equipo:** APK de distribución interna; requiere cuenta gratuita de Expo; la 301 ya exige *development build* por `react-native-fast-tflite`) |
-| infra | Valida los `docker-compose*.yml` (`docker compose config`), el JSON del realm y las definiciones de RabbitMQ (colas `ia`, `n8n.stock-bajo`, `n8n.compra-recibida`, `plataforma.fallidos`); valida los flujos de n8n de `n8n/flujos/` (JSON bien formado) | `az vm run-command invoke` (VM de Azure) y `gcloud compute ssh` (VM de Google) para `docker compose pull && docker compose up -d` |
+| erp-shell | `configuracion.json` (`keycloakUrl`, `keycloakRealm`, `gatewayUrl`, `portalUrl`) y `federation.manifest.json` (dirección de cada remoto) | `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `GATEWAY_URL`, `PORTAL_URL`, `MF_OBRAS_URL`, `MF_MATERIALES_URL`, `MF_SUPERVISION_URL` |
+| portal | `configuracion.json` (`keycloakUrl`, `keycloakRealm`, `obrasUrl`, `erpUrl`) | `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `OBRAS_URL`, `ERP_URL` |
+| mf-obras, mf-materiales, mf-supervision | ninguno: leen la configuración que publica el shell en `window.plataforma.configuracion` (ya es así en mf-materiales y mf-supervision; mf-obras se alinea) | — |
 
-- `astral-sh/setup-uv`: la versión mayor se fija al implementar (no se verificó en esta spec); alternativa sin acción externa: `pip install uv`.
-- Las imágenes que van a Azure Container Apps se publican en **GHCR** (gratuito para estos repositorios; Container Apps puede descargar de cualquier registro). Las de Google van a **Artifact Registry** y la de AWS a **ECR**, porque Cloud Run y Lambda descargan de su propio registro. **(decisión del equipo)**
-- Los frontends también construyen y publican su imagen nginx en GHCR (sirve para Docker Compose y como alternativa de despliegue), pero en la nube se publican los archivos estáticos. **(decisión del equipo)**
+- El shell y el portal cargan `configuracion.json` **antes** de iniciar (inicializador de Angular en el shell; antes de montar React en el portal). En desarrollo, si el archivo no está, usan los valores de desarrollo de hoy.
+- Reglas del servidor de estáticos (Caddy en el ensayo; el *hosting* en la nube): SPA (si no existe el archivo, `index.html`), CORS en `remoteEntry.json` y `.js` de los microfrontends para el origen del shell, y sin caché en `index.html`, `configuracion.json`, `federation.manifest.json`, `ngsw.json` y `ngsw-worker.js`.
+- El script `infra/produccion-local/publicar-frontends.(ps1|sh)` compila (o toma) la carpeta `dist` de cada frontend, la copia al volumen de Caddy y escribe los dos archivos con `envsubst`; la 602 hace lo mismo hacia el *hosting* de la nube.
 
-## Secretos de GitHub (entorno `produccion`)
+## Configuración por variables
 
-| Secreto | Repos |
+Fuente de los nombres actuales: `docs/entorno-local.md` («Variables de entorno por proyecto») y el `.env.example` de cada proyecto. Esta spec **revisa que no quede ninguna dirección fija** y agrega solo lo que falta para producción:
+
+| Proyecto | Agrega (si no existe ya) |
 |---|---|
-| `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (identidad federada, sin contraseña) | obras, finanzas, gateway, infra |
-| `AZURE_SWA_TOKEN` (token de despliegue de cada Static Web App) | erp-shell, mf-obras, mf-materiales, mf-supervision, portal |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT` | materiales, ia, infra |
-| `AWS_ROLE_ARN` (rol con confianza OIDC para el repositorio) | sincronizacion |
-| `EXPO_TOKEN` | app-obra |
+| Obras | `OBRAS_DB_SSLMODE`, `OBRAS_RABBITMQ_SSL`, `OBRAS_CORS_ORIGENES` (si faltara), perfil `prod` (`SPRING_PROFILES_ACTIVE`) |
+| Materiales | TLS en `MONGODB_URI` y `RABBITMQ_URL` (`amqps://`) por la propia URL; `CORS_ORIGENES` si atiende al navegador; `NODE_ENV` |
+| Finanzas | `DB_SSLMODE`, `RABBITMQ_SSL`, `APP_ENV`, `APP_DEBUG`, `LOG_CHANNEL=stderr`, `EMPRESA_NOMBRE` (201) |
+| IA | TLS por las URL (`IA_RABBITMQ_URL` con `amqps://`, `IA_MONGO_URL`, `sslmode` en las de PostgreSQL); `IA_CA_EXTRA` opcional (ruta de una CA adicional, para el ensayo local) |
+| Sincronización | `NODE_ENV`; las direcciones de Obras y Materiales ya son variables (101) |
+| Gateway | `CORS_ORIGENES`, `NODE_ENV` |
+| Frontends | las de la tabla anterior (al publicar) |
+| app-obra | `EXPO_PUBLIC_KEYCLOAK_URL`, `EXPO_PUBLIC_SINCRONIZACION_URL` (al compilar; hoy están en `app.json` → `extra`). El APK lo genera Jairo más adelante |
+| Keycloak (infra) | `ERP_URL`, `PORTAL_URL` (direcciones de regreso y orígenes de los clientes `erp` y `portal`), `USUARIOS_PRUEBA_CLAVE` (contraseña de los usuarios de prueba al importar; por defecto `Prueba123!` solo en desarrollo), `KC_HOSTNAME` (dirección pública de Keycloak, para que el emisor de los tokens sea el mismo para todos), secretos de los clientes (ya por variable) |
 
-- Los secretos de la **aplicación** (contraseñas de bases, de RabbitMQ, secretos de los clientes de Keycloak, clave de cifrado de n8n) no los usa el workflow: viven en el gestor de cada nube y se cargan en el servicio (602). El workflow solo cambia la imagen.
+- **Una CA extra para el ensayo local:** en la «producción local» los certificados los firma una autoridad local de Caddy. Cada imagen acepta una CA adicional por variable sin cambiar el código: Java (`JAVA_TOOL_OPTIONS` con un *truststore*), Node (`NODE_EXTRA_CA_CERTS`), Python (`SSL_CERT_FILE` o `IA_CA_EXTRA`) y PHP (`curl.cainfo` y `openssl.cafile`). En la nube no hace falta: los certificados son públicos.
+
+## Datos de demostración
+
+- Guarda nueva común a la semilla de Obras, Finanzas y Materiales y a los scripts de `infra`: con `SEMILLA_DEMO=si`, la semilla **carga** (idempotente) aunque el servicio esté en modo producción o la base no sea local; el **vaciado** sigue prohibido fuera de desarrollo (sin excepción).
+- Fotos de prueba: al bucket o al S3 compatible configurado (`S3_BUCKET` y su *endpoint*); la guarda del prefijo `supervision-dev-` se cambia por «`supervision-dev-` o `SEMILLA_DEMO=si`».
+- Después de la semilla, la carga inicial de reportes (401) con el comando `ia-carga-inicial` de la imagen de IA.
+
+## CI en GitHub
+
+Workflow `.github/workflows/ci.yml` en cada repositorio. Versiones de las acciones (mayores, verificadas al implementar): `actions/checkout`, `actions/setup-node`, `actions/setup-java`, `astral-sh/setup-uv` (o `pip install uv`), `shivammathur/setup-php`, `docker/setup-buildx-action`, `docker/login-action`, `docker/build-push-action`.
+
+```yaml
+name: ci
+on:
+  pull_request: { branches: [develop, main] }
+  push: { branches: [main] }
+permissions: { contents: read, packages: write }
+concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+jobs:
+  prueba:   # dependencias con caché, lint, tipos, pruebas, compilación
+  imagen:   # solo servicios · needs: prueba · en PR: build sin push · en push a main: build + push a GHCR (sha-<7> y main)
+  archivos: # solo frontends · needs: prueba · en push a main: sube la carpeta compilada como artefacto (actions/upload-artifact)
+```
+
+| Proyecto | Job `prueba` |
+|---|---|
+| Obras | Java 21: `./mvnw -B verify` (Testcontainers con el Docker del runner) |
+| Finanzas | PHP 8.3+ con `pdo_pgsql`, `bcmath` y `sockets`: `composer install`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse`, `php artisan test` |
+| Materiales, Sincronización y gateway | Node 24: `npm ci` y los scripts de lint, pruebas (unitarias y e2e) y compilación de cada proyecto; Materiales con MongoDB en *replica set* y Sincronización con DynamoDB Local como servicios del job |
+| IA | uv con Python 3.12: `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy`, `pytest` (Testcontainers) |
+| erp-shell, mf-obras | `npm ci`, pruebas y `npm run build` |
+| mf-materiales, mf-supervision | `npm ci`, `npm run typecheck`, pruebas y `npm run build` |
+| portal | `npm ci`, lint, pruebas y `npm run build` |
+| app-obra | `npm ci`, `npx tsc --noEmit` y `npx jest` (sin imagen) |
+| infra | `docker compose config -q` (todos los perfiles), JSON del realm, definiciones de RabbitMQ y flujos de n8n bien formados |
+
+- Imagen publicada: `ghcr.io/jairovargasfigueroa/supervision-<repo>:sha-<7>` y `:main`. Caché de capas con `type=gha`.
+- Los repositorios son públicos: GitHub Actions y GHCR no tienen costo.
+
+## Ensayo local («producción local»)
+
+Carpeta nueva `infra/produccion-local/`:
+
+```
+produccion-local/
+  compose.azure.yml    keycloak (KC_HOSTNAME), rabbitmq (TLS 5671), n8n, mailpit, postgres (obras_db, finanzas_db, keycloak_db),
+                       obras, finanzas-api, finanzas-trabajos (consumidor, publicador y schedule), gateway y caddy, que además
+                       sirve los 5 frontends compilados (erp, mf-obras, mf-materiales, mf-supervision y portal)
+  compose.google.yml   ia-api, ia-worker, postgres de reportes, mongo (replica set), materiales, ollama (perfil opcional,
+                       reusa el volumen del modelo), caddy
+  compose.aws.yml      sincronizacion, dynamodb-local, minio (S3), caddy
+  caddy/               un Caddyfile por grupo (tls internal) y la CA local compartida
+  certificados.ps1/.sh genera la CA local y el certificado de RabbitMQ (openssl en un contenedor)
+  .env.example         todas las variables de los tres grupos, sin secretos
+  publicar-frontends.ps1/.sh  compila los 5 frontends, los copia al volumen de Caddy y escribe su configuración
+  levantar.ps1/.sh     construye o descarga las imágenes, publica los frontends, genera certificados y levanta los tres grupos
+  bajar.ps1/.sh
+```
+
+- **Nombres:** cada grupo publica sus servicios en `https://<servicio>.<grupo>.localhost` (por ejemplo `https://keycloak.azure.localhost`, `https://ia.google.localhost`); `*.localhost` resuelve a la máquina en el navegador sin tocar el archivo `hosts`. Dentro de los contenedores, esos nombres apuntan a la máquina con `extra_hosts` (`host-gateway`), así las llamadas entre grupos salen y entran por Caddy con HTTPS, como entre nubes.
+- **Puertos en la máquina:** 443 compartido no es posible para tres Caddy; cada grupo usa el suyo (por ejemplo 8443 azure, 9443 google y 10443 aws) y las direcciones los llevan (`https://keycloak.azure.localhost:8443`). Se eligen para no chocar con los de desarrollo (`convenciones.md`).
+- **Navegador:** acepta la CA local una vez (instalarla en Windows es opcional y necesita permisos de administrador; si no, el navegador muestra el aviso de certificado una vez por dirección).
+- **Imágenes:** por defecto se **construyen** desde las carpetas de cada proyecto (sin depender de GHCR); con `--desde-ghcr` se descargan las publicadas.
+- **Datos:** `levantar` termina con la semilla en modo demostración y la carga inicial de reportes.
+- **Recursos:** el ensayo completo corre unos 20 contenedores; si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, y después los otros). El desarrollo diario no cambia: sigue con los servidores de desarrollo; con 16 GB de RAM se levanta sin Ollama por defecto (reportes y agentes con el modelo apagado, o con el Ollama de desarrollo).
+
+## Prueba de humo
+
+`infra/pruebas/humo-despliegue.mjs` (Node 24, sin dependencias), con un archivo de direcciones (`--entorno produccion-local/.env` o, en la 602, el de la nube):
+
+1. `GET /salud` de Obras, Materiales, Finanzas, IA, Sincronización y el gateway; la página inicial de cada frontend y su `configuracion.json`.
+2. Keycloak: token de un usuario de prueba (`ERP_URL` como origen) y de los clientes de servicio (`gateway`, `ia-reportes`, `ia-agentes`, `n8n`), con el emisor esperado.
+3. Gateway: una consulta con el token del gerente.
+4. `/mcp` de los cuatro servicios: `401` sin token.
+5. RabbitMQ: colas de la plataforma y de n8n, por TLS.
+6. n8n (flujos publicados) y Mailpit.
+7. Con `--completa`: presentar y aprobar una planilla, esperar el cobro y la nota de cobro en Mailpit (reusa la lógica de `pruebas/cobranza.mjs`).
+
+Salida: una línea por comprobación y un resumen; código distinto de 0 si algo falla.
+
+## App
+
+- `app.config.js` toma `EXPO_PUBLIC_KEYCLOAK_URL` y `EXPO_PUBLIC_SINCRONIZACION_URL` (por defecto, las de desarrollo). Generar y distribuir el APK queda fuera de esta spec (lo hace Jairo).
 
 ## Pruebas
 
-- Cada proyecto: `docker build` local y `docker run` con variables de prueba responden `GET /salud` (o la página inicial en los frontends) y el proceso no corre como `root` (`docker run … id -u` distinto de 0).
-- IA: la misma imagen arranca con `ia-api` (responde `/salud`) y con `ia-worker` (se conecta a RabbitMQ y registra la cola `ia`).
-- Sincronización: la imagen responde `/salud` con `docker run` (la extensión de Lambda no interfiere fuera de Lambda).
-- Workflow: un PR de prueba con una prueba rota queda en rojo y no publica imagen; un *push* a `main` publica `sha-…` y `main` y despliega.
-- `docker history` de la imagen final no muestra `.env` ni herramientas de compilación.
+- Cada servicio: `docker build` y `docker run` con variables de prueba responden `/salud`, el proceso no corre como `root` (`id -u` distinto de 0) y `docker history` no muestra `.env` ni herramientas de compilación.
+- IA: la misma imagen arranca con `ia-api` (responde `/salud`) y con `ia-worker` (se conecta a RabbitMQ).
+- Finanzas: la misma imagen corre la API y los tres procesos en segundo plano.
+- Workflows: un PR con una prueba rota queda en rojo; un *push* a `main` publica `sha-…` y `main`.
+- Ensayo local: `levantar` deja los tres grupos sanos y `humo-despliegue.mjs --completa` pasa entero; mover un servicio de grupo solo cambia los *compose* y las variables.
 
 ## Cambios a contratos y datos
 
 ### `docs/convenciones.md`
 
-Nueva sección «Contenedores y CI/CD»:
-- Un `Dockerfile` y un `ci-cd.yml` por repositorio; imagen *multi-stage*, sin `root`, configuración por variables de entorno.
-- Etiquetas `sha-<7>` (la que se despliega) y `main`.
-- Registros: GHCR (`ghcr.io/jairovargasfigueroa/supervision-<repo>`) para lo que va a Azure; Artifact Registry para Google; ECR para AWS.
-- Autenticación de los workflows con OIDC; secretos de despliegue en GitHub Secrets (entorno `produccion`).
-- Tabla de variables de entorno por proyecto de este diseño (incluidas las *propuestas*, para que cada proyecto las agregue a su `.env.example`).
+Sección nueva «Contenedores y CI»: un `Dockerfile` por servicio y un `ci.yml` por repositorio; imagen en dos etapas, sin `root`, configuración por variables; etiquetas `sha-<7>` y `main` en GHCR; frontends como archivos estáticos con `configuracion.json` escrito al publicar; puertos del ensayo local.
+
+### `docs/entorno-local.md`
+
+- Variables nuevas de la tabla «Configuración por variables».
+- Sección «Producción local»: qué levanta, cómo, puertos, la CA local y cuánto ocupa.
+
+### `docs/datos-prueba.md`
+
+Guardas: la excepción `SEMILLA_DEMO=si` (solo carga, nunca vaciado).
 
 ### `docs/arquitectura.md`
 
-- «Los 4 niveles → Despliegue»: agregar «imagen por repositorio publicada por GitHub Actions; IA con una imagen y dos procesos (`ia-api`, `ia-worker`); frontends como sitios estáticos».
-- «Versiones»: imágenes base (`eclipse-temurin:21`, `node:24-alpine`, `python:3.12-slim`, `dunglas/frankenphp:1-php8.3`, `nginx-unprivileged:1.29`) y AWS Lambda Web Adapter 1.1.0.
+«Los 4 niveles → Despliegue»: imagen por repositorio publicada por GitHub Actions; IA con una imagen y sus procesos; frontends como archivos estáticos compilados una vez con la configuración escrita al publicar; ensayo local en tres grupos.
+
+### `docs/stack.md`
+
+Imágenes base, Caddy, MinIO y las acciones de GitHub, con sus versiones.
+
+### `docs/specs/602-despliegue-tres-nubes/`
+
+Queda en borrador y se reescribe al desplegar, partiendo de esta spec (imágenes, *compose* por grupo, variables y prueba de humo).
+
+### Repos con tareas del borrador anterior
+
+Reemplazar `docs/specs/601-contenedores-ci/tareas.md` en cada repo por las tareas nuevas (y borrar las de la raíz `tareas-ia.md` y `tareas-sincronizacion.md`, reemplazadas por las nuevas).
