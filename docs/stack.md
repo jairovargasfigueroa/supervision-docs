@@ -122,7 +122,7 @@ Instalar **siempre** con `npx expo install <paquete>` (elige la versión compati
 | Estado de la red (capa 1) | `@react-native-community/netinfo` |
 | Fotos guardadas en el celular hasta enviarlas (102) | `expo-file-system` |
 | Detección de casco y chaleco en el celular (301) | `react-native-fast-tflite` 3 + `react-native-nitro-modules` 0.37, `jpeg-js` 0.4 (JPEG → píxeles) y `buffer` 6; `expo-dev-client` (la app ya no corre en Expo Go: *development build*) |
-| Avisos *push* por temas de Firebase Cloud Messaging (010) | `@react-native-firebase/app` + `@react-native-firebase/messaging` (con sus *config plugins* en `app.json`; versión y compatibilidad con Expo SDK 58 a verificar en la primera tarea de la 010; si no son compatibles, se vuelve a especificar con `expo-notifications`). Solo en la *development build*, no en Expo Go |
+| Avisos *push* por temas de Firebase Cloud Messaging (010) | `@react-native-firebase/app` + `@react-native-firebase/messaging` **26.4.0**, versión exacta en los dos (con sus *config plugins*, agregados por `app.config.js` solo si existe `google-services.json`; *development build*, no Expo Go). Verificado el 02/11/2026 con Expo SDK 58 y RN 0.88; la 27 usa el BoM 35 de Firebase, que exige Kotlin 2.4, y Expo SDK 58 compila con Kotlin 2.2. El permiso `POST_NOTIFICATIONS` se pide con `PermissionsAndroid` |
 | Pruebas | `jest-expo` + `@testing-library/react-native` 14 |
 
 ## services/sincronizacion (NestJS 12, capa 1)
