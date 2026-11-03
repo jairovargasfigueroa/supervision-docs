@@ -6,12 +6,12 @@ En la columna **Origen**, «texto de la spec» indica que el mensaje se copió t
 
 ## Cómo se usa
 
-- Cada frontend tiene un archivo `errores.ts` (en mf-obras, un servicio de Angular equivalente) que mapea `codigo` → mensaje de este catálogo: shell (notificaciones), mf-obras, mf-materiales, mf-supervision, portal y app de obra. Cada uno incluye solo los códigos que puede recibir (columna **Se ve en**).
+- Cada frontend tiene un archivo `errores.ts` (en mf-obras, un servicio de Angular equivalente) que mapea `codigo` → mensaje de este catálogo: mf-obras, mf-materiales, mf-supervision, portal y app de obra. Cada uno incluye solo los códigos que puede recibir (columna **Se ve en**).
 - **Dónde está el código:** en REST, el campo `codigo` del Problem Details; en GraphQL, `errors[].extensions.codigo` (y `extensions.servicio` dice qué servicio falló); en la app de obra, el `codigo` del resultado de cada operación de `POST /lotes` (101).
 - **Código desconocido:** si el código no está en el mapa, se muestra el mensaje **genérico de su estado HTTP** (tabla «Genéricos»). El `detail` del servicio no se muestra al usuario; queda en el registro para soporte. Vale también para la app (101).
 - **Errores por campo:** si la respuesta trae `errores[]` (`400` o `422`), cada `mensaje` se muestra junto a su `campo`, y arriba el mensaje del código. Cuando un código puede deberse a reglas distintas (`COMENTARIO_INVALIDO`), la regla concreta llega en `errores[].mensaje` (convenciones).
 - **Marcadores** entre llaves (`{codigo}`, `{saldo}`, `{periodo}`…): los completa el frontend con datos que ya tiene en pantalla o que vienen en `errores[]`. Si no tiene el dato, usa la frase sin esa parte.
-- **Formato:** montos con «Bs» y 2 decimales; fechas `dd/mm/aaaa` (o `dd/mm` donde la spec lo dice); periodos `AAAA-MM` (en las notificaciones, «marzo 2027»), como en `docs/diseno-visual.md` y el `formato.ts` de cada proyecto.
+- **Formato:** montos con «Bs» y 2 decimales; fechas `dd/mm/aaaa` (o `dd/mm` donde la spec lo dice); periodos `AAAA-MM`, como en `docs/diseno-visual.md` y el `formato.ts` de cada proyecto.
 - Los mensajes no muestran nombres técnicos (servicio, endpoint, `codigo`); el `codigo` y el `X-Request-Id` van a la consola para soporte.
 
 ## Genéricos
@@ -40,7 +40,7 @@ Todo error lleva `codigo`; sin uno propio, el servicio usa el genérico de su es
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
-| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporte`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). En la bandeja de notificaciones: «No disponible por el momento · Reintentar» (la campana queda sin número) | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 010 (criterio 16), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporte`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
 
 Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los mismos códigos: `NO_AUTENTICADO`, `SIN_PERMISO`, `DATOS_INVALIDOS`.
 
@@ -77,7 +77,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 
 ### Motivos de observación que pone la saga
 
-No son códigos: es el texto que queda en la observación de la planilla (`origen = SAGA`) y que ven el cliente en el portal, el residente en el ERP y el aviso «No se pudo aprobar la planilla» (010).
+No son códigos: es el texto que queda en la observación de la planilla (`origen = SAGA`) y que ven el cliente en el portal y el residente en el ERP.
 
 | Situación | Texto | Origen |
 |---|---|---|
@@ -89,7 +89,7 @@ No son códigos: es el texto que queda en la observación de la planilla (`orige
 
 ### Motivos de rechazo del contrato
 
-Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detalle de la obra (002, criterio 9) y en el aviso «Contrato rechazado» (010). Si fallan varias reglas, se unen con «; ».
+Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detalle de la obra (002, criterio 9). Si fallan varias reglas, se unen con «; ».
 
 | Regla | Texto | Origen |
 |---|---|---|
@@ -180,13 +180,6 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 | `ERROR_INTERNO` | Paso (error de herramienta MCP) y ejecución | En un paso: la herramienta falló en el servicio. En la ejecución: un fallo no previsto del ejecutor (`FALLIDA`) | Paso: «La consulta falló en el servicio.» · Ejecución: «La ejecución falló por un error inesperado.» (también para un código de ejecución desconocido sin mensaje) | Volver a ejecutar si el reporte quedó incompleto | 501, 502 (decisión técnica de la implementación) · catálogo |
 | `LLM_NO_DISPONIBLE` | Ejecución | El modelo de lenguaje (Ollama o Anthropic) no respondió durante la ejecución (`FALLIDA`) | «El modelo de lenguaje no respondió.» (el tipo de error va solo al registro de IA) | Volver a ejecutar más tarde | 502 (decisión técnica de la implementación) |
 
-## Notificaciones (010)
-
-| Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
-|---|---|---|---|---|---|---|
-| `NOTIFICACION_NO_ENCONTRADA` | 404 | Se marca como leída una notificación que no existe o es de otro usuario | «Ese aviso ya no está disponible.» | Recargar la bandeja | ERP (shell), portal, app | 010 · catálogo |
-| `SERVICIO_NO_DISPONIBLE` | 503 | El servicio de notificaciones no responde | «No disponible por el momento · Reintentar» (la campana queda sin número; el resto de la aplicación sigue igual) | «Reintentar» | ERP (shell), portal, app | 010 (criterio 16) · texto de la spec |
-
 ## Avisos y mensajes que no son errores
 
 Textos exactos de los requisitos y diseños (marcadores entre llaves donde la spec usa un valor de ejemplo). Los que la spec menciona sin texto quedan definidos aquí («catálogo»).
@@ -273,7 +266,7 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Pago registrado» | ERP · detalle · Cobros | El pago quedó registrado | 201 (diseño) · texto de la spec |
 | Columna «Correos»: «Nota enviada» · «Recordatorio por vencer» · «Recordatorio de vencido» · «Constancia enviada» (fecha y hora al pasar el cursor) | ERP · detalle · Cobros | Un envío anotado de ese tipo | 201 (criterio 17; diseño) · texto de la spec |
 | «Nota sin enviar» (ámbar) | ERP · detalle · Cobros | El cobro no tiene envío `NOTA_COBRO` | 201 (criterio 17; diseño) · texto de la spec |
-| «El cliente no tiene correo registrado» | n8n (motivo de la ejecución fallida) | El cliente de la obra no tiene correo en Keycloak | 201 (criterio 20) · texto de la spec |
+| «El cliente no tiene correo registrado» | n8n (motivo de la ejecución fallida) | El cliente de la obra no tiene correo en Keycloak (nota de cobro, constancia o, desde la 010, «planilla para revisar») | 201 (criterio 20), 010 (criterio 13) · texto de la spec |
 
 Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Constructora Andina»; montos `Bs 330.149,10` y fechas `dd/mm/aaaa`):
 
@@ -418,29 +411,29 @@ Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Con
 | «Últimas consultas» · «{dd/mm/aaaa hh:mm} · {1 fila\|{N} filas\|Con error\|No reconocida}» · «Aún no hiciste consultas.» | ERP · Supervisión (reportes) | Siempre · sin consultas | 503 (criterio 16) · catálogo |
 | Excel: hojas «Datos» y «Consulta» (filas «Pedido», «Conjunto», «Aplicado», «Resumen», «Avisos», «Fecha», «Usuario»); archivo `reporte-{conjunto}-{AAAA-MM-DD-HHmm}.xlsx` (o `.csv`) | Archivo descargado desde ERP · Supervisión | Al exportar | 503 (criterios 12 y 13; diseño) · texto de la spec |
 
-### Notificaciones (010)
+### Avisos al celular y al cliente (010)
+
+Los envía n8n (sin bandeja ni historial). `{EMPRESA_NOMBRE}` = «Constructora Andina»; montos `Bs 330.149,10`.
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
-| Número sobre la campana; «9+» si son más de 9; sin número si no hay sin leer | ERP, portal, app («Avisos») | Siempre | 010 (criterio 9) · texto de la spec |
-| «No tienes notificaciones» | Bandeja | Sin avisos | 010 (criterio 10) · texto de la spec |
-| «Ver más» · «Marcar todas como leídas» | Bandeja | Siempre | 010 (criterios 10 y 12) · texto de la spec |
-| «Activar avisos en este navegador» | Bandeja (ERP, portal) | Permiso del navegador sin decidir y Firebase configurado | 010 (criterio 17) · texto de la spec |
-| «Los avisos están bloqueados en este navegador» | Bandeja (ERP, portal) | Permiso bloqueado | 010 (criterio 18) · texto de la spec |
-| Mensaje breve con el título del aviso y «Ver» | ERP, portal, app | Llega un aviso con la aplicación abierta | 010 (criterio 19; diseño) · texto de la spec |
-| «Sin señal · no se pueden cargar los avisos» | App («Avisos») | Sin señal | 010 (diseño) · texto de la spec |
+| Pedido de permiso para mostrar notificaciones (diálogo de Android 13 o posterior); si se niega, la app sigue igual, sin avisos | App | Primera vez que el maestro o el almacenero entra con señal | 010 (criterio 7) · texto del sistema |
+| Mensaje breve (`Snackbar`) con el texto del aviso y «Ver» (abre el stock o el diario de la obra) | App | Llega un aviso con la app abierta (en lugar de la notificación del sistema) | 010 (criterio 9; diseño) · texto de la spec |
 
-Títulos y mensajes de los avisos (los redacta el servicio Notificaciones; ejemplos con valores de la spec):
+Avisos *push* (Firebase Cloud Messaging, al tema de la obra; al tocarlos, la app abre la pantalla indicada):
 
-| Aviso | Título | Mensaje | Origen |
+| Aviso | A quién | Título | Cuerpo | Abre | Origen |
+|---|---|---|---|---|---|
+| Stock bajo | Almacenero de la obra (`obra-{obraId}-almacenero`) | «Stock bajo: {material}» | «{obra}: quedan {cantidad} {unidadPlural} (mínimo {minimo})» | Stock de la obra | 010 (criterio 1; diseño) · texto de la spec |
+| Diario pendiente (18:00 de La Paz, obra `EN_EJECUCION` sin diario de hoy) | Maestro de la obra (`obra-{obraId}-maestro`) | «Diario pendiente: {obra}» | «Todavía no registraste el diario de hoy. Si ya lo registraste sin señal, se enviará al volver la señal.» | Diario de la obra | 010 (criterios 4 y 6; diseño) · texto de la spec |
+
+Correo (solo al cliente, sin copia a cobranzas; Mailpit en desarrollo):
+
+| Correo | Asunto | Cuerpo | Origen |
 |---|---|---|---|
-| Planilla presentada | «Planilla para revisar» (si se corrigió: «Planilla corregida para revisar») | «Se presentó la planilla N.º {numero} ({periodo}) de {obra} por Bs {neto}. Revísala para aprobarla u observarla.» (corregida: «Se corrigió y volvió a presentar la planilla N.º {numero} …») | 010 (diseño) · texto de la spec |
-| Planilla aprobada | «Planilla aprobada» | «Se aprobó la planilla N.º {numero} ({periodo}) de {obra}. Neto: Bs {neto}.» | 010 (diseño) · texto de la spec |
-| Planilla observada por el cliente | «Planilla observada» | «El cliente observó la planilla N.º {numero} ({periodo}) de {obra}: «{motivo}».» | 010 (diseño) · texto de la spec |
-| Planilla observada por la saga | «No se pudo aprobar la planilla» | «La aprobación de la planilla N.º {numero} ({periodo}) de {obra} falló y quedó observada: {motivo}.» (motivos en «Motivos de observación que pone la saga») | 010 (diseño) · texto de la spec |
-| Stock bajo | «Stock bajo: {material}» (sin datos del material: «Stock bajo») | «En {obra} quedan {cantidad} {unidadPlural} de {material} (mínimo {minimo}).» (sin datos: «En {obra} un material quedó por debajo del mínimo») | 010 (diseño) · texto de la spec |
-| Cobro vencido | «Cobro vencido {numero}» | «El cobro {numero} de {obra} por Bs {monto} venció el {fecha}.» | 010 (diseño) · texto de la spec |
-| Contrato rechazado | «Contrato rechazado» | «Finanzas rechazó el contrato de {obra}: {motivo}.» (motivos en «Motivos de rechazo del contrato») | 010 (diseño) · texto de la spec |
+| Planilla para revisar (al cliente de la obra, al presentarse la planilla) | «Planilla para revisar: N.º {numero} · {obra} · {periodo}» (si se vuelve a presentar después de una observación: «Planilla corregida para revisar: N.º {numero} · {obra} · {periodo}») | «Estimado/a {nombre}: le presentamos la planilla N.º {numero} de {periodo} de la obra {obra}, con un neto de Bs {neto}. Puede revisarla y aprobarla u observarla en el portal: {PORTAL_URL}/planillas/{planillaId}. {EMPRESA_NOMBRE}» | 010 (criterio 11; diseño) · texto de la spec |
+
+Si el cliente no tiene correo, la ejecución queda fallida en n8n con «El cliente no tiene correo registrado» (como en la 201, arriba).
 
 ## Inconsistencias encontradas
 

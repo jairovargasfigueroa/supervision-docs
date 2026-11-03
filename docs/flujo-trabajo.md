@@ -5,7 +5,7 @@ Por ahora trabaja una sola persona (Jairo, con el agente); más adelante pueden 
 ## Repositorios
 
 - `supervision-docs`: esta carpeta raíz (CLAUDE.md, `docs/`, `scripts/`, prototipo). Las carpetas de los proyectos están en su `.gitignore`.
-- Un repo por proyecto: `supervision-ms-obras`, `supervision-ms-materiales`, `supervision-ms-finanzas`, `supervision-gateway`, `supervision-erp-shell`, `supervision-mf-obras`, `supervision-mf-materiales`, `supervision-mf-supervision`, `supervision-portal`, `supervision-app-obra`, y los que se creen (`supervision-infra`, `supervision-ms-sincronizacion`, `supervision-ms-ia`, `supervision-ms-notificaciones`). Los nombres están en `scripts/repos.ps1`.
+- Un repo por proyecto: `supervision-ms-obras`, `supervision-ms-materiales`, `supervision-ms-finanzas`, `supervision-gateway`, `supervision-erp-shell`, `supervision-mf-obras`, `supervision-mf-materiales`, `supervision-mf-supervision`, `supervision-portal`, `supervision-app-obra`, y los que se creen (`supervision-infra`, `supervision-ms-sincronizacion`, `supervision-ms-ia`). Los nombres están en `scripts/repos.ps1`.
 
 ## Ramas
 

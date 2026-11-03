@@ -24,15 +24,14 @@ Lo que todos los proyectos hacen igual.
 | Sincronización (capa 1) | 8084 |
 | IA (capas 4 y 5) | 8085 |
 | Gateway | 4000 |
-| Notificaciones (010) | 8086 |
 | ERP: shell · mf-obras · mf-materiales · mf-supervision | 4200 · 4201 · 4202 · 4203 |
 | Portal | 4300 |
 | Metro de Expo (app en desarrollo; el 8081 es de Obras) | 8090 |
 | PostgreSQL · MongoDB · RabbitMQ (AMQP / panel) | 5433 · 27017 · 5672 / 15672 |
 | DynamoDB Local (Sincronización, capa 1) | 8000 |
 | Ollama (modelo de lenguaje local, capa 5, perfil `ollama`; solo en `127.0.0.1`) | 11434 |
-| n8n (capa 2, 201, perfil `automatizacion`) | 5678 |
-| Mailpit (correo de prueba, 201, perfil `automatizacion`): SMTP / interfaz y API | 1025 / 8025 |
+| n8n (201 y 010, perfil `automatizacion`) | 5678 |
+| Mailpit (correo de prueba, 201 y 010, perfil `automatizacion`): SMTP / interfaz y API | 1025 / 8025 |
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db` (modelo de lectura del servicio de IA, 401), con su usuario propio `ia`, dueño de la base (`POSTGRES_IA_CLAVE` de `infra/.env`), y desde la 503 el rol de solo lectura `ia_reportes_lector` (`POSTGRES_IA_LECTOR_CLAVE`; `SELECT` solo sobre las tablas `rpt_*` que lee el constructor de reportes). El servicio de IA usa además la base `ia_db` de MongoDB (402, 403 y, en la capa 5, agentes, sugerencias, consultas de reportes y límite por minuto).
 - En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y DynamoDB Local (101). Quien no los tenga instalados levanta también los contenedores de las bases.
@@ -49,7 +48,7 @@ Lo que todos los proyectos hacen igual.
 - Roles técnicos (se crean con su capa; ninguna persona los tiene): `automatizacion` (201, *service account* del cliente confidencial `n8n`; solo en las rutas de Finanzas de la 201 que llama n8n: `GET /cobros/recordatorios`, `POST /cobros/{id}/envios` y `POST /cobros/{id}/nota-cobro`) y `agente_ia` (501, *service account* del cliente confidencial `ia-agentes`; solo en `POST /mcp` de Obras, Materiales, Finanzas e IA, donde ve todas las obras como `gerente`; ningún endpoint REST lo acepta).
 - Clientes públicos con PKCE: `erp` (shell y microfrontends), `portal`, `app-obra`.
 - Cliente confidencial `gateway` con *service account* y los roles `view-users` y `view-realm` de `realm-management`: el gateway los usa para listar usuarios por rol (formularios de asignación) y resolver nombres. `view-realm` hace falta porque Keycloak 26 exige ver los roles del realm para responder `GET /roles/{rol}/users`; es de solo lectura. Ningún otro proyecto llama a la API de administración de Keycloak, salvo n8n (capa 2, abajo).
-- Capa 2 (201): cliente confidencial `n8n` (solo *client credentials*, mapper de audiencia `plataforma-api`) con *service account* que tiene `automatizacion` (rutas nuevas de Finanzas), el **rol de realm `gerente`** (para leer con los endpoints que ya existen: Obras `GET /obras/{id}` y `GET /planillas/{id}`, Finanzas `GET /cobros/{id}`, igual que `ia-reportes`, sin cambiar guardias ni visibilidad) y `view-users` de `realm-management` (para leer el nombre y el correo del cliente con `GET /admin/realms/supervision/users/{id}`): es la **segunda excepción** a la API de administración de Keycloak, junto al gateway. El `azp` del token es `n8n` (roles del token tal cual). Su secreto va en `N8N_KEYCLOAK_SECRETO` de `infra/.env` y se inyecta en la credencial de n8n; nunca en el repo.
+- Capa 2 (201): cliente confidencial `n8n` (solo *client credentials*, mapper de audiencia `plataforma-api`) con *service account* que tiene `automatizacion` (rutas nuevas de Finanzas), el **rol de realm `gerente`** (para leer con los endpoints que ya existen: Obras `GET /obras/{id}` y `GET /planillas/{id}`, Finanzas `GET /cobros/{id}` y, desde la 010, Obras `GET /obras` y `GET /obras/{obraId}/diario` y Materiales `GET /materiales`, igual que `ia-reportes`, sin cambiar guardias ni visibilidad) y `view-users` de `realm-management` (para leer el nombre y el correo del cliente con `GET /admin/realms/supervision/users/{id}`): es la **segunda excepción** a la API de administración de Keycloak, junto al gateway. El `azp` del token es `n8n` (roles del token tal cual). Su secreto va en `N8N_KEYCLOAK_SECRETO` de `infra/.env` y se inyecta en la credencial de n8n; nunca en el repo.
 - Capa 4 (401): cliente confidencial `ia-reportes` con *service account* (solo *client credentials*) y el **rol de realm `gerente`** en su *service account*, para la carga inicial del modelo de lectura: el servicio de IA hace solo `GET` a endpoints que ya aceptan `gerente` (Obras, Materiales y Finanzas; lista en la 401). Se usa `gerente` y no un rol técnico nuevo para no cambiar los guardias ni la visibilidad de los tres servicios. Su secreto solo lo lee el comando de carga inicial (no `ia-api` ni `ia-worker`).
 - Capa 5: cliente confidencial `ia-agentes` con *service account* para que el servicio de IA (host de los agentes, `ia-worker`) llame a las herramientas MCP de los cuatro servicios; su secreto solo lo lee `ia-worker`. La clave de la API de Anthropic (`IA_ANTHROPIC_API_KEY`, si se usa ese proveedor) se trata igual: solo en `.env` o en el gestor de secretos.
 - Todos los tokens llevan la audiencia `plataforma-api` (mapper de audiencia en Keycloak).
@@ -131,7 +130,7 @@ Lo que todos los proyectos hacen igual.
 
 - Un *exchange* tipo `topic` llamado `plataforma`.
 - Clave de enrutamiento: `evento.<origen>.<Tipo>` para eventos (algo que pasó) y `comando.<destino>.<Tipo>` para órdenes de la saga. Ejemplos: `evento.obras.ObraRegistrada`, `comando.finanzas.ReservarSaldo`.
-- Cada servicio tiene su propia cola durable (`obras`, `materiales`, `finanzas`, `ia`) y se suscribe a las claves que le interesan. n8n (capa 2, 201) usa una cola durable por flujo, declarada en las definiciones de RabbitMQ de infra: `n8n.cobro-emitido` (`evento.finanzas.CobroEmitido`) y `n8n.cobro-pagado` (`evento.finanzas.CobroPagado`). No guarda inbox: confirma el mensaje al terminar la ejecución y la idempotencia la da Finanzas (`envio_cobro`, único por cobro y tipo).
+- Cada servicio tiene su propia cola durable (`obras`, `materiales`, `finanzas`, `ia`) y se suscribe a las claves que le interesan. n8n (201 y 010) usa una cola durable por flujo, declarada en las definiciones de RabbitMQ de infra: `n8n.cobro-emitido` (`evento.finanzas.CobroEmitido`) y `n8n.cobro-pagado` (`evento.finanzas.CobroPagado`) en la 201; `n8n.stock-bajo` (`evento.materiales.StockBajo`) y `n8n.planilla-presentada` (`evento.obras.PlanillaPresentada`) en la 010. No guarda inbox en una base: confirma el mensaje al terminar la ejecución; en la 201 la idempotencia la da Finanzas (`envio_cobro`, único por cobro y tipo) y en la 010 cada flujo guarda el `id` del sobre en sus datos estáticos (los últimos 500) y descarta los repetidos.
 - Sobre común de todo mensaje:
 
 ```json
@@ -178,6 +177,12 @@ Lo que todos los proyectos hacen igual.
 - Encabezado `X-Request-Id`: el gateway lo crea si no viene y lo reenvía a cada servicio; todos los registros lo incluyen. En los eventos se usa `correlacionId`.
 - Encabezado `X-Dispositivo-Id` (UUID del celular, generado por la app al instalarse): obligatorio en las llamadas de la app a Sincronización, salvo `GET /salud`; sin él, `400 DISPOSITIVO_REQUERIDO` (101).
 - Registros en formato JSON en producción y texto legible en desarrollo.
+
+## Avisos al celular (010)
+
+- *Push* con **Firebase Cloud Messaging por temas**: la app de obra suscribe el celular a `obra-{obraId}-maestro` u `obra-{obraId}-almacenero` (según su rol) por cada obra asignada del paquete de datos (101), quita los de las obras que ya no tiene al actualizar los datos y todos al cerrar sesión. Ningún servicio guarda tokens de dispositivos.
+- Los envía solo n8n, con la API v1 de FCM. Cada mensaje lleva `notification { title, body }` (Android lo muestra con la app cerrada) y `data { tipo, obraId }` (`tipo`: `STOCK_BAJO` o `DIARIO`) para abrir el stock o el diario de la obra al tocarlo.
+- La cuenta de servicio de Firebase (en `infra/.env`) y el `google-services.json` de la app nunca van al repo. Sin Firebase configurado, los flujos de *push* no se publican y el resto funciona igual.
 
 ## Archivos (fotos y notas de remisión)
 

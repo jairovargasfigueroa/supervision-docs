@@ -83,7 +83,7 @@ Reglas que cruzan varios proyectos. Los valores marcados como **(decisión del e
 - Stock de un material en una obra = suma de ingresos − suma de salidas.
 - Una salida indica la partida de destino.
 - Una salida que supera el stock conocido **se acepta** y genera una alerta para revisión.
-- Cada material tiene un stock mínimo por obra. Si el stock queda por debajo, se publica el evento «stock bajo» (lo usarán las notificaciones de la 010; la capa 2 ya no lo usa desde que la 201 pasó a ser la cobranza automática).
+- Cada material tiene un stock mínimo por obra. Si el stock queda por debajo, se publica el evento «stock bajo» (con él, n8n avisa al almacenero por *push*, 010; la capa 2 ya no lo usa desde que la 201 pasó a ser la cobranza automática).
 - Estado del stock (**decisión del equipo**): `BAJO` si cantidad < mínimo; `JUSTO` si mínimo ≤ cantidad ≤ 1,25 × mínimo; `OK` si cantidad > 1,25 × mínimo.
 - Consumo fuera de lo previsto (**decisión del equipo**): el material usado en una partida durante el periodo supera en más de 20 % al previsto (usado > 1,20 × previsto). Se marca como alerta; no bloquea nada.
 - El cierre del periodo (paso 3 de la saga) congela los movimientos de ese periodo; la compensación los reabre.
@@ -104,6 +104,14 @@ Reglas que cruzan varios proyectos. Los valores marcados como **(decisión del e
 - La app permite elegir hasta 7 días atrás (**decisión del equipo**).
 - Una entrada enviada no se edita.
 - Lo usa el agente de Seguimiento de obras (herramienta MCP `buscar_diario`). No forma parte del sistema base.
+
+## Avisos al celular y al cliente (010)
+
+- Cada usuario recibe pocos avisos, solo los importantes y por el canal que usa: el almacenero y el maestro, *push* en la app de obra; el cliente, correo. Sin bandeja ni historial. Los envía n8n.
+- **Stock bajo:** cuando el stock de un material en una obra baja del mínimo (el evento «stock bajo»), el almacenero de esa obra recibe un *push* en menos de 1 minuto; uno por cada vez que el material cruza el mínimo, aunque el evento llegue repetido.
+- **Diario pendiente:** todos los días a las 18:00 de La Paz (**decisión del equipo**), el maestro de cada obra `EN_EJECUCION` sin entrada del diario de ese día recibe un recordatorio *push*. Si lo registró sin señal y todavía no se envió, el recordatorio puede llegar igual (el texto lo aclara).
+- **Planilla para revisar:** cuando el residente presenta una planilla, el cliente de la obra recibe un correo en menos de 1 minuto («planilla corregida» si se vuelve a presentar después de una observación); uno solo aunque el evento llegue repetido. Va solo al cliente, sin copia a cobranzas (es un aviso de trabajo, no de cobro).
+- Sin permiso de notificaciones en el celular o sin Firebase configurado, no hay *push* y todo lo demás funciona igual.
 
 ## Cobranza (capa 2)
 

@@ -16,7 +16,8 @@
 | IA | Microservicio (capas 4 y 5) | Python 3.12 · FastAPI: procesos `ia-api` (REST y servidor MCP en `/mcp`, 8085) e `ia-worker` (cola `ia`, tareas programadas y **host de los agentes** con el cliente MCP) y el comando `ia-carga-inicial`, de la misma imagen; ML clásico en la capa 4 (XGBoost e Isolation Forest, en CPU); en la capa 5, **modelo de lenguaje por un puerto** (`ModeloLenguaje`) con dos adaptadores, Ollama local (`qwen3:8b`) o la API de Anthropic (`claude-sonnet-5-5`), elegido con `IA_LLM_PROVEEDOR` | PostgreSQL `reportes_db` (modelo de lectura, CQRS) y MongoDB `ia_db` (predicciones, consumos atípicos y, en la capa 5, ejecuciones de agentes, sugerencias, consultas de reportes y límite por minuto) |
 | Ollama | Modelo de lenguaje local (capa 5, opcional) | `ollama/ollama:0.40.4` con `qwen3:8b` (perfil `ollama` de infra; GPU opcional); solo si `IA_LLM_PROVEEDOR=ollama` | — |
 | RabbitMQ | Mensajería | RabbitMQ | — |
-| n8n | Automatización (capa 2): cobranza automática (201) | n8n 2.43.7 (`n8nio/n8n`), flujos en `infra/n8n/flujos/`; sin estado propio (la idempotencia la da Finanzas). En desarrollo, el correo llega a Mailpit | — |
+| n8n | Automatización: cobranza automática (capa 2, 201) y avisos al celular y al cliente (010) | n8n 2.43.7 (`n8nio/n8n`), flujos en `infra/n8n/flujos/`; sin base propia (en la 201 la idempotencia la da Finanzas; en la 010, cada flujo recuerda los últimos 500 `id` de sobre en sus datos estáticos). En desarrollo, el correo llega a Mailpit | — |
+| Firebase Cloud Messaging | Avisos *push* a la app de obra (010) | Firebase (plan gratuito *Spark*), envío por **temas** (`obra-{obraId}-maestro`, `obra-{obraId}-almacenero`); ningún servicio guarda tokens de dispositivos. Opcional: sin Firebase configurado, no hay *push* | — |
 | Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
 
 ## Conexiones
@@ -40,6 +41,11 @@
 | RabbitMQ | n8n (capa 2) | AMQP (colas `n8n.cobro-emitido` y `n8n.cobro-pagado`) | Eventos `CobroEmitido` y `CobroPagado`: enviar la nota de cobro y la constancia de pago (201) |
 | n8n (capa 2) | Finanzas, Obras, Keycloak | REST, con el token de la *service account* del cliente `n8n` | Finanzas: recordatorios, nota de cobro en PDF y anotar los envíos; Obras: planilla y obra (`gerente`); Keycloak: nombre y correo del cliente (API de administración, `view-users`) (201) |
 | n8n (capa 2) | Correo | SMTP | Nota de cobro, recordatorios, resumen del día y constancia de pago (Mailpit en desarrollo; servidor real en la nube, capa 6) (201) |
+| RabbitMQ | n8n (010) | AMQP (colas `n8n.stock-bajo` y `n8n.planilla-presentada`) | Eventos `StockBajo` y `PlanillaPresentada`: aviso de stock bajo al almacenero y correo «planilla para revisar» al cliente (010) |
+| n8n (010) | Obras, Materiales, Keycloak | REST, con el token de la *service account* del cliente `n8n` (`gerente`, `view-users`) | Obras: obra, planilla, obras `EN_EJECUCION` y diario de hoy; Materiales: nombre y unidad del material; Keycloak: nombre y correo del cliente (010) |
+| n8n (010) | Correo | SMTP | «Planilla para revisar» al cliente, sin copia a cobranzas (Mailpit en desarrollo) (010) |
+| n8n (010) | Firebase Cloud Messaging | HTTPS (API v1, `messages:send`, cuenta de servicio de Google) | *Push* al tema de la obra: stock bajo (almacenero) y recordatorio del diario a las 18:00 de La Paz (maestro) (010) |
+| App de obra | Firebase Cloud Messaging | SDK de Firebase (`@react-native-firebase/messaging`) | Suscribirse a los temas de sus obras asignadas y recibir los avisos; tocar uno abre el stock o el diario (010) |
 | IA (`ia-worker`, host de los agentes) | Obras, Materiales, Finanzas e IA (`ia-api`) | **MCP** (HTTP «streamable» sin estado en `POST /mcp`, solo lectura, token de `ia-agentes`, privados: solo los llama IA; versión común 2025-11-25) | Herramientas para los agentes: el dato al instante de cada dueño y, en IA, `consultar_reporte` (motor de la 503), riesgo de retraso y consumos atípicos (501) |
 | IA | Ollama **o** API de Anthropic | HTTP / HTTPS | Modelo de lenguaje de la capa 5 (uno u otro, según `IA_LLM_PROVEEDOR`) |
 
