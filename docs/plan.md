@@ -2,7 +2,7 @@
 
 Orden de trabajo y estado. Estados: `pendiente`, `en curso`, `hecho`. Al terminar una tarea, cambia su estado aquí.
 
-**Siguiente:** a decidir por Jairo: la capa 6 (601 contenedores e integración continua, 602 despliegue en tres nubes; en **borrador**) o mejorar el modelo de lenguaje local (`qwen3:4b`, precarga del modelo). La **201** (cobranza automática con n8n) se terminó el 02/11/2026 y la **301** (casco y chaleco) el 01/11/2026, las dos con sus pruebas manuales pendientes (Jairo). La capa 5 se terminó el 01/11/2026 y la capa 4 el 31/10/2026. La fase 1 y el sistema base están terminados (salvo la 010, pospuesta).
+**Siguiente:** a decidir por Jairo: la capa 6 (601 contenedores e integración continua, 602 despliegue en tres nubes; en **borrador**) o mejorar el modelo de lenguaje local (`qwen3:4b`, precarga del modelo). La **201** (cobranza automática con n8n) se terminó el 02/11/2026 y la **301** (casco y chaleco) el 01/11/2026, las dos con sus pruebas manuales pendientes (Jairo). La capa 5 se terminó el 01/11/2026 y la capa 4 el 31/10/2026. La fase 1 y el sistema base están terminados (la 010 se rehízo y terminó el 03/11/2026).
 
 Ramas, *pull requests* y definición de terminado: `docs/flujo-trabajo.md`. Solo se empieza algo cuyas dependencias están `hecho`.
 
@@ -31,7 +31,7 @@ Los contratos detallados (rutas REST exactas, cuerpos, eventos con sus datos, es
 | 1.2 | Docker Compose: RabbitMQ (con panel), Keycloak 26.8; PostgreSQL 17 y MongoDB 8.0 como perfil opcional; scripts de `infra/scripts/` (todo según `docs/entorno-local.md`) | infra | hecho |
 | 1.3 | MongoDB como *replica set* de un nodo (lo necesitan las transacciones del outbox de Materiales), en el contenedor y en la instalación local | infra | hecho |
 | 1.4 | Realm `supervision` exportado en JSON e importado al iniciar: roles, clientes `erp`, `portal`, `app-obra`, mapper de audiencia `plataforma-api`, cliente `gateway` con *service account*, usuarios de prueba de la 001 (con `demo1`), política de contraseñas, protección contra fuerza bruta, idioma español y tema `supervision` (`docs/convenciones.md`, «Seguridad») | infra | hecho |
-| 1.5 | Bases `obras_db` y `finanzas_db` en PostgreSQL; definiciones de RabbitMQ con el exchange `plataforma` y todas las colas (incluidas `ia` y `notificaciones`) | infra | hecho |
+| 1.5 | Bases `obras_db` y `finanzas_db` en PostgreSQL; definiciones de RabbitMQ con el exchange `plataforma` y todas las colas (incluidas `ia` y `notificaciones`; la cola `notificaciones` se quitó con la 010) | infra | hecho |
 | 1.6 | `GET /salud` en Obras, Materiales y Finanzas, y validación del token de Keycloak en los tres (rechaza sin token, acepta con token válido) | services/* | hecho |
 | 1.7 | Gateway: validación del token, reenvío del token y de `X-Request-Id`, tiempo máximo de 3 s | gateway | hecho |
 | 1.8 | Shell: login con keycloak-angular, `window.plataforma.sesion`, menú y rutas `/obras`, `/materiales`, `/supervision` cargando cada microfrontend (Angular por `loadRemoteModule`; React como Web Component) con aviso si uno no carga | erp-shell, mf-* | hecho |
@@ -62,7 +62,7 @@ Las especificaciones ya están escritas y aprobadas (la 010 y la 011 terminan co
 | 007 | Elaborar y presentar planilla | obras, gateway, mf-obras | 005, 006 | hecho (la galería de fotos necesita el bucket S3) |
 | 008 | Revisar planilla en el portal (saga aprobar planilla) | obras, finanzas, materiales, gateway, mf-obras, portal, infra | 007 | hecho |
 | 009 | Consultar tablero | materiales, finanzas, gateway, mf-supervision | 006 | hecho |
-| 010 | Avisos al celular y al cliente: *push* de stock bajo al almacenero y recordatorio del diario al maestro (Firebase, desde n8n), y correo «planilla para revisar» al cliente | obras, app-obra, infra | 003, 004, 007, 103, 201 | pendiente (aprobada el 02/11/2026: reemplaza a la versión con servicio de notificaciones y bandeja) |
+| 010 | Avisos al celular y al cliente: *push* de stock bajo al almacenero y recordatorio del diario al maestro (Firebase, desde n8n), y correo «planilla para revisar» al cliente | obras, app-obra, infra | 003, 004, 007, 103, 201 | hecho (03/11/2026; reemplazó a la versión con servicio de notificaciones y bandeja; pendiente de Jairo: crear el proyecto de Firebase, `node pruebas/avisos.mjs` tras recargar los datos y la prueba del *push* en el celular) |
 | 011 | Datos de prueba (`docs/datos-prueba.md`) | obras, materiales, finanzas, infra | 009 | hecho (las fotos se suben al bucket S3 cuando exista: completar `infra/.env` y correr `semilla`) |
 
 ### Pendientes conocidos del sistema base
