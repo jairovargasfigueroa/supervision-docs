@@ -6,5 +6,5 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [ ] Aplicar «Cambios a contratos y datos» que tocan este proyecto (`docs/`, `CLAUDE.md`, `.env.example`)
 - [ ] Cargar `configuracion.json` antes de iniciar (inicializador de Angular) con respaldo a los valores de desarrollo; `federation.manifest.json` con las direcciones de los remotos; pruebas
-- [ ] `Dockerfile` (compilación + `nginx-unprivileged`), `nginx.conf` (SPA, sin caché en los archivos de configuración y del *service worker*) y script de `/docker-entrypoint.d/` que genera los dos archivos con `envsubst`; prueba con `docker run`
-- [ ] `.github/workflows/ci.yml`: job `prueba` (pruebas y compilación) y job `imagen` (build en PR; *push* a GHCR con `sha-<7>` y `main` en `main`)
+- [ ] Plantillas `configuracion.json.plantilla` y `federation.manifest.json.plantilla` (con `${VARIABLES}`) que usa el script de publicación de infra
+- [ ] `.github/workflows/ci.yml`: job `prueba` (pruebas y compilación) y job `archivos` (en `main`, la carpeta compilada como artefacto)

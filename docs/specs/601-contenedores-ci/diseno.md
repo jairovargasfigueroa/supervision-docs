@@ -4,13 +4,13 @@
 
 ```
 1. EMPAQUETAR (esta spec)      2. ENSAYAR (esta spec)                 3. SUBIR (602, después)
-código ─Dockerfile─> imagen    imágenes + compose por grupo           crear recursos en cada nube,
-(una por proyecto, 11)         (azure / google / aws) en la laptop,   copiar el compose de cada grupo,
+servicio ─Dockerfile─> imagen  imágenes + compose por grupo           crear recursos en cada nube,
+frontend ─build─> archivos     (6 imágenes + 5 frontends estáticos)         (azure / google / aws) en la laptop,   copiar el compose de cada grupo,
                                HTTPS y TLS entre grupos, datos de     cambiar las variables y correr
                                demo y prueba de humo                  la misma prueba de humo
 ```
 
-- **Imagen:** el programa ya empaquetado; no cambia según dónde se despliegue.
+- **Imagen:** el servicio ya empaquetado; no cambia según dónde se despliegue. Los frontends no llevan imagen: son archivos estáticos.
 - **Compose:** qué imágenes corren juntas en un servidor y con qué variables. Cambiar el reparto entre nubes es mover bloques de un compose a otro y cambiar variables.
 
 ## Imágenes
@@ -21,7 +21,7 @@ código ─Dockerfile─> imagen    imágenes + compose por grupo           crea
 - Dos etapas: `construir` (dependencias y compilación) y `final` (solo lo necesario para correr).
 - Usuario sin privilegios (`USER` numérico, por ejemplo `10001`, o el que trae la imagen: `node`, `nginx`).
 - `EXPOSE` con el puerto de `convenciones.md`; el proceso lee el puerto de su variable.
-- `HEALTHCHECK` contra `GET /salud` (en los frontends, contra `/`).
+- `HEALTHCHECK` contra `GET /salud`.
 - Etiqueta OCI `org.opencontainers.image.source` con la URL del repositorio (GHCR la usa para enlazar el paquete).
 - `.dockerignore`: `.git`, `node_modules`, `vendor`, `target`, `dist`, `.env*`, `*.log`, `coverage`, `.venv`, `android`, `datos`.
 - Las pruebas no corren dentro del `docker build`: corren antes, en el workflow.
@@ -36,13 +36,10 @@ código ─Dockerfile─> imagen    imágenes + compose por grupo           crea
 | services/ia | Python 3.12 con `uv sync --frozen --no-dev` (entorno en `/app/.venv`) | Python 3.12 con el entorno copiado y `modelos/` (402 y 403); sin `entrenamiento/` ni `ml/`. **Una imagen, dos comandos:** `ia-api` (aplica `alembic upgrade head` y atiende en 8085) e `ia-worker`. La carga inicial (`ia-carga-inicial`) es un tercer comando de la misma imagen | 8085 |
 | services/sincronizacion | como Materiales | Node 24: `node dist/main.js`. Sin adaptador de Lambda: si la 602 la pone en Lambda, lo agrega allá | 8084 |
 | gateway | como Materiales | Node 24: `node dist/main.js` | 4000 |
-| frontend/erp-shell, mf-obras | Node 24: `npm ci`, `npm run build` (Angular: `dist/<proyecto>/browser`) | `nginx-unprivileged` con `nginx.conf` propio: SPA (`try_files … /index.html`), CORS en `remoteEntry.json` y `.js` para los remotos, sin caché en `index.html`, `configuracion.json`, `federation.manifest.json`, `ngsw.json` y `ngsw-worker.js` | 8080 |
-| frontend/mf-materiales, mf-supervision | Node 24: `npm ci`, `npm run build` (`dist/`) | igual | 8080 |
-| frontend/portal | Node 24: `npm ci`, `npm run build` (`dist/`) | igual | 8080 |
 
-### Configuración de los frontends al arrancar
+### Frontends: archivos estáticos con configuración al publicar
 
-Los frontends se construyen una vez (decisión del equipo). Al arrancar, el contenedor genera con `envsubst` (script en `/docker-entrypoint.d/`, que la imagen de nginx ya ejecuta) los archivos que dependen del entorno:
+Los frontends no llevan imagen (decisión de Jairo): se compilan una vez (`npm run build`) y se publican como archivos estáticos, como en Amplify. En el ensayo local los sirve Caddy desde las carpetas compiladas; en la nube, un *hosting* de estáticos (602). Al **publicar**, un script escribe con las variables del entorno los archivos que dependen de él:
 
 | Proyecto | Archivo generado | Variables |
 |---|---|---|
@@ -51,7 +48,8 @@ Los frontends se construyen una vez (decisión del equipo). Al arrancar, el cont
 | mf-obras, mf-materiales, mf-supervision | ninguno: leen la configuración que publica el shell en `window.plataforma.configuracion` (ya es así en mf-materiales y mf-supervision; mf-obras se alinea) | — |
 
 - El shell y el portal cargan `configuracion.json` **antes** de iniciar (inicializador de Angular en el shell; antes de montar React en el portal). En desarrollo, si el archivo no está, usan los valores de desarrollo de hoy.
-- En la nube, si los frontends van a un hosting de archivos estáticos (602), los mismos dos archivos se escriben al publicar.
+- Reglas del servidor de estáticos (Caddy en el ensayo; el *hosting* en la nube): SPA (si no existe el archivo, `index.html`), CORS en `remoteEntry.json` y `.js` de los microfrontends para el origen del shell, y sin caché en `index.html`, `configuracion.json`, `federation.manifest.json`, `ngsw.json` y `ngsw-worker.js`.
+- El script `infra/produccion-local/publicar-frontends.(ps1|sh)` compila (o toma) la carpeta `dist` de cada frontend, la copia al volumen de Caddy y escribe los dos archivos con `envsubst`; la 602 hace lo mismo hacia el *hosting* de la nube.
 
 ## Configuración por variables
 
@@ -65,8 +63,8 @@ Fuente de los nombres actuales: `docs/entorno-local.md` («Variables de entorno 
 | IA | TLS por las URL (`IA_RABBITMQ_URL` con `amqps://`, `IA_MONGO_URL`, `sslmode` en las de PostgreSQL); `IA_CA_EXTRA` opcional (ruta de una CA adicional, para el ensayo local) |
 | Sincronización | `NODE_ENV`; las direcciones de Obras y Materiales ya son variables (101) |
 | Gateway | `CORS_ORIGENES`, `NODE_ENV` |
-| Frontends | las de la tabla anterior (al arrancar) |
-| app-obra | `EXPO_PUBLIC_KEYCLOAK_URL`, `EXPO_PUBLIC_SINCRONIZACION_URL` (al compilar; hoy están en `app.json` → `extra`) |
+| Frontends | las de la tabla anterior (al publicar) |
+| app-obra | `EXPO_PUBLIC_KEYCLOAK_URL`, `EXPO_PUBLIC_SINCRONIZACION_URL` (al compilar; hoy están en `app.json` → `extra`). El APK lo genera Jairo más adelante |
 | Keycloak (infra) | `ERP_URL`, `PORTAL_URL` (direcciones de regreso y orígenes de los clientes `erp` y `portal`), `USUARIOS_PRUEBA_CLAVE` (contraseña de los usuarios de prueba al importar; por defecto `Prueba123!` solo en desarrollo), `KC_HOSTNAME` (dirección pública de Keycloak, para que el emisor de los tokens sea el mismo para todos), secretos de los clientes (ya por variable) |
 
 - **Una CA extra para el ensayo local:** en la «producción local» los certificados los firma una autoridad local de Caddy. Cada imagen acepta una CA adicional por variable sin cambiar el código: Java (`JAVA_TOOL_OPTIONS` con un *truststore*), Node (`NODE_EXTRA_CA_CERTS`), Python (`SSL_CERT_FILE` o `IA_CA_EXTRA`) y PHP (`curl.cainfo` y `openssl.cafile`). En la nube no hace falta: los certificados son públicos.
@@ -90,7 +88,8 @@ permissions: { contents: read, packages: write }
 concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
 jobs:
   prueba:   # dependencias con caché, lint, tipos, pruebas, compilación
-  imagen:   # needs: prueba · en PR: build sin push · en push a main: build + push a GHCR (sha-<7> y main)
+  imagen:   # solo servicios · needs: prueba · en PR: build sin push · en push a main: build + push a GHCR (sha-<7> y main)
+  archivos: # solo frontends · needs: prueba · en push a main: sube la carpeta compilada como artefacto (actions/upload-artifact)
 ```
 
 | Proyecto | Job `prueba` |
@@ -115,15 +114,16 @@ Carpeta nueva `infra/produccion-local/`:
 ```
 produccion-local/
   compose.azure.yml    keycloak (KC_HOSTNAME), rabbitmq (TLS 5671), n8n, mailpit, postgres (obras_db, finanzas_db, keycloak_db),
-                       obras, finanzas-api, finanzas-trabajos (consumidor, publicador y schedule), gateway, erp-shell,
-                       mf-obras, mf-materiales, mf-supervision, portal, caddy
+                       obras, finanzas-api, finanzas-trabajos (consumidor, publicador y schedule), gateway y caddy, que además
+                       sirve los 5 frontends compilados (erp, mf-obras, mf-materiales, mf-supervision y portal)
   compose.google.yml   ia-api, ia-worker, postgres de reportes, mongo (replica set), materiales, ollama (perfil opcional,
                        reusa el volumen del modelo), caddy
   compose.aws.yml      sincronizacion, dynamodb-local, minio (S3), caddy
   caddy/               un Caddyfile por grupo (tls internal) y la CA local compartida
   certificados.ps1/.sh genera la CA local y el certificado de RabbitMQ (openssl en un contenedor)
   .env.example         todas las variables de los tres grupos, sin secretos
-  levantar.ps1/.sh     construye o descarga las imágenes, genera certificados y levanta los tres grupos
+  publicar-frontends.ps1/.sh  compila los 5 frontends, los copia al volumen de Caddy y escribe su configuración
+  levantar.ps1/.sh     construye o descarga las imágenes, publica los frontends, genera certificados y levanta los tres grupos
   bajar.ps1/.sh
 ```
 
@@ -132,7 +132,7 @@ produccion-local/
 - **Navegador:** acepta la CA local una vez (instalarla en Windows es opcional y necesita permisos de administrador; si no, el navegador muestra el aviso de certificado una vez por dirección).
 - **Imágenes:** por defecto se **construyen** desde las carpetas de cada proyecto (sin depender de GHCR); con `--desde-ghcr` se descargan las publicadas.
 - **Datos:** `levantar` termina con la semilla en modo demostración y la carga inicial de reportes.
-- **Recursos:** el ensayo completo corre unos 25 contenedores; con 16 GB de RAM se levanta sin Ollama por defecto (reportes y agentes con el modelo apagado, o con el Ollama de desarrollo).
+- **Recursos:** el ensayo completo corre unos 20 contenedores; si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, y después los otros). El desarrollo diario no cambia: sigue con los servidores de desarrollo; con 16 GB de RAM se levanta sin Ollama por defecto (reportes y agentes con el modelo apagado, o con el Ollama de desarrollo).
 
 ## Prueba de humo
 
@@ -148,15 +148,13 @@ produccion-local/
 
 Salida: una línea por comprobación y un resumen; código distinto de 0 si algo falla.
 
-## App instalable
+## App
 
-- `app.config.js` toma `EXPO_PUBLIC_KEYCLOAK_URL` y `EXPO_PUBLIC_SINCRONIZACION_URL` (por defecto, las de desarrollo).
-- APK de distribución interna con `npx expo prebuild --platform android` y `./gradlew assembleRelease`, firmado con una clave propia (*keystore*) guardada fuera del repositorio y pasada por variables de Gradle. El procedimiento queda en el README de la app; el APK no se versiona.
-- El esquema `appobra://` ya está en el realm (001); con `ERP_URL`/`PORTAL_URL` no cambia.
+- `app.config.js` toma `EXPO_PUBLIC_KEYCLOAK_URL` y `EXPO_PUBLIC_SINCRONIZACION_URL` (por defecto, las de desarrollo). Generar y distribuir el APK queda fuera de esta spec (lo hace Jairo).
 
 ## Pruebas
 
-- Cada proyecto: `docker build` y `docker run` con variables de prueba responden `/salud` (o `/` en los frontends, con su `configuracion.json` generado), el proceso no corre como `root` (`id -u` distinto de 0) y `docker history` no muestra `.env` ni herramientas de compilación.
+- Cada servicio: `docker build` y `docker run` con variables de prueba responden `/salud`, el proceso no corre como `root` (`id -u` distinto de 0) y `docker history` no muestra `.env` ni herramientas de compilación.
 - IA: la misma imagen arranca con `ia-api` (responde `/salud`) y con `ia-worker` (se conecta a RabbitMQ).
 - Finanzas: la misma imagen corre la API y los tres procesos en segundo plano.
 - Workflows: un PR con una prueba rota queda en rojo; un *push* a `main` publica `sha-…` y `main`.
@@ -166,7 +164,7 @@ Salida: una línea por comprobación y un resumen; código distinto de 0 si algo
 
 ### `docs/convenciones.md`
 
-Sección nueva «Contenedores y CI»: un `Dockerfile` y un `ci.yml` por repositorio; imagen en dos etapas, sin `root`, configuración por variables; etiquetas `sha-<7>` y `main` en GHCR; frontends con `configuracion.json` generado al arrancar; puertos del ensayo local.
+Sección nueva «Contenedores y CI»: un `Dockerfile` por servicio y un `ci.yml` por repositorio; imagen en dos etapas, sin `root`, configuración por variables; etiquetas `sha-<7>` y `main` en GHCR; frontends como archivos estáticos con `configuracion.json` escrito al publicar; puertos del ensayo local.
 
 ### `docs/entorno-local.md`
 
@@ -179,7 +177,7 @@ Guardas: la excepción `SEMILLA_DEMO=si` (solo carga, nunca vaciado).
 
 ### `docs/arquitectura.md`
 
-«Los 4 niveles → Despliegue»: imagen por repositorio publicada por GitHub Actions; IA con una imagen y dos procesos; frontends construidos una vez con configuración al arrancar; ensayo local en tres grupos.
+«Los 4 niveles → Despliegue»: imagen por repositorio publicada por GitHub Actions; IA con una imagen y sus procesos; frontends como archivos estáticos compilados una vez con la configuración escrita al publicar; ensayo local en tres grupos.
 
 ### `docs/stack.md`
 

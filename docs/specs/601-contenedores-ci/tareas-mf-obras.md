@@ -6,5 +6,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [ ] Aplicar «Cambios a contratos y datos» que tocan este proyecto (`docs/`, `CLAUDE.md`, `.env.example`)
 - [ ] Leer la dirección del gateway de `window.plataforma.configuracion` (como mf-materiales y mf-supervision) con respaldo al valor de desarrollo; pruebas
-- [ ] `Dockerfile` (compilación + `nginx-unprivileged`) y `nginx.conf` con CORS en `remoteEntry.json` y `.js`; prueba con `docker run`
-- [ ] `.github/workflows/ci.yml`: job `prueba` (pruebas y compilación) y job `imagen` (build en PR; *push* a GHCR con `sha-<7>` y `main` en `main`)
+- [ ] `.github/workflows/ci.yml`: job `prueba` (pruebas y compilación) y job `archivos`
