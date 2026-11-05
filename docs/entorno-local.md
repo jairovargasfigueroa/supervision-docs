@@ -130,4 +130,18 @@ Opciones de `levantar`: `-Grupo azure|google|aws` (solo ese grupo), `-DesdeGhcr`
 | Gateway | 205 MB |
 | IA | 683 MB |
 
-En total, unos 1,9 GB de imágenes propias, más las de apoyo y unos 20 contenedores corriendo. Si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, y después los otros; los datos se cargan cuando estén los tres). Con 16 GB de RAM conviene sin Ollama (`IA_LLM_PROVEEDOR=anthropic`, o reportes y agentes con el modelo apagado). El desarrollo diario no cambia: sigue con los servidores de desarrollo.
+En total, unos 1,9 GB de imágenes propias, más las de apoyo (~4,5 GB, casi todas compartidas con el desarrollo; nuevas solo Caddy y MinIO).
+
+Medido el 05/11/2026 (8 GB para Docker, sin Ollama, con los datos de demostración y después de la prueba de humo completa):
+
+| Grupo | Contenedores | RAM |
+|---|---|---|
+| `azure` | 11 | ~2,7 GB (Keycloak ~870 MB, n8n ~580 MB, Obras ~500 MB) |
+| `google` | 6 | ~1,0 GB |
+| `aws` | 4 | ~0,4 GB |
+| **Total** | **21** | **~4,1 GB** |
+
+- **Disco de datos:** ~360 MB en los 10 volúmenes (MongoDB 212 MB, PostgreSQL de `azure` 88 MB, reportes 48 MB), más ~225 MB de capas de los contenedores y 13 MB de frontends publicados.
+- **Tiempo de `levantar`** con las imágenes ya construidas y los frontends ya compilados (`-SinCompilar`), desde volúmenes vacíos: ~4 min 40 s (`azure` 125 s, `google` 53 s, `aws` 19 s, datos de demostración 42 s, carga inicial 10 s, certificados y frontends 29 s). Construir las imágenes y compilar los frontends depende de la red y de la caché. Detalle en el README de infra («Cuánto ocupa y cuánto tarda»).
+
+Si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, y después los otros; los datos se cargan cuando estén los tres). Con 16 GB de RAM conviene sin Ollama (`IA_LLM_PROVEEDOR=anthropic`, o reportes y agentes con el modelo apagado). El desarrollo diario no cambia: sigue con los servidores de desarrollo.
