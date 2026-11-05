@@ -4,6 +4,15 @@
 
 **Estado:** borrador para aprobar · **Capa:** 6 (requisito del ingeniero) · **Proyectos:** infra (y la configuración de producción de todos los proyectos, hecha en 601)
 
+## Pendientes para reescribir
+
+Encontrados al implementar la 601 (imágenes, *compose* por grupo, variables y prueba de humo, de los que parte la reescritura de esta spec). No se resuelven aquí; se tienen en cuenta al reescribirla:
+
+- **Service worker del shell (104):** `ngsw-config.json` del `erp-shell` tiene el grupo `remotos` con las direcciones de desarrollo (`http://localhost:4201/**`, `:4202/**` y `:4203/**`). Resuelto en la 601 para la «producción local»: `publicar-frontends` ajusta el `ngsw.json` publicado con `produccion-local/ajustar-ngsw.mjs` (y la prueba de humo lo comprueba). Al publicar en la nube hay que correr el mismo ajuste con las direcciones de los remotos del entorno.
+- **libcurl de PHP y `*.localhost`:** libcurl resuelve `*.localhost` siempre a la propia máquina e ignora `extra_hosts`. En el ensayo local Finanzas usa un reenvío (`finanzas-reenvio`, que lleva `127.0.0.1:8443` al Caddy de `azure`) para pedir el JWKS de Keycloak. Es solo del ensayo: con dominios reales no hace falta.
+- **MongoDB 8.0 y el kernel de Linux 6.19+:** MongoDB 8.0 se niega a arrancar en un kernel 6.19 a 7.0.13 (incompatibilidad de su TCMalloc, SERVER-125742). Pasa en los runners de GitHub (el CI de IA usa MongoDB 7.0 por eso). Si MongoDB corre en una máquina virtual propia y no en Atlas, revisar el kernel o la versión de MongoDB.
+- **Node 24 y `localhost`:** en la máquina del equipo, Node 24 resuelve `localhost` a `::1` (IPv6). Un script o servicio de Node que llama a `localhost` puede no llegar a algo que escucha solo en `127.0.0.1`; tenerlo en cuenta en los scripts y las direcciones del despliegue.
+
 ## Historia
 
 Como **equipo** queremos la plataforma funcionando en internet repartida entre AWS, Google Cloud y Azure, con HTTPS, secretos protegidos y costo bajo, para demostrar que cada pieza se despliega por separado y que las piezas se comunican de forma segura entre nubes.

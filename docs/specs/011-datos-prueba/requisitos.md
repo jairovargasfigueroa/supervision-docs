@@ -16,7 +16,7 @@ Los datos están en `docs/datos-prueba.md` (fuente única).
 2. CUANDO se corre `semilla` una segunda vez, ENTONCES no se duplica nada (mismos conteos) y no falla.
 3. CUANDO se modifica algo en una demostración (por ejemplo, se aprueba la planilla 3 de la obra 1) y se corre `recargar`, ENTONCES, después de confirmar, todo vuelve al estado del documento con la fecha del día.
 4. La carga no publica eventos ni comandos: después de cargar, las tablas o colecciones `outbox_evento` de los tres servicios están vacías y el panel de RabbitMQ no muestra mensajes nuevos en el exchange `plataforma`.
-5. SI un servicio corre en producción, o su base no es local, o falta `SEMILLA_PERMITIDA=si` en el `.env` de infra, ENTONCES la semilla y el vaciado se niegan a correr con un mensaje claro.
+5. SI un servicio corre en producción, o su base no es local, o falta `SEMILLA_PERMITIDA=si` en el `.env` de infra, ENTONCES la semilla y el vaciado se niegan a correr con un mensaje claro. (Desde la 601: con `SEMILLA_DEMO=si` la **carga** se permite en producción o con una base no local, para los datos de demostración; el **vaciado** sigue prohibido. Ver `docs/datos-prueba.md`, «Guardas».)
 6. Los tres servicios usan la misma fecha D (la que calcula el script y pasa en `SEMILLA_FECHA`).
 
 ### Qué se ve el día de la carga

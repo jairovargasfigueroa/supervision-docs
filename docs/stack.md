@@ -14,6 +14,7 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 - **Validación en NestJS:** `class-validator` + `class-transformer` con el `ValidationPipe` global. (`nestjs-zod` todavía no es compatible con NestJS 12.)
 - **Documentación de cada API REST:** OpenAPI generado desde el código, publicado en `/docs` (solo en desarrollo).
 - **Pruebas de punta a punta:** Playwright 1, en el repo `infra` (carpeta `e2e/`), contra el entorno de Docker Compose.
+- **Contenedores y CI (601):** imágenes base, servidor del ensayo local y acciones de GitHub en «Contenedores, CI y ensayo local» (al final).
 
 ## services/obras (Java 21 · Spring Boot 4.1)
 
@@ -52,6 +53,8 @@ Las capas pueden sumar librerías propias (Whisper, MediaPipe, SheetJS, TF Lite,
 | Pruebas | Vitest (ya), `supertest` | — |
 
 ## services/finanzas (PHP · Laravel 13)
+
+PHP 8.4 o superior: el `composer.lock` trae Symfony 8.1, que pide PHP 8.4.1 o más (encontrado en la 601; la imagen y el CI usan PHP 8.4).
 
 | Para qué | Librería | Versión |
 |---|---|---|
@@ -163,3 +166,42 @@ Creado por la 401 (llenado en la 401, 402 y 403; la capa 5 suma la 503, 501, 502
 ## infra
 
 Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y las pruebas de punta a punta con Playwright (`e2e/`). Datos de prueba (011): scripts `semilla/` y la imagen oficial `amazon/aws-cli:2.38.0` (servicio `s3-cli`, perfil `herramientas`) para subir y borrar las fotos del bucket de desarrollo. Base de reportes (401): la imagen oficial `postgres:17` como `psql-cli` (perfil `herramientas`) para vaciar `reportes_db` en `recargar`, y la imagen de `services/ia` (`IA_DIR`) para `ia-api`, `ia-worker` (perfil `ia`) e `ia-carga-inicial` (perfil `ia-carga`). Capa 5 (503 y 502): la imagen oficial `ollama/ollama:0.40.4` (servicio `ollama`, perfil `ollama`; GPU opcional con `docker-compose.gpu.yml`) y `mongo:8.0` como `mongo-cli` (perfil `herramientas`) para vaciar `ia_db.consumo_atipico` en `recargar`. Capa 2 (201, perfil `automatizacion`): las imágenes oficiales `n8nio/n8n:2.43.7` (flujos de la cobranza en `n8n/flujos/`, en JSON) y `axllent/mailpit:v1.31.6` (buzón de prueba). Avisos (010, mismo perfil): sin imágenes nuevas; los flujos «Avisar stock bajo», «Recordar diario» y «Avisar planilla para revisar» van en `n8n/flujos/` y el *push* se envía con el nodo **HTTP Request** de n8n a la API v1 de Firebase Cloud Messaging (sin librería de Firebase en infra).
+
+Desde la 601, «producción local» (`produccion-local/`): las mismas imágenes de apoyo de desarrollo más `caddy:2.11.7-alpine` y `pgsty/minio:RELEASE.2026-08-04T00-00-00Z` (tabla siguiente). Scripts de Node 24 sin dependencias: `pruebas/humo-despliegue.mjs` y `pruebas/red-local.mjs`.
+
+## Contenedores, CI y ensayo local (601)
+
+Versiones verificadas al implementar la 601 (Docker Hub y GitHub, noviembre de 2026). Fijas, nunca `latest`; se cambian aquí y en el `Dockerfile` o el workflow a la vez.
+
+### Imágenes base de los servicios
+
+| Proyecto | Etapa `construir` | Etapa `final` | Tamaño de la imagen |
+|---|---|---|---|
+| services/obras | `eclipse-temurin:21.0.12_8-jdk-alpine-3.24` (`./mvnw -B package -DskipTests`) | `eclipse-temurin:21.0.12_8-jre-alpine-3.24` | 296 MB |
+| services/finanzas | `dunglas/frankenphp:1.13.0-php8.4.26-alpine` con Composer 2.10.3 (`composer install --no-dev --optimize-autoloader`) | `dunglas/frankenphp:1.13.0-php8.4.26-alpine` con `pdo_pgsql`, `bcmath`, `sockets` y `opcache` | 308 MB |
+| services/materiales | `node:24.22.0-alpine3.24` (`npm ci`, `npm run build`, `npm prune --omit=dev`) | `node:24.22.0-alpine3.24` | 229 MB |
+| services/sincronizacion | `node:24.22.0-alpine3.24` | `node:24.22.0-alpine3.24` | 211 MB |
+| gateway | `node:24.22.0-alpine3.24` | `node:24.22.0-alpine3.24` | 205 MB |
+| services/ia | `python:3.12-slim` con uv 0.13.1 (`uv sync --frozen --no-dev --no-editable`, sin `nvidia-nccl-cu13`) | `python:3.12-slim` (entorno, migraciones y `modelos/`) | 683 MB |
+
+Los frontends y la app no llevan imagen (archivos estáticos y APK).
+
+### Ensayo local («producción local», en `infra`)
+
+| Para qué | Imagen |
+|---|---|
+| HTTPS de cada grupo con una CA local y servidor de los 5 frontends estáticos | `caddy:2.11.7-alpine` |
+| S3 compatible para las fotos (solo el ensayo; en la nube, Amazon S3) | `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`: *fork* comunitario de MinIO, porque la imagen oficial `minio/minio` ya no está en Docker Hub |
+
+### Acciones de GitHub (`.github/workflows/ci.yml`)
+
+| Para qué | Acción |
+|---|---|
+| Código del repositorio | `actions/checkout@v7` |
+| Node 24 (Materiales, Sincronización, gateway, frontends, app e infra) | `actions/setup-node@v7` |
+| Java 21 (Obras) | `actions/setup-java@v6` |
+| PHP 8.4 con extensiones (Finanzas) | `shivammathur/setup-php@v2` |
+| uv y Python 3.12 (IA) | `astral-sh/setup-uv@v10.3.0` (no publica etiqueta mayor; uv 0.13.1, el mismo de la imagen) |
+| Caché de dependencias (Composer en Finanzas; el binario de `mongodb-memory-server` en Materiales) | `actions/cache@v6` |
+| Carpeta compilada de cada frontend como artefacto | `actions/upload-artifact@v7` |
+| Construir y publicar la imagen en GHCR (caché `type=gha`, solo `GITHUB_TOKEN`) | `docker/setup-buildx-action@v4`, `docker/login-action@v4`, `docker/build-push-action@v7` |
