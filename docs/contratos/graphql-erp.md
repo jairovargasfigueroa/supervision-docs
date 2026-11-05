@@ -311,6 +311,10 @@ type Mutation {
 - `ejecutarAgente` → `POST /agentes/{agente}/ejecuciones` (sin cuerpo); `aprobarSugerencia` → `POST /sugerencias/{id}/aprobar` `{ comentario }` (`comentario` solo si viene); `rechazarSugerencia` → `POST /sugerencias/{id}/rechazar` `{ motivo }`. Sin reintento. Los errores de IA llegan en `extensions.codigo` con `extensions.servicio = "ia"` y `data: null`: `AGENTE_INVALIDO` (400), `EJECUCION_EN_CURSO` (409), `SUGERENCIA_NO_ENCONTRADA` (404, también si no puede verla), `SUGERENCIA_YA_DECIDIDA` (409), `COMENTARIO_INVALIDO` (422, con `extensions.errores[]`) y `MOTIVO_INVALIDO` (422). Aprobar solo registra la decisión.
 - `ejecucionAgente(id)` inexistente: `null` con `EJECUCION_NO_ENCONTRADA`. Si IA no responde: `SERVICIO_NO_DISPONIBLE` con `extensions.servicio = "ia"`.
 
+## Expone: REST técnico (601)
+
+- `GET /salud`: sin token, `200 {"estado":"ok"}` (convenciones, «Registros y salud»). Lo usan el `HEALTHCHECK` de la imagen y la prueba de humo. No toca a ningún servicio. La consulta GraphQL `{ salud }` sigue igual.
+
 ## Consume (REST)
 
 | Servicio | Endpoints |
@@ -321,4 +325,4 @@ type Mutation {
 | Keycloak (cliente `gateway`) | `GET /admin/realms/supervision/roles/{rol}/users`, `GET /admin/realms/supervision/users/{id}` |
 | IA (capas 4 y 5) | 402: `GET /predicciones?obraIds=` (hasta 100 por llamada), `GET /obras/{id}/prediccion?historial=`, `GET /modelos/riesgo-retraso`; 403: `GET /consumos-atipicos?obraId=&estado=`, `GET /consumos-atipicos/resumen?obraIds=` (hasta 100 por llamada), `PUT /consumos-atipicos/{id}/revision`; 503: `GET /catalogo-reportes`, `GET /consultas-reporte?limite=`, `POST /consultas-reporte` (60 s); 502: `GET /agentes`, `POST /agentes/{agente}/ejecuciones`, `GET /ejecuciones?agente=&estado=&limite=`, `GET /ejecuciones/{id}`, `GET /hallazgos?agente=&obraId=`, `GET /sugerencias?estado=&agente=&obraId=&limite=`, `POST /sugerencias/{id}/aprobar`, `POST /sugerencias/{id}/rechazar` |
 
-URLs base por variables de entorno: `OBRAS_URL`, `MATERIALES_URL`, `FINANZAS_URL`, `IA_URL` (402; por defecto `http://localhost:8085`), `KEYCLOAK_URL`, `KEYCLOAK_GATEWAY_CLIENT_ID`, `KEYCLOAK_GATEWAY_CLIENT_SECRET`.
+URLs base por variables de entorno, **obligatorias y sin valor por defecto en el código** (601; las de desarrollo están en `.env.example`): `OBRAS_URL`, `MATERIALES_URL`, `FINANZAS_URL`, `IA_URL` (402) y `KEYCLOAK_URL`. Además `KEYCLOAK_REALM` (por defecto `supervision`), `KEYCLOAK_GATEWAY_CLIENT_ID` (por defecto `gateway`), `KEYCLOAK_GATEWAY_CLIENT_SECRET` y `CORS_ORIGENES`.

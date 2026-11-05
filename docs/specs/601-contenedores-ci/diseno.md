@@ -32,7 +32,7 @@ frontend ─build─> archivos     (6 imágenes + 5 frontends estáticos)       
 |---|---|---|---|
 | services/obras | JDK 21: `./mvnw -B package -DskipTests` | JRE 21: `java -XX:MaxRAMPercentage=75 -jar app.jar` con el perfil `prod` | 8081 |
 | services/materiales | Node 24: `npm ci`, `npm run build`, `npm prune --omit=dev` | Node 24: `node dist/main.js`, usuario `node` | 8082 |
-| services/finanzas | `composer install --no-dev --optimize-autoloader` | FrankenPHP con PHP 8.3+ y las extensiones `pdo_pgsql`, `bcmath`, `sockets`, `opcache`; `php artisan migrate --force` y después `frankenphp php-server` sobre `public/` (decisión del equipo: un solo proceso, sin nginx + php-fpm). **La misma imagen** corre los procesos en segundo plano cambiando el comando: `mensajeria:consumir`, `mensajeria:publicar` y `schedule:work` | 8083 |
+| services/finanzas | `composer install --no-dev --optimize-autoloader` | FrankenPHP con PHP 8.4 (Symfony 8.1, en el `composer.lock`, pide PHP 8.4.1 o más; encontrado al implementar) y las extensiones `pdo_pgsql`, `bcmath`, `sockets`, `opcache`; `php artisan migrate --force` y después `frankenphp php-server` sobre `public/` (decisión del equipo: un solo proceso, sin nginx + php-fpm). **La misma imagen** corre los procesos en segundo plano cambiando el comando: `mensajeria:consumir`, `mensajeria:publicar` y `schedule:work` | 8083 |
 | services/ia | Python 3.12 con `uv sync --frozen --no-dev` (entorno en `/app/.venv`) | Python 3.12 con el entorno copiado y `modelos/` (402 y 403); sin `entrenamiento/` ni `ml/`. **Una imagen, dos comandos:** `ia-api` (aplica `alembic upgrade head` y atiende en 8085) e `ia-worker`. La carga inicial (`ia-carga-inicial`) es un tercer comando de la misma imagen | 8085 |
 | services/sincronizacion | como Materiales | Node 24: `node dist/main.js`. Sin adaptador de Lambda: si la 602 la pone en Lambda, lo agrega allá | 8084 |
 | gateway | como Materiales | Node 24: `node dist/main.js` | 4000 |
@@ -95,7 +95,7 @@ jobs:
 | Proyecto | Job `prueba` |
 |---|---|
 | Obras | Java 21: `./mvnw -B verify` (Testcontainers con el Docker del runner) |
-| Finanzas | PHP 8.3+ con `pdo_pgsql`, `bcmath` y `sockets`: `composer install`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse`, `php artisan test` |
+| Finanzas | PHP 8.4 con `pdo_pgsql`, `bcmath` y `sockets`: `composer install`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse`, `php artisan test` |
 | Materiales, Sincronización y gateway | Node 24: `npm ci` y los scripts de lint, pruebas (unitarias y e2e) y compilación de cada proyecto; Materiales con MongoDB en *replica set* y Sincronización con DynamoDB Local como servicios del job |
 | IA | uv con Python 3.12: `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy`, `pytest` (Testcontainers) |
 | erp-shell, mf-obras | `npm ci`, pruebas y `npm run build` |

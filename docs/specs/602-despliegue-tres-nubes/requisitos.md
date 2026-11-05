@@ -4,6 +4,14 @@
 
 **Estado:** borrador para aprobar · **Capa:** 6 (requisito del ingeniero) · **Proyectos:** infra (y la configuración de producción de todos los proyectos, hecha en 601)
 
+## Pendientes para reescribir
+
+Encontrados al implementar la 601 (imágenes, *compose* por grupo, variables y prueba de humo, de los que parte la reescritura de esta spec). No se resuelven aquí; se tienen en cuenta al reescribirla:
+
+- **Service worker del shell (104):** `ngsw-config.json` del `erp-shell` tiene el grupo `remotos` con las direcciones de desarrollo (`http://localhost:4201/**`, `:4202/**` y `:4203/**`). Fuera de desarrollo los microfrontends no quedarían guardados para trabajar sin conexión: al publicar en la nube hay que poner ahí las direcciones de los remotos del entorno (o resolverlo de otra forma).
+- **libcurl de PHP y `*.localhost`:** libcurl resuelve `*.localhost` siempre a la propia máquina e ignora `extra_hosts`. En el ensayo local Finanzas usa un reenvío (`finanzas-reenvio`, que lleva `127.0.0.1:8443` al Caddy de `azure`) para pedir el JWKS de Keycloak. Es solo del ensayo: con dominios reales no hace falta.
+- **Node 24 y `localhost`:** en la máquina del equipo, Node 24 resuelve `localhost` a `::1` (IPv6). Un script o servicio de Node que llama a `localhost` puede no llegar a algo que escucha solo en `127.0.0.1`; tenerlo en cuenta en los scripts y las direcciones del despliegue.
+
 ## Historia
 
 Como **equipo** queremos la plataforma funcionando en internet repartida entre AWS, Google Cloud y Azure, con HTTPS, secretos protegidos y costo bajo, para demostrar que cada pieza se despliega por separado y que las piezas se comunican de forma segura entre nubes.

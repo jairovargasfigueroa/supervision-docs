@@ -11,7 +11,7 @@ Para quien se suma al equipo. Windows 11 (los comandos de PowerShell tienen su e
 | nvm para Windows | 1.2 | cambiar de Node | `nvm version` |
 | Node | **24 LTS** (`nvm install 24` y `nvm use 24`) | proyectos JavaScript | `node -v` → v24.x |
 | Java (JDK) | **21** (Temurin u OpenJDK) | Obras | `java -version` |
-| PHP + Composer | PHP **8.3 o más** (Laravel Herd trae 8.5) | Finanzas | `php -v` en PowerShell |
+| PHP + Composer | PHP **8.4 o más** (Laravel Herd trae 8.5; Symfony 8.1, en el `composer.lock` de Finanzas, pide 8.4.1 o más) | Finanzas | `php -v` en PowerShell |
 | Docker Desktop | con WSL 2 | `infra` | `docker compose version` |
 | Python | **3.12** estable, gestionado por `uv` | servicio IA (capas 4 y 5) | `uv --version` y `uv python find 3.12` |
 | Modelo de lenguaje (capa 5, uno de los dos) | Ollama en Docker (perfil `ollama` de `infra`, modelo `qwen3:8b`, unos 5 GB; GPU NVIDIA opcional) **o** una clave propia de la API de Anthropic | agentes (502) y reportes (503) del servicio IA | `infra/scripts/estado.ps1` («Ollama: responde») |

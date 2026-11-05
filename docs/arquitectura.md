@@ -18,7 +18,7 @@
 | RabbitMQ | Mensajería | RabbitMQ | — |
 | n8n | Automatización: cobranza automática (capa 2, 201) y avisos al celular y al cliente (010) | n8n 2.43.7 (`n8nio/n8n`), flujos en `infra/n8n/flujos/`; sin base propia (en la 201 la idempotencia la da Finanzas; en la 010, cada flujo recuerda los últimos 500 `id` de sobre en sus datos estáticos). En desarrollo, el correo llega a Mailpit | — |
 | Firebase Cloud Messaging | Avisos *push* a la app de obra (010) | Firebase (plan gratuito *Spark*), envío por **temas** (`obra-{obraId}-maestro`, `obra-{obraId}-almacenero`); ningún servicio guarda tokens de dispositivos. Opcional: sin Firebase configurado, no hay *push* | — |
-| Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio) | — |
+| Almacenamiento de objetos | Fotos y notas de remisión | Amazon S3 (también en desarrollo, con un bucket propio); en el ensayo local de la 601, un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` | — |
 
 ## Conexiones
 
@@ -75,7 +75,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Login (previsto) | Keycloak 26 · keycloak-angular 22 · react-oidc-context 3 | OIDC estándar |
 | App móvil | Expo SDK 58 · React Native 0.88 | Recomendado por la documentación de React Native; TensorFlow Lite (capa 3) con `react-native-fast-tflite` en una *development build* |
 | Obras | Spring Boot 4.1 · Java 21 | Ya creado |
-| Finanzas | Laravel 13 · PHP 8.3 o superior | Ya creado |
+| Finanzas | Laravel 13 · PHP 8.4 o superior | Ya creado. El `composer.lock` trae Symfony 8.1, que pide PHP 8.4.1 o más: la imagen y el CI usan PHP 8.4 (601); en la máquina, el PHP 8.5 de Herd |
 | IA | Python 3.12 · FastAPI 0.162 · `uv` · XGBoost 3 · scikit-learn 1 | `xgboost` 3 y `numpy` 2.5 exigen Python 3.12; librerías en `docs/stack.md` (401) |
 | Capa 5: MCP | Especificación vigente 2026-07-28; versión común 2025-11-25. SDK oficiales: Java `io.modelcontextprotocol.sdk:mcp` 2.1.0 (por Spring AI 2.0.2), TypeScript `@modelcontextprotocol/server` 2.4.0 (con su transporte `WebStandardStreamableHTTPServerTransport`; el adaptador `@modelcontextprotocol/express` no hizo falta), Python `mcp` 2.3.0; PHP: `laravel/mcp` 1.1.2 (oficial de Laravel; el SDK de la organización MCP, `mcp/sdk`, sigue en 0.9) | Verificado el 31/10/2026; detalle en la 501 |
 | Capa 5: modelo de lenguaje | `ollama` 0.6.3 (Python) con `qwen3:8b` · `anthropic` 2.3.0 (Python) con `claude-sonnet-5-5` | Verificado el 31/10/2026; detalle en la 503. En desarrollo, imagen `ollama/ollama:0.40.4` (`docs/entorno-local.md`) |
@@ -86,7 +86,7 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 - **Backend:** microservicios por área del negocio. DDD en todos; Hexagonal en Obras y Finanzas; Clean en Materiales y Sincronización; hexagonal ligera por módulo en IA (`reportes`, `riesgo`, `atipicos` y, en la capa 5, `lenguaje`, `constructor_reportes`, `mcp`, `agentes` y `seguridad`). En la capa 5, MCP: el servicio de IA es el **host** de los agentes y los cuatro servicios (Obras, Materiales, Finanzas e IA) son **servidores MCP** internos de solo lectura; las personas usan REST por el gateway.
 - **Frontend:** shell + microfrontends en el ERP; portal y app como aplicaciones separadas.
 - **Datos:** una base por servicio; sin JOIN entre servicios. Para los reportes que cruzan servicios (el ingeniero pidió «algún mecanismo», no un microservicio), **CQRS: modelo de lectura alimentado por eventos**, solo para lo que cruza servicios: cada microservicio sigue escribiendo y leyendo lo suyo, y las proyecciones de sus eventos de RabbitMQ arman `reportes_db` (tablas `rpt_*`) dentro del servicio de IA, que es quien lo usa (predicciones de la capa 4 y reportes por voz de la capa 5). Sin *event sourcing*. Lo que existía antes se trae una vez con una carga inicial por REST (401). Decisión de Jairo, 31/10/2026.
-- **Despliegue:** cada proyecto produce su propia imagen de contenedor y se despliega por separado.
+- **Despliegue (601):** cada servicio (Obras, Materiales, Finanzas, IA, Sincronización y el gateway) produce **su propia imagen** de contenedor, construida en dos etapas, sin `root` y configurada solo por variables, y la publica GitHub Actions en GitHub Container Registry (`ghcr.io/jairovargasfigueroa/supervision-<repo>`, etiquetas `sha-<7>` y `main`) con cada *push* a `main`; cada pieza se despliega por separado. El servicio de IA tiene **una imagen con sus procesos** (`ia-api`, `ia-worker` e `ia-carga-inicial`, cambiando el comando), igual que Finanzas (API, `mensajeria:consumir`, `mensajeria:publicar` y `schedule:work`). Los **frontends** (shell, 3 microfrontends y portal) no llevan imagen: se **compilan una vez** a archivos estáticos y, al publicarlos, un script escribe su configuración (`configuracion.json` del shell y del portal y `federation.manifest.json` del shell) con las direcciones del entorno, así la misma compilación sirve en la laptop y en cualquier nube. La app no lleva imagen (el APK lo genera Jairo). Antes de subir a las nubes (602) se **ensaya en local** («producción local», `infra/produccion-local/`): las mismas imágenes y los frontends compilados, en **tres grupos** (`azure`, `google` y `aws`, el reparto de abajo), cada uno con su red y su Caddy; entre grupos solo por direcciones públicas con HTTPS (CA local) y RabbitMQ con TLS. Mover un servicio de nube solo cambia los *compose* y las variables, nunca una imagen. Detalle en `docs/convenciones.md` («Contenedores y CI») y `docs/entorno-local.md` («Producción local»).
 
 ## Resiliencia
 
@@ -103,4 +103,4 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 | Google Cloud | IA (+ Ollama en máquina virtual si se usa `IA_LLM_PROVEEDOR=ollama`; con `anthropic` no hace falta), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje local necesita memoria |
 | Azure | Gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n, apps web, PostgreSQL de Obras y Finanzas | Obras y Finanzas comparten la saga |
 
-En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo.
+En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo. El ensayo local de la 601 reproduce este reparto en tres grupos de Docker Compose (MinIO en lugar de S3).

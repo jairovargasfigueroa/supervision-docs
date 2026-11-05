@@ -6,7 +6,7 @@ Funcionalidad: `docs/specs/011-datos-prueba/`. Este documento es la **fuente ún
 
 Reglas generales:
 
-- **Solo desarrollo.** Nunca se carga en las nubes de la capa 6 ni en una base que no sea local (ver «Guardas»).
+- **Solo desarrollo.** Nunca se carga en las nubes de la capa 6 ni en una base que no sea local (ver «Guardas»), salvo como **datos de demostración** con el permiso explícito `SEMILLA_DEMO=si` (601): en la «producción local» o en la nube solo se carga, nunca se vacía.
 - **Cada servicio carga lo suyo** en su propia base (principio 4 del `CLAUDE.md`). Los identificadores son fijos y están escritos aquí para que los tres servicios coincidan sin hablarse.
 - **La carga no publica eventos** (ver «Por qué la semilla no publica eventos»).
 - Montos en bolivianos (Bs). En este documento se escriben con punto de miles y coma decimal (`2.773.800,00`); en JSON y en la base, como número (`2773800.00`).
@@ -489,7 +489,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 | Obras | `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,semilla` (en Windows `mvnw.cmd`) | Perfil `semilla`: arranca sin servidor web, sin consumidores de RabbitMQ y sin publicador del outbox, carga y termina. Opción `--semilla.modo=recargar` para vaciar antes. |
 | Finanzas | `php artisan db:seed --class=DatosPruebaSeeder --force` | Contratos, reservas y cobros (y, desde la 201, el envío `NOTA_COBRO` de cada cobro). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
 | Materiales | `npm run semilla` | Script que crea un contexto de NestJS solo con Mongoose (sin HTTP ni RabbitMQ). Vaciar: `npm run semilla:vaciar`. |
-| Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. |
+| Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. Con `SEMILLA_DEMO=si` (601), al bucket o al S3 compatible configurado (`S3_BUCKET` y su *endpoint*; en la «producción local», MinIO) con el `s3-cli` del grupo donde está. |
 
 - Cada servicio guarda su parte en un archivo de datos propio con la notación de fechas de la sección 1 (por ejemplo `"fechaInicio": "D-120"`, `"registradoEn": "M-1/09 10:00"`) y un pequeño resolvedor de fechas con pruebas. Valores y cálculos derivados (stock, saldo, número de cobro, estado del cobro) los calcula la semilla, no se copian.
 - **Idempotencia:** cada registro se inserta solo si su `id` no existe (`INSERT … ON CONFLICT (id) DO NOTHING` en PostgreSQL; *upsert* con `$setOnInsert` en MongoDB; el almacén S3 sobrescribe la misma clave y `aws s3 sync` no vuelve a subir lo que ya está igual). Correr la carga dos veces no duplica nada. La carga **no pisa** lo que ya existe: si en una demostración se aprobó una planilla, cargar de nuevo no la devuelve a `PRESENTADA`; para eso está `recargar`.
@@ -504,6 +504,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
   4. Obras → Finanzas → Materiales (cada uno con su comando; las rutas de los proyectos salen de variables del `.env`, por defecto las carpetas hermanas `../services/…`).
   5. Fotos al bucket S3 de desarrollo.
   6. Resumen: cuántos registros quedaron por servicio y la fecha D usada.
+- **Datos de demostración (601):** `semilla.ps1 -Entorno <archivo>` (`semilla.sh --entorno <archivo>`) lee ese archivo en lugar de `infra/.env` (por ejemplo `infra/produccion-local/.env`). Con `SEMILLA_DEMO=si` en él, cada servicio carga su parte con **su imagen de producción** en el grupo donde corre (`docker compose run --rm` con `SEMILLA_DEMO=si` y `SEMILLA_FECHA`; Obras con `SPRING_PROFILES_ACTIVE=prod,semilla`, Finanzas con `php artisan db:seed --class=DatosPruebaSeeder --force`, Materiales con `node dist/semilla/main.js cargar`), sin PHP ni las carpetas de los proyectos; las fotos van al S3 configurado. Después, la carga inicial de la base de reportes (401) con el comando `ia-carga-inicial` de la imagen de IA. Lo usa `infra/produccion-local/levantar` al terminar.
 - `semilla/recargar.ps1` y `semilla/recargar.sh` **vacían y vuelven a cargar**: piden confirmación («Esto borra todos los datos de desarrollo de obras_db, finanzas_db, materiales_db y del bucket supervision. ¿Continuar? (s/N)»; `-Si` / `--si` la omite), vacían cada servicio con su propio comando (todas las tablas o colecciones del negocio; nunca el historial de migraciones), vacían las colas de RabbitMQ de la plataforma (para que no lleguen mensajes viejos que apunten a datos borrados), borran los objetos del bucket, reimportan los usuarios del realm si sus `id` no coinciden y corren `semilla`. Se recomienda detener antes los servicios.
 
 ### Guardas
@@ -512,7 +513,13 @@ La semilla y el vaciado se niegan a correr (mensaje claro y código de salida di
 
 - el servicio corre con un perfil o entorno de producción (`prod` en Spring, `APP_ENV=production` en Laravel, `NODE_ENV=production` en Node);
 - la base no está en `localhost`, `127.0.0.1` o en el nombre de un contenedor del Docker Compose de infra;
-- en infra, la variable `SEMILLA_PERMITIDA=si` no está en el `.env` (el `.env.example` la trae; los entornos de la capa 6 no).
+- en infra, la variable `SEMILLA_PERMITIDA=si` no está en el `.env` (el `.env.example` la trae; los entornos de la capa 6 no);
+- en infra, el bucket de las fotos (`S3_BUCKET`) no empieza con `supervision-dev-`.
+
+**Excepción: datos de demostración (601).** Con `SEMILLA_DEMO=si` (en el `.env` de la «producción local» o de la nube; nunca en `infra/.env`):
+
+- la **carga** corre igual aunque el servicio esté en modo producción, la base no sea local, falte `SEMILLA_PERMITIDA=si` o el bucket no empiece con `supervision-dev-` (la guarda del prefijo queda «`supervision-dev-` o `SEMILLA_DEMO=si`»). Carga los mismos datos, sin duplicar ni pisar nada, igual que en desarrollo;
+- el **vaciado** sigue prohibido fuera de desarrollo, sin excepción: `recargar` se niega con `SEMILLA_DEMO=si` y los comandos de vaciar de cada servicio (`--semilla.modo=recargar` en Obras, `datos-prueba:vaciar` en Finanzas, `npm run semilla:vaciar` en Materiales) se niegan en modo producción o con una base que no es local, con o sin `SEMILLA_DEMO`. Para empezar de cero en la «producción local», `bajar -Datos`.
 
 ## 13. Ampliaciones por capa
 

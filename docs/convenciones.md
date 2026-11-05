@@ -35,10 +35,12 @@ Lo que todos los proyectos hacen igual.
 
 - PostgreSQL usa el 5433 (no el 5432) porque así está configurado Obras y es el puerto de la instalación local de Jairo. Una sola instancia con una base por servicio: `obras_db`, `finanzas_db` y, en la capa 4, `reportes_db` (modelo de lectura del servicio de IA, 401), con su usuario propio `ia`, dueño de la base (`POSTGRES_IA_CLAVE` de `infra/.env`), y desde la 503 el rol de solo lectura `ia_reportes_lector` (`POSTGRES_IA_LECTOR_CLAVE`; `SELECT` solo sobre las tablas `rpt_*` que lee el constructor de reportes). El servicio de IA usa además la base `ia_db` de MongoDB (402, 403 y, en la capa 5, agentes, sugerencias, consultas de reportes y límite por minuto).
 - En la máquina de Jairo, PostgreSQL (5433) y MongoDB (27017) ya están instalados como servicios de Windows; ahí Docker Compose levanta solo RabbitMQ, Keycloak y DynamoDB Local (101). Quien no los tenga instalados levanta también los contenedores de las bases.
+- El ensayo del despliegue («producción local», 601) usa otros puertos (8443, 9443, 10443 y 5671) para no chocar con estos: «Contenedores y CI».
 
 ## Datos de prueba (011)
 
 - Los datos de prueba (`docs/datos-prueba.md`) **solo se cargan en desarrollo**: `infra/semilla/semilla.ps1` (o `.sh`) y `recargar` se niegan a correr sin `SEMILLA_PERMITIDA=si` en el `.env` de infra, y cada servicio rechaza su propia semilla en producción (`prod`, `APP_ENV=production`, `NODE_ENV=production`) o con una base que no sea local.
+- **Única excepción, datos de demostración (601):** con `SEMILLA_DEMO=si` (solo en el `.env` de la «producción local» o de la nube, nunca en `infra/.env`) la semilla **carga** sin duplicar aunque el servicio esté en modo producción o la base no sea local; el **vaciado** (`recargar` y los comandos de vaciar de cada servicio) sigue prohibido fuera de desarrollo, sin excepción. Detalle en `docs/datos-prueba.md` («Guardas»).
 - La semilla no publica eventos ni comandos (no escribe `outbox_evento` ni `mensaje_procesado`) y todos los servicios usan la misma fecha D (`SEMILLA_FECHA`).
 
 ## Autenticación y permisos (Keycloak)
@@ -72,7 +74,7 @@ Lo que todos los proyectos hacen igual.
   - `obtenerToken(): Promise<string>`: devuelve un token vigente (lo renueva si hace falta)
   - `cerrarSesion(): void`
 - Cuando la sesión cambia, el shell emite el evento `plataforma:sesion` en `window`.
-- El shell publica también `window.plataforma.configuracion` con `{ gatewayUrl }`, para que los microfrontends no repitan configuración.
+- El shell publica también `window.plataforma.configuracion` con `{ gatewayUrl }`, para que los microfrontends no repitan configuración. Desde la 601 el shell lo toma de su `configuracion.json` (escrito al publicar) y es la **única** fuente de la dirección del gateway para los microfrontends; abiertos solos (desarrollo), usan `http://localhost:4000/graphql`.
 - Los microfrontends (Angular y React) solo leen ese objeto; nunca hablan con Keycloak.
 - ERP sin conexión (104):
   - `sesion.sinConexion: boolean`; en ese modo `obtenerToken()` rechaza con `Error('SIN_CONEXION')`.
@@ -173,7 +175,7 @@ Lo que todos los proyectos hacen igual.
 
 ## Registros y salud
 
-- Cada servicio expone `GET /salud` sin token, que responde `200 {"estado":"ok"}`. El gateway responde además la consulta GraphQL `{ salud }`, que tampoco exige token (el ERP la usa para saber si volvió la conexión, también sin sesión; 104).
+- Cada servicio expone `GET /salud` sin token, que responde `200 {"estado":"ok"}`; desde la 601 también el gateway (lo usan el `HEALTHCHECK` de su imagen y la prueba de humo). El gateway responde además la consulta GraphQL `{ salud }`, que tampoco exige token (el ERP la usa para saber si volvió la conexión, también sin sesión; 104).
 - Encabezado `X-Request-Id`: el gateway lo crea si no viene y lo reenvía a cada servicio; todos los registros lo incluyen. En los eventos se usa `correlacionId`.
 - Encabezado `X-Dispositivo-Id` (UUID del celular, generado por la app al instalarse): obligatorio en las llamadas de la app a Sincronización, salvo `GET /salud`; sin él, `400 DISPOSITIVO_REQUERIDO` (101).
 - Registros en formato JSON en producción y texto legible en desarrollo.
@@ -186,11 +188,30 @@ Lo que todos los proyectos hacen igual.
 
 ## Archivos (fotos y notas de remisión)
 
-- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción, el bucket de la capa 6. El código es el mismo; solo cambian las variables.
+- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción, el bucket de la capa 6; en la «producción local» (601), un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` (rutas de estilo *path*; vacío = Amazon S3). El código es el mismo; solo cambian las variables.
 - Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
 - En la capa 1 la app guarda la foto comprimida (1280 px, calidad 70) en el celular y la sube completa con la URL firmada que pide a Sincronización (que la obtiene del servicio dueño); si falla, la vuelve a subir completa (102).
+
+## Contenedores y CI (601)
+
+- **Una imagen por servicio:** Obras, Materiales, Finanzas, IA, Sincronización y el gateway tienen en su raíz un `Dockerfile` y un `.dockerignore` (`.git`, `node_modules`, `vendor`, `target`, `dist`, `.env*`, `*.log`, `coverage`, `.venv`, `android`, `datos`). Los frontends y la app no llevan imagen.
+- **Dos etapas:** `construir` (dependencias y compilación) y `final` (solo lo necesario para correr); las herramientas de compilación no quedan en la imagen final. Las pruebas no corren dentro del `docker build`: corren antes, en el workflow.
+- **Sin `root`:** usuario `10001` (Obras, Finanzas, IA) o `node` (Materiales, Sincronización, gateway). `EXPOSE` con el puerto de «Puertos en desarrollo», `HEALTHCHECK` contra `GET /salud` y la etiqueta OCI `org.opencontainers.image.source` con la URL del repositorio.
+- **Una imagen, varios procesos:** IA corre `ia-api` (por defecto; aplica antes `alembic upgrade head`), `ia-worker` e `ia-carga-inicial`; Finanzas corre la API (por defecto: `php artisan migrate --force` y FrankenPHP sobre `public/` en `PORT`) y, cambiando el comando, `mensajeria:consumir`, `mensajeria:publicar` y `schedule:work`. Obras aplica sus migraciones de Flyway al iniciar.
+- **Configuración solo por variables:** la imagen no lleva `.env`, claves, contraseñas ni direcciones de otros servicios; todo entra por variables al arrancar, con el valor de desarrollo en el `.env.example` de cada proyecto (lista en `docs/entorno-local.md`). El gateway y Sincronización exigen las direcciones de los servicios que llaman (sin valor por defecto en el código: si falta una, no arrancan). La imagen trae el modo producción: `SPRING_PROFILES_ACTIVE=prod` (Obras), `APP_ENV=production`, `APP_DEBUG=false` y `LOG_CHANNEL=stderr` (Finanzas), `NODE_ENV=production` (Node) e `IA_ENTORNO=produccion` (IA): registros en la salida estándar, en JSON, y errores sin trazas para el usuario.
+- **TLS cuando se configura:** Obras con `OBRAS_DB_SSLMODE` y `OBRAS_RABBITMQ_SSL`, Finanzas con `DB_SSLMODE` y `RABBITMQ_SSL`, y Materiales, Sincronización, gateway e IA por la propia URL (`https://`, `amqps://`, `tls=true` o `mongodb+srv://`, `sslmode=` en PostgreSQL). Una CA adicional (solo la del ensayo local; en la nube los certificados son públicos) entra por variable sin cambiar la imagen: Java `JAVA_TOOL_OPTIONS` con un *truststore*, Node `NODE_EXTRA_CA_CERTS`, IA `IA_CA_EXTRA` y PHP un `.ini` con `curl.cainfo` y `openssl.cafile`.
+- **CI:** un workflow `.github/workflows/ci.yml` por repositorio. En cada *pull request* hacia `develop` o `main`: job `prueba` (dependencias con caché, lint, tipos, pruebas y compilación) y, en los servicios, job `imagen` que la construye sin publicarla; si algo falla, el PR queda en rojo. En cada *push* a `main` (un *release*): cada servicio publica su imagen en GitHub Container Registry, `ghcr.io/jairovargasfigueroa/supervision-<repo>` (por ejemplo `supervision-ms-obras`, `supervision-gateway`), con las etiquetas `sha-<7 caracteres>` y `main` (caché de capas `type=gha`), y cada frontend guarda su carpeta compilada como artefacto del workflow. La app corre tipos y pruebas; infra valida los *compose*, el realm, las definiciones de RabbitMQ y los flujos de n8n. Los workflows no usan secretos de la aplicación: solo `GITHUB_TOKEN`.
+- **Frontends como archivos estáticos:** se compilan **una vez** (`npm run build`) y se publican tal cual. Al publicar, un script escribe con las variables del entorno (todas sin `/` final), desde las plantillas `*.plantilla` de cada repo, `configuracion.json` del shell (`keycloakUrl`, `keycloakRealm`, `gatewayUrl`, `portalUrl`) y del portal (`keycloakUrl`, `keycloakRealm`, `obrasUrl`, `erpUrl`) y el `federation.manifest.json` del shell (dirección de cada remoto). El shell y el portal lo leen antes de iniciar; sin el archivo (desarrollo), usan los valores de desarrollo. Los microfrontends no escriben nada: leen `window.plataforma.configuracion`. Reglas del servidor de estáticos (Caddy en el ensayo; el *hosting* en la nube): SPA (si el archivo no existe, `index.html`), CORS en `remoteEntry.json` y los `.js` de los microfrontends para el origen del shell, y sin caché en `index.html`, `configuracion.json`, `federation.manifest.json`, `ngsw.json` y `ngsw-worker.js`.
+- **Ensayo local («producción local», `infra/produccion-local/`):** tres grupos que hacen de las tres nubes, cada uno con su proyecto de Compose, su red y su Caddy (HTTPS con una CA local). Direcciones `https://<pieza>.<grupo>.localhost:<puerto>`; detalle en `docs/entorno-local.md` («Producción local»).
+
+| Grupo (proyecto de Compose) | Puerto en la máquina | Piezas publicadas |
+|---|---|---|
+| `azure` (`supervision-azure`) | 8443 (HTTPS) | `keycloak`, `gateway`, `obras`, `finanzas`, `n8n`, `mailpit`, `rabbitmq` (panel), `erp`, `mf-obras`, `mf-materiales`, `mf-supervision`, `portal` |
+| `azure` (RabbitMQ) | 5671 (AMQPS) | `rabbitmq.azure.localhost:5671`, para los servicios de los tres grupos |
+| `google` (`supervision-google`) | 9443 (HTTPS) | `ia`, `materiales` |
+| `aws` (`supervision-aws`) | 10443 (HTTPS) | `sincronizacion`, `s3` (MinIO) |
 
 ## Git
 

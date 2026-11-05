@@ -12,7 +12,7 @@ Esta carpeta es el repo **`supervision-docs`**: contiene este archivo, `docs/` (
 |---|---|---|---|
 | `services/obras` | Java 21 · Spring Boot 4.1 · PostgreSQL | Obras, presupuesto, avance, planillas; orquesta la saga | Base |
 | `services/materiales` | NestJS 12 · TypeScript · MongoDB | Catálogo, stock, ingresos y salidas | Base |
-| `services/finanzas` | PHP 8.3 · Laravel 13 · PostgreSQL | Contratos, cobros y registro de pagos; nota de cobro en PDF (capa 2) | Base |
+| `services/finanzas` | PHP 8.4 · Laravel 13 · PostgreSQL | Contratos, cobros y registro de pagos; nota de cobro en PDF (capa 2) | Base |
 | `gateway` | NestJS 12 · GraphQL (Apollo Server 5) | Única entrada del ERP (BFF) | Base |
 | `frontend/erp-shell` | Angular 22 · Native Federation (host) | Contenedor del ERP: sesión, menú, carga microfrontends | Base |
 | `frontend/mf-obras` | Angular 22 · Native Federation (remoto) | Microfrontend de Obras | Base |
