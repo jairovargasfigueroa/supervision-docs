@@ -233,7 +233,7 @@ Al terminar cada sesión de trabajo: `apagar todas`.
 
 - `--sin-google`: omite las comprobaciones de Materiales e IA y lo dice en el resumen (pasos 4 y 5).
 - Mailpit con autenticación básica si están `MAILPIT_USUARIO` y `MAILPIT_CLAVE`.
-- Si el SMTP no es Mailpit (`SMTP_HOST` distinto de `mailpit`), `--completa` comprueba el envío `NOTA_COBRO` en Finanzas (`GET /cobros/{id}/envios`) en lugar del correo en Mailpit.
+- Si el SMTP no es Mailpit (`SMTP_HOST` distinto de `mailpit`), `--completa` comprueba el envío `NOTA_COBRO` que n8n registra en Finanzas (los `envios` del cobro, con la misma consulta de la pestaña «Cobros» del ERP por el gateway) en lugar del correo en Mailpit.
 - Puertos cerrados: desde la PC, intenta conectarse a los puertos internos de cada máquina (5432, 5672, 15672, 5678, 1025, 8025, 8080, 8081, 8082, 8083, 8084, 8085, 4000, 27017 y 11434) y espera que fallen.
 
 ## Pruebas
