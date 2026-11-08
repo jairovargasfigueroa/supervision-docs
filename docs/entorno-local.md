@@ -36,7 +36,7 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 
 Las fotos y notas de remisión van a **Amazon S3 también en desarrollo** (no hay imitador en Docker). Lo crea Jairo una vez en la consola de AWS (tarea 1.5):
 
-1. Bucket privado `supervision-dev-<sufijo>` en `sa-east-1` (São Paulo), con «Bloquear todo el acceso público» activado.
+1. Bucket privado `supervision-dev-<sufijo>` en `us-east-2` (Ohio; la organización de la cuenta de AWS solo permite esa región, así que `OBRAS_S3_REGION=us-east-2`), con «Bloquear todo el acceso público» activado.
 2. Regla CORS del bucket: métodos `GET` y `PUT`, orígenes `http://localhost:4200`, `http://localhost:4201` y `http://localhost:4300`, encabezados `*`.
 3. Regla de ciclo de vida del prefijo `temporal/`: ya no hace falta (la 102 se simplificó el 30/10/2026: la foto se sube completa a `fotos/` con la URL firmada de Obras y no usa `temporal/`).
 4. Usuario IAM `supervision-dev` con una política que solo permite `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` y `s3:ListBucket` sobre ese bucket; sus claves van en los `.env` (nunca en el repo).
@@ -150,7 +150,7 @@ Si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, 
 
 El despliegue en las tres nubes vive en `infra/nube/` y se maneja desde la PC con `node infra/nube/nube.mjs <acción> [nube]`: `secretos`, `crear`, `desplegar`, `encender`, `apagar`, `estado`, `registros`, `ssh`, `dns` y `contextos`. Detalle, pasos manuales y costos: `infra/nube/README.md`; diseño: `docs/specs/602-despliegue-tres-nubes/diseno.md`.
 
-Hace falta, además de lo de desarrollo: la CLI de Azure (`az`), la de AWS (`aws`, con el usuario IAM `jairo-cli` en `us-east-2` por defecto; los *scripts* usan `sa-east-1`), la de Google (`gcloud`, cuando esté la cuenta) y OpenSSH (viene con Windows 11).
+Hace falta, además de lo de desarrollo: la CLI de Azure (`az`), la de AWS (`aws`, con el usuario IAM `jairo-cli` en `us-east-2`, la única región que permite la organización de la cuenta), la de Google (`gcloud`, cuando esté la cuenta) y OpenSSH (viene con Windows 11).
 
 Variables nuevas (en `infra/nube/.env`, que no se sube; `.env.example` sin secretos):
 

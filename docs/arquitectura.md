@@ -97,13 +97,13 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 
 ## Despliegue (capa 6, 602)
 
-Una máquina virtual por nube con Docker Compose (los mismos *compose* del ensayo local de la 601) y Caddy, que da HTTPS con certificados de Let's Encrypt. Las tres en São Paulo. Los nombres van bajo `supervision.workflow-tramites.site`. Las máquinas están apagadas salvo para probar y para la presentación, y se manejan con `node infra/nube/nube.mjs` desde la PC de Jairo.
+Una máquina virtual por nube con Docker Compose (los mismos *compose* del ensayo local de la 601) y Caddy, que da HTTPS con certificados de Let's Encrypt. Azure y Google en São Paulo; AWS en Ohio (`us-east-2`), la única región que permite la organización de la cuenta. Los nombres van bajo `supervision.workflow-tramites.site`. Las máquinas están apagadas salvo para probar y para la presentación, y se manejan con `node infra/nube/nube.mjs` desde la PC de Jairo.
 
 | Nube | Máquina | Qué aloja | Por qué |
 |---|---|---|---|
 | Azure (`brazilsouth`) | `vm-plataforma`, B2s (4 GiB) | Gateway, Obras, Finanzas, Keycloak, RabbitMQ (AMQPS 5671), n8n, Mailpit, apps web y PostgreSQL de Obras, Finanzas y Keycloak | Obras y Finanzas comparten la saga; Keycloak y RabbitMQ son el centro |
 | Google Cloud (`southamerica-east1`) | `vm-ia`, e2-medium (4 GB; 16 GB si se usa Ollama) | IA (`ia-api` e `ia-worker`), Materiales, MongoDB y PostgreSQL de reportes | Materiales e IA comparten MongoDB; el modelo de lenguaje local necesitaría memoria |
-| AWS (`sa-east-1`) | `vm-sincronizacion`, t3.micro (1 GiB) | Sincronización; además DynamoDB y S3 (fotos) | DynamoDB es de AWS |
+| AWS (`us-east-2`) | `vm-sincronizacion`, t3.micro (1 GiB) | Sincronización; además DynamoDB y S3 (fotos) | DynamoDB es de AWS |
 
 Entre nubes: HTTPS con los nombres públicos y el token de Keycloak, y RabbitMQ por AMQPS. Dentro de una máquina, los nombres de sus propias piezas apuntan a su Caddy. Detalle (comunicación, secretos, costos y orden): `docs/specs/602-despliegue-tres-nubes/diseno.md`.
 

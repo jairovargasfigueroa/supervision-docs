@@ -193,7 +193,7 @@ Lo que todos los proyectos hacen igual.
 
 ## Archivos (fotos y notas de remisión)
 
-- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción (602), el bucket privado `supervision-obras-<sufijo>` en `sa-east-1`, con el prefijo `fotos/`; en la «producción local» (601), un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` (rutas de estilo *path*; vacío = Amazon S3). El código es el mismo; solo cambian las variables.
+- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción (602), el bucket privado `supervision-obras-<sufijo>` en `us-east-2`, con el prefijo `fotos/`; en la «producción local» (601), un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` (rutas de estilo *path*; vacío = Amazon S3). El código es el mismo; solo cambian las variables.
 - Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
