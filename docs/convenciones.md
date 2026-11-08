@@ -45,7 +45,7 @@ Lo que todos los proyectos hacen igual.
 
 ## Autenticación y permisos (Keycloak)
 
-- Realm `supervision`. Keycloak emite tokens JWT (OIDC).
+- Realm `supervision`. Keycloak emite tokens JWT (OIDC). Emisor: `http://localhost:8080/realms/supervision` en desarrollo y, en la nube (602), `https://keycloak.supervision.workflow-tramites.site/realms/supervision` (`KC_HOSTNAME`).
 - Roles del realm: `admin`, `residente`, `gerente`, `maestro`, `almacenero`, `cliente`.
 - Roles técnicos (se crean con su capa; ninguna persona los tiene): `automatizacion` (201, *service account* del cliente confidencial `n8n`; solo en las rutas de Finanzas de la 201 que llama n8n: `GET /cobros/recordatorios`, `POST /cobros/{id}/envios` y `POST /cobros/{id}/nota-cobro`) y `agente_ia` (501, *service account* del cliente confidencial `ia-agentes`; solo en `POST /mcp` de Obras, Materiales, Finanzas e IA, donde ve todas las obras como `gerente`; ningún endpoint REST lo acepta).
 - Clientes públicos con PKCE: `erp` (shell y microfrontends), `portal`, `app-obra`.
@@ -186,9 +186,14 @@ Lo que todos los proyectos hacen igual.
 - Los envía solo n8n, con la API v1 de FCM. Cada mensaje lleva `notification { title, body }` (Android lo muestra con la app cerrada) y `data { tipo, obraId }` (`tipo`: `STOCK_BAJO` o `DIARIO`) para abrir el stock o el diario de la obra al tocarlo.
 - La cuenta de servicio de Firebase (en `infra/.env`) y el `google-services.json` de la app nunca van al repo. Sin Firebase configurado, los flujos de *push* no se publican y el resto funciona igual.
 
+## Correo (201, 010 y 602)
+
+- Los correos los envía solo n8n, por SMTP con las variables `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO` y `SMTP_CLAVE`. Por defecto es Mailpit (desarrollo y ensayo local, sin TLS ni usuario). En la nube es el Gmail de la plataforma (587 con STARTTLS y contraseña de aplicación), con Mailpit desplegado como respaldo.
+- El destinatario de los avisos al cliente es el correo de su usuario en Keycloak.
+
 ## Archivos (fotos y notas de remisión)
 
-- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción, el bucket de la capa 6; en la «producción local» (601), un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` (rutas de estilo *path*; vacío = Amazon S3). El código es el mismo; solo cambian las variables.
+- Se guardan en **Amazon S3**: en desarrollo, un bucket propio (`supervision-dev-<sufijo>`, ver `docs/entorno-local.md`); en producción (602), el bucket privado `supervision-obras-<sufijo>` en `sa-east-1`, con el prefijo `fotos/`; en la «producción local» (601), un S3 compatible (MinIO) con `OBRAS_S3_ENDPOINT` (rutas de estilo *path*; vacío = Amazon S3). El código es el mismo; solo cambian las variables.
 - Las pruebas automáticas **no usan S3**: usan un doble del puerto de almacenamiento (por ejemplo `AlmacenArchivos` en memoria).
 - La app sube el archivo con una URL firmada que entrega el servicio dueño; el servicio guarda solo la clave (`clave_archivo`).
 - Fotos comprimidas en el celular a un máximo de 1600 px de lado y calidad JPEG 80 antes de subirse.
@@ -212,6 +217,13 @@ Lo que todos los proyectos hacen igual.
 | `azure` (RabbitMQ) | 5671 (AMQPS) | `rabbitmq.azure.localhost:5671`, para los servicios de los tres grupos |
 | `google` (`supervision-google`) | 9443 (HTTPS) | `ia`, `materiales` |
 | `aws` (`supervision-aws`) | 10443 (HTTPS) | `sincronizacion`, `s3` (MinIO) |
+
+## Despliegue en la nube (602)
+
+- Una máquina por nube con Docker Compose (`infra/nube/`). Nombres `https://<pieza>.supervision.workflow-tramites.site` (los mismos nombres de pieza que el ensayo local), con certificados de Let's Encrypt que saca Caddy.
+- Desde internet solo se abren 80 y 443 en las tres máquinas, más 5671 (AMQPS) en la de Azure. El 22 se abre solo para la IP de Jairo y con clave. Bases, RabbitMQ 5672, n8n, SMTP y Ollama no tienen puerto público.
+- **Secretos en producción:** todos en `infra/nube/.env` de la PC de Jairo (no se sube). Cada máquina recibe en `/opt/supervision/.env` (permisos `600`) solo las variables de su grupo. No hay secretos en el código, las imágenes ni los registros.
+- Imágenes de GHCR con la etiqueta `main` del último *release* o, para volver atrás un servicio, su `sha-<7>` anterior.
 
 ## Git
 
