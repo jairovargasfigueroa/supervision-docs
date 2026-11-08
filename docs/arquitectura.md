@@ -95,12 +95,16 @@ Elegidas por compatibilidad entre sí y soporte durante el proyecto (revisado el
 - La mayoría de las escrituras tocan un solo servicio. Solo la saga y la automatización involucran a varios.
 - Cada servicio guarda una copia de lo poco que necesita de otros (por ejemplo, Obras guarda el anticipo y la retención del contrato).
 
-## Despliegue (propuesta, capa 6)
+## Despliegue (capa 6, 602)
 
-| Nube | Qué aloja | Por qué |
-|---|---|---|
-| AWS | Sincronización, DynamoDB, S3 | DynamoDB es de AWS |
-| Google Cloud | IA (+ Ollama en máquina virtual si se usa `IA_LLM_PROVEEDOR=ollama`; con `anthropic` no hace falta), Materiales, MongoDB, PostgreSQL de reportes | El modelo de lenguaje local necesita memoria |
-| Azure | Gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n, apps web, PostgreSQL de Obras y Finanzas | Obras y Finanzas comparten la saga |
+Una máquina virtual por nube con Docker Compose (los mismos *compose* del ensayo local de la 601) y Caddy, que da HTTPS con certificados de Let's Encrypt. Azure y Google en São Paulo; AWS en Ohio (`us-east-2`), la única región que permite la organización de la cuenta. Los nombres van bajo `supervision.workflow-tramites.site`. Las máquinas están apagadas salvo para probar y para la presentación, y se manejan con `node infra/nube/nube.mjs` desde la PC de Jairo.
+
+| Nube | Máquina | Qué aloja | Por qué |
+|---|---|---|---|
+| Azure (`brazilsouth`) | `vm-plataforma`, B2s (4 GiB) | Gateway, Obras, Finanzas, Keycloak, RabbitMQ (AMQPS 5671), n8n, Mailpit, apps web y PostgreSQL de Obras, Finanzas y Keycloak | Obras y Finanzas comparten la saga; Keycloak y RabbitMQ son el centro |
+| Google Cloud (`southamerica-east1`) | `vm-ia`, e2-medium (4 GB; 16 GB si se usa Ollama) | IA (`ia-api` e `ia-worker`), Materiales, MongoDB y PostgreSQL de reportes | Materiales e IA comparten MongoDB; el modelo de lenguaje local necesitaría memoria |
+| AWS (`us-east-2`) | `vm-sincronizacion`, t3.micro (1 GiB) | Sincronización; además DynamoDB y S3 (fotos) | DynamoDB es de AWS |
+
+Entre nubes: HTTPS con los nombres públicos y el token de Keycloak, y RabbitMQ por AMQPS. Dentro de una máquina, los nombres de sus propias piezas apuntan a su Caddy. Detalle (comunicación, secretos, costos y orden): `docs/specs/602-despliegue-tres-nubes/diseno.md`.
 
 En desarrollo todo corre con Docker Compose (DynamoDB Local en lugar de AWS); las fotos van a un bucket S3 real de desarrollo. El ensayo local de la 601 reproduce este reparto en tres grupos de Docker Compose (MinIO en lugar de S3).

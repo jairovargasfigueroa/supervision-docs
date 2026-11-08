@@ -36,7 +36,7 @@ Lo que corre en Docker para desarrollar, con versiones fijas (revisadas el 28 de
 
 Las fotos y notas de remisión van a **Amazon S3 también en desarrollo** (no hay imitador en Docker). Lo crea Jairo una vez en la consola de AWS (tarea 1.5):
 
-1. Bucket privado `supervision-dev-<sufijo>` en `sa-east-1` (São Paulo), con «Bloquear todo el acceso público» activado.
+1. Bucket privado `supervision-dev-<sufijo>` en `us-east-2` (Ohio; la organización de la cuenta de AWS solo permite esa región, así que `OBRAS_S3_REGION=us-east-2`), con «Bloquear todo el acceso público» activado.
 2. Regla CORS del bucket: métodos `GET` y `PUT`, orígenes `http://localhost:4200`, `http://localhost:4201` y `http://localhost:4300`, encabezados `*`.
 3. Regla de ciclo de vida del prefijo `temporal/`: ya no hace falta (la 102 se simplificó el 30/10/2026: la foto se sube completa a `fotos/` con la URL firmada de Obras y no usa `temporal/`).
 4. Usuario IAM `supervision-dev` con una política que solo permite `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` y `s3:ListBucket` sobre ese bucket; sus claves van en los `.env` (nunca en el repo).
@@ -79,7 +79,7 @@ Datos de prueba (011), en `infra/semilla/`: `semilla.ps1` / `.sh` cargan los dat
 | Portal (`.env`) | `VITE_KEYCLOAK_URL=http://localhost:8080`, `VITE_KEYCLOAK_REALM=supervision`, `VITE_KEYCLOAK_CLIENT_ID=portal`, `VITE_OBRAS_URL=http://localhost:8081`; desde la 601, `VITE_ERP_URL=http://localhost:4200` (opcional). Todas son respaldo de desarrollo: al publicar manda `configuracion.json` (fila «Frontends al publicar») |
 | Frontends al publicar (601; las lee el script de publicación, no la compilación) | Shell: `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `GATEWAY_URL` (dirección base; la plantilla agrega `/graphql`) y `PORTAL_URL` → `configuracion.json`; `MF_OBRAS_URL`, `MF_MATERIALES_URL` y `MF_SUPERVISION_URL` (dirección base de cada remoto; la plantilla agrega `/remoteEntry.json`) → `federation.manifest.json`. Portal: `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `OBRAS_URL` y `ERP_URL` → `configuracion.json`. Todas sin `/` final. Los microfrontends no tienen variables |
 | App (`app.json` → `extra`) | `keycloakUrl`, `realm`, `clientId: 'app-obra'`, `obrasUrl`, `materialesUrl`, `sincronizacionUrl` (desde la 101): todas con `localhost` (`http://localhost:8080`, `:8081`, `:8082`, `:8084`). El celular llega a la computadora con `adb reverse` (`infra/scripts/celular.ps1`), así el token sale con el mismo emisor `http://localhost:8080/realms/supervision` que validan los servicios; con la IP de la red local, Keycloak pondría otro emisor y los servicios rechazarían el token. Desde la 010, al compilar la *development build* (no en `app.json`): `GOOGLE_SERVICES_JSON`, ruta al `google-services.json` de Firebase, que queda fuera del repo (`.gitignore`); sin él la app compila sin avisos *push*. Desde la 601, al compilar (en la terminal o en `.env`, copia de `.env.example`): `EXPO_PUBLIC_KEYCLOAK_URL` (sin `/realms`) y `EXPO_PUBLIC_SINCRONIZACION_URL` reemplazan `keycloakUrl` y `sincronizacionUrl` de `extra` en `app.config.js`; sin ellas, las de desarrollo. Así el APK puede apuntar a la nube sin tocar código |
-| Keycloak (infra, 601) | El realm las toma al importarse, con el valor de desarrollo por defecto (`${VARIABLE:valor}`): `ERP_URL` (`http://localhost:4200`) y `PORTAL_URL` (`http://localhost:4300`), direcciones de regreso y orígenes de los clientes `erp` y `portal`; `USUARIOS_PRUEBA_CLAVE` (`Prueba123!` solo en desarrollo; en el ensayo y en la nube, otra); `KEYCLOAK_GATEWAY_CLIENT_SECRET` (`gateway-secreto-solo-desarrollo`). Del servidor, fuera de desarrollo: `KC_HOSTNAME` (dirección pública de Keycloak, URL completa: el emisor de los tokens es siempre `KC_HOSTNAME/realms/supervision`). Los secretos de `ia-reportes`, `ia-agentes` y `n8n` ya iban por variable. Detalle en `infra/docs/contratos.md` |
+| Keycloak (infra, 601) | El realm las toma al importarse, con el valor de desarrollo por defecto (`${VARIABLE:valor}`): `ERP_URL` (`http://localhost:4200`) y `PORTAL_URL` (`http://localhost:4300`), direcciones de regreso y orígenes de los clientes `erp` y `portal`; `USUARIOS_PRUEBA_CLAVE` (`Prueba123!` solo en desarrollo; en el ensayo y en la nube, otra); `KEYCLOAK_GATEWAY_CLIENT_SECRET` (`gateway-secreto-solo-desarrollo`); desde la 602, `CLIENTE1_CORREO` (`cliente1@correo.test`; en la nube, un buzón real). Del servidor, fuera de desarrollo: `KC_HOSTNAME` (dirección pública de Keycloak, URL completa: el emisor de los tokens es siempre `KC_HOSTNAME/realms/supervision`). Los secretos de `ia-reportes`, `ia-agentes` y `n8n` ya iban por variable. Detalle en `infra/docs/contratos.md` |
 
 Los secretos de desarrollo (contraseñas de bases y RabbitMQ, secretos de los clientes `gateway`, `ia-reportes`, `ia-agentes` y `n8n`, la cuenta de servicio de Firebase (010) y la clave de Anthropic si se usa) se fijan una vez en `infra/.env` y se copian a los `.env` de cada proyecto. El realm de desarrollo trae el secreto del cliente `gateway` fijo **solo para desarrollo**: `gateway-secreto-solo-desarrollo` (va en `KEYCLOAK_GATEWAY_CLIENT_SECRET` del gateway). `SEMILLA_DEMO=si` (601) nunca va en `infra/.env`: solo en el `.env` de la «producción local» o de la nube.
 
@@ -145,3 +145,23 @@ Medido el 05/11/2026 (8 GB para Docker, sin Ollama, con los datos de demostraci�
 - **Tiempo de `levantar`** con las imágenes ya construidas y los frontends ya compilados (`-SinCompilar`), desde volúmenes vacíos: ~4 min 40 s (`azure` 125 s, `google` 53 s, `aws` 19 s, datos de demostración 42 s, carga inicial 10 s, certificados y frontends 29 s). Construir las imágenes y compilar los frontends depende de la red y de la caché. Detalle en el README de infra («Cuánto ocupa y cuánto tarda»).
 
 Si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, y después los otros; los datos se cargan cuando estén los tres). Con 16 GB de RAM conviene sin Ollama (`IA_LLM_PROVEEDOR=anthropic`, o reportes y agentes con el modelo apagado). El desarrollo diario no cambia: sigue con los servidores de desarrollo.
+
+## Nube (602)
+
+El despliegue en las tres nubes vive en `infra/nube/` y se maneja desde la PC con `node infra/nube/nube.mjs <acción> [nube]`: `secretos`, `crear`, `desplegar`, `encender`, `apagar`, `estado`, `registros`, `ssh`, `dns` y `contextos`. Detalle, pasos manuales y costos: `infra/nube/README.md`; diseño: `docs/specs/602-despliegue-tres-nubes/diseno.md`.
+
+Hace falta, además de lo de desarrollo: la CLI de Azure (`az`), la de AWS (`aws`, con el usuario IAM `jairo-cli` en `us-east-2`, la única región que permite la organización de la cuenta), la de Google (`gcloud`, cuando esté la cuenta) y OpenSSH (viene con Windows 11).
+
+Variables nuevas (en `infra/nube/.env`, que no se sube; `.env.example` sin secretos):
+
+| Variable | Para qué |
+|---|---|
+| Direcciones (`KEYCLOAK_URL`, `GATEWAY_URL`…) | Las mismas de la «producción local», con `https://<pieza>.supervision.workflow-tramites.site` |
+| `ACME_CORREO` | Correo para Let's Encrypt (avisos de vencimiento) |
+| `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Correo de n8n: el Gmail de la plataforma (`smtp.gmail.com`, 587, `false` = STARTTLS, contraseña de aplicación). Vacías: Mailpit. También existen en desarrollo y en el ensayo local, con Mailpit por defecto |
+| `CLIENTE1_CORREO` | Buzón real de `cliente1` para la demostración |
+| `MAILPIT_USUARIO`, `MAILPIT_CLAVE` y `MAILPIT_CLAVE_HASH` | Autenticación básica de la interfaz de Mailpit en Caddy |
+| `MONGO_IMAGEN` | `mongo:8.0`, o `mongo:7.0` si el *kernel* de la máquina de Google es 6.19 o más |
+| `SEMILLA_CONTEXTO_OBRAS`, `_FINANZAS` y `_MATERIALES` | Contexto de Docker (por SSH) donde la semilla de demostración corre la carga de cada servicio. Vacías: el Docker local, como en la 601 |
+| `NUBE_ALERTAS_CORREO` | Correo de los avisos de presupuesto |
+

@@ -25,7 +25,7 @@ Es el de la 601 y `docs/arquitectura.md`, sin cambios:
 5. **Avisos *push* con Firebase** (plan gratuito Spark; no depende de la cuenta de Google Cloud), cuando Jairo cree el proyecto (010).
 6. **Usuarios de prueba con contraseña nueva:** `Prueba123!` está en el repositorio público y no se usa en la nube.
 7. **Dominio:** `supervision.workflow-tramites.site` (Namecheap). Los registros `api` y `sga-api` de ese dominio son de otro proyecto y no se tocan.
-8. **Región São Paulo en las tres nubes:** Azure `brazilsouth`, AWS `sa-east-1` y Google `southamerica-east1`. Responde más rápido desde Bolivia y las tres nubes quedan cerca entre sí. Cuesta ~60 % más por hora que el este de EE. UU. Con las máquinas encendidas solo para probar, la diferencia es de pocos dólares y la cubren los créditos.
+8. **Regiones:** Azure `brazilsouth` y Google `southamerica-east1`, en São Paulo: responden más rápido desde Bolivia y quedan cerca entre sí. Cuestan ~60 % más por hora que el este de EE. UU., pero con las máquinas encendidas solo para probar la diferencia es de pocos dólares y la cubren los créditos. **AWS va en `us-east-2` (Ohio):** la cuenta pertenece a una organización cuya política de control de servicios solo permite esa región (comprobado el 08/11/2026 al crear el bucket). Solo afecta a Sincronización, que habla con Obras y Materiales entre continentes (unos 120 ms más por llamada).
 9. **Release `v1.0.0`** antes de desplegar: las máquinas descargan las imágenes que GitHub Actions publica al fusionar en `main`.
 
 ## Criterios de aceptación

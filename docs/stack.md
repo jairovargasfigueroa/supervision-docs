@@ -169,6 +169,8 @@ Docker Compose, el JSON del realm de Keycloak, las definiciones de RabbitMQ y la
 
 Desde la 601, «producción local» (`produccion-local/`): las mismas imágenes de apoyo de desarrollo más `caddy:2.11.7-alpine` y `pgsty/minio:RELEASE.2026-08-04T00-00-00Z` (tabla siguiente). Scripts de Node 24 sin dependencias: `pruebas/humo-despliegue.mjs` y `pruebas/red-local.mjs`.
 
+Desde la 602, en la nube (`nube/`): Ubuntu 24.04 LTS, Docker Engine y su plugin de Compose del repositorio oficial de Docker, y certificados de Let's Encrypt que saca Caddy (la misma imagen `caddy:2.11.7-alpine`). Sin imágenes nuevas: la nube no usa MinIO ni DynamoDB Local. Los *scripts* son de Node 24 sin dependencias (`nube/nube.mjs`) y llaman a las CLI `az`, `aws` y `gcloud`.
+
 ## Contenedores, CI y ensayo local (601)
 
 Versiones verificadas al implementar la 601 (Docker Hub y GitHub, noviembre de 2026). Fijas, nunca `latest`; se cambian aquí y en el `Dockerfile` o el workflow a la vez.

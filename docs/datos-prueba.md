@@ -64,7 +64,7 @@ Las claves compuestas (`stock_obra._id`, `cierre_periodo._id`) se arman con esto
 
 ## 3. Usuarios (Keycloak)
 
-Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`, que es el `sub` del token). Contraseña `Prueba123!` (no temporal), correo verificado.
+Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`, que es el `sub` del token). Contraseña `Prueba123!` (no temporal), correo verificado. En el ensayo local y en la nube (601 y 602) la contraseña es la de `USUARIOS_PRUEBA_CLAVE`; en la nube, el correo de `cliente1` es `CLIENTE1_CORREO` (un buzón real, para recibir la nota de cobro).
 
 | `id` | Usuario | Nombre | Apellido | Correo | Rol |
 |---|---|---|---|---|---|
