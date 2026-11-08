@@ -83,7 +83,7 @@ Los *compose* de la nube viven en `infra/nube/` y se copian de los de `infra/pro
 **En los tres grupos**
 
 - Direcciones: las de «Nombres», en el puerto 443, desde el `.env` de la nube. Los Caddyfile usan las variables de entorno de Caddy (`{$KEYCLOAK_HOST}`…) en lugar de nombres fijos.
-- Caddy escucha en 80 y 443 y saca un certificado de **Let's Encrypt** por nombre (desafío HTTP), con el correo de `ACME_CORREO`. Se quitan `local_certs`, la CA local (`pki`) y `disable_redirects`: HTTP redirige a HTTPS.
+- Caddy escucha en 80 y 443 y saca un certificado de **Let's Encrypt** por nombre (desafío HTTP), sin correo (Let's Encrypt no lo exige). Se quitan `local_certs`, la CA local (`pki`) y `disable_redirects`: HTTP redirige a HTTPS.
 - Sin CA local: se quitan los montajes de `./certificados` en los servicios, `JAVA_TOOL_OPTIONS`, `NODE_EXTRA_CA_CERTS`, `IA_CA_EXTRA` y `finanzas/ca-local.ini`. `CA_LOCAL` queda vacío.
 - Imágenes de GHCR con la etiqueta del release (`IMAGEN_ETIQUETA`, por defecto `main`), sin `build:`. Cada servicio acepta su propia etiqueta (`OBRAS_ETIQUETA`…) para volver atrás solo ese servicio con un `sha-<7>` anterior.
 - Registros de Docker con rotación (10 MB × 3 por contenedor, en `daemon.json`) para no llenar el disco.
@@ -263,7 +263,7 @@ Reemplazar la tabla «Despliegue (propuesta, capa 6)» por el «Mapa del desplie
 
 ### `docs/entorno-local.md`
 
-Variables nuevas (`SMTP_*`, `CLIENTE1_CORREO`, `SEMILLA_CONTEXTO_*`, `MAILPIT_USUARIO` y `MAILPIT_CLAVE_HASH`, `MONGO_IMAGEN` y `ACME_CORREO`) y una sección «Nube» que remite a `infra/nube/README.md`.
+Variables nuevas (`SMTP_*`, `CLIENTE1_CORREO`, `SEMILLA_CONTEXTO_*`, `MAILPIT_USUARIO` y `MAILPIT_CLAVE_HASH`, y `MONGO_IMAGEN`) y una sección «Nube» que remite a `infra/nube/README.md`.
 
 ### `docs/datos-prueba.md`
 

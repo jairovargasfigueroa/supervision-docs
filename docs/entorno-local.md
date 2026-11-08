@@ -157,11 +157,10 @@ Variables nuevas (en `infra/nube/.env`, que no se sube; `.env.example` sin secre
 | Variable | Para qué |
 |---|---|
 | Direcciones (`KEYCLOAK_URL`, `GATEWAY_URL`…) | Las mismas de la «producción local», con `https://<pieza>.supervision.workflow-tramites.site` |
-| `ACME_CORREO` | Correo para Let's Encrypt (avisos de vencimiento) |
 | `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Correo de n8n: el Gmail de la plataforma (`smtp.gmail.com`, 587, `false` = STARTTLS, contraseña de aplicación). Vacías: Mailpit. También existen en desarrollo y en el ensayo local, con Mailpit por defecto |
 | `CLIENTE1_CORREO` | Buzón real de `cliente1` para la demostración |
 | `MAILPIT_USUARIO`, `MAILPIT_CLAVE` y `MAILPIT_CLAVE_HASH` | Autenticación básica de la interfaz de Mailpit en Caddy |
 | `MONGO_IMAGEN` | `mongo:8.0`, o `mongo:7.0` si el *kernel* de la máquina de Google es 6.19 o más |
 | `SEMILLA_CONTEXTO_OBRAS`, `_FINANZAS` y `_MATERIALES` | Contexto de Docker (por SSH) donde la semilla de demostración corre la carga de cada servicio. Vacías: el Docker local, como en la 601 |
-| `NUBE_ALERTAS_CORREO` | Correo de los avisos de presupuesto |
+| `NUBE_ALERTAS_CORREO` | Correo de los avisos de presupuesto (opcional: vacío, no se crean los presupuestos) |
 
