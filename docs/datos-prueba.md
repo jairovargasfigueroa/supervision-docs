@@ -6,7 +6,7 @@ Funcionalidad: `docs/specs/011-datos-prueba/`. Este documento es la **fuente ún
 
 Reglas generales:
 
-- **Solo desarrollo.** Nunca se carga en las nubes de la capa 6 ni en una base que no sea local (ver «Guardas»).
+- **Solo desarrollo.** Nunca se carga en las nubes de la capa 6 ni en una base que no sea local (ver «Guardas»), salvo como **datos de demostración** con el permiso explícito `SEMILLA_DEMO=si` (601): en la «producción local» o en la nube solo se carga, nunca se vacía.
 - **Cada servicio carga lo suyo** en su propia base (principio 4 del `CLAUDE.md`). Los identificadores son fijos y están escritos aquí para que los tres servicios coincidan sin hablarse.
 - **La carga no publica eventos** (ver «Por qué la semilla no publica eventos»).
 - Montos en bolivianos (Bs). En este documento se escriben con punto de miles y coma decimal (`2.773.800,00`); en JSON y en la base, como número (`2773800.00`).
@@ -55,7 +55,8 @@ Todos son UUID válidos (versión 4 en su forma; no son aleatorios) con un prefi
 | Contrato | Finanzas | `c0000000-0000-4000-8000-00000000000O` | `c0000000-0000-4000-8000-000000000002` |
 | Reserva de saldo | Finanzas | `c1000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c1000000-0000-4000-8000-000000000101` |
 | Cobro | Finanzas | `c2000000-0000-4000-8000-000000000ONN` (mismo `ONN` que la planilla) | `c2000000-0000-4000-8000-000000000101` |
-| Proveedor (capa 2) | Finanzas | los de la 201 | `7b1e5c1a-0001-4c3e-9a10-000000000001` |
+| Envío de cobranza (201) | Finanzas | `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro) | `c3000000-0000-4000-8000-000000000101` |
+| Proveedor (sin uso desde la 201; solo como valor de `proveedor_habitual_id`) | Materiales (campo del material) | los de la sección 4 | `7b1e5c1a-0001-4c3e-9a10-000000000001` |
 | Material | Materiales | `e0000000-0000-4000-8000-0000000000NN` | `e0000000-0000-4000-8000-000000000001` (cemento) |
 | Movimiento | Materiales | `f0000000-0000-4000-8000-0000000ONNNN` | `f0000000-0000-4000-8000-000000010033` |
 
@@ -63,7 +64,7 @@ Las claves compuestas (`stock_obra._id`, `cierre_periodo._id`) se arman con esto
 
 ## 3. Usuarios (Keycloak)
 
-Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`, que es el `sub` del token). Contraseña `Prueba123!` (no temporal), correo verificado.
+Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`, que es el `sub` del token). Contraseña `Prueba123!` (no temporal), correo verificado. En el ensayo local y en la nube (601 y 602) la contraseña es la de `USUARIOS_PRUEBA_CLAVE`; en la nube, el correo de `cliente1` es `CLIENTE1_CORREO` (un buzón real, para recibir la nota de cobro).
 
 | `id` | Usuario | Nombre | Apellido | Correo | Rol |
 |---|---|---|---|---|---|
@@ -81,9 +82,9 @@ Los de la 001 más `demo1`, con el `id` fijo (el realm los importa con ese `id`,
 
 Los usuarios de servicio de las capas (`n8n`, `ia-agentes`) son clientes confidenciales, no usuarios: no van aquí.
 
-## 4. Proveedores (Finanzas, capa 2)
+## 4. Proveedores (sin uso)
 
-Los tres de la 201 (`ProveedorSeeder`), sin cambios: `7b1e5c1a-0001-4c3e-9a10-000000000001` Ferretería El Constructor, `7b1e5c1a-0002-4c3e-9a10-000000000002` Aceros del Oriente y `7b1e5c1a-0003-4c3e-9a10-000000000003` Agregados Santa Cruz. En el sistema base la tabla `proveedor` todavía no existe; los materiales ya guardan su `proveedor_habitual_id` (el campo está en el modelo de Materiales).
+Sin uso desde que la 201 dejó de ser la compra automática (01/11/2026): Finanzas no tiene tabla `proveedor` ni se cargan proveedores. Los materiales siguen guardando su `proveedor_habitual_id` (campo del modelo de Materiales que queda sin uso; no se borra para no tocar la semilla), con estos valores: `7b1e5c1a-0001-4c3e-9a10-000000000001` Ferretería El Constructor, `7b1e5c1a-0002-4c3e-9a10-000000000002` Aceros del Oriente y `7b1e5c1a-0003-4c3e-9a10-000000000003` Agregados Santa Cruz.
 
 ## 5. Catálogo de materiales (Materiales)
 
@@ -105,7 +106,7 @@ Los tres de la 201 (`ProveedorSeeder`), sin cambios: `7b1e5c1a-0001-4c3e-9a10-00
 | 14 | `TUB-PVC4` | Tubo PVC sanitario de 4" | `SANITARIO` | pieza / piezas | 95,00 | **sin proveedor** (`null`) | largo: 6 m | sí |
 | 15 | `LAD-18H` | Ladrillo de 18 huecos | `LADRILLO` | pieza / piezas | 2,10 | Ferretería El Constructor | — | **no** |
 
-- `TUB-PVC4` no tiene proveedor habitual (muestra la etiqueta «Sin proveedor habitual» de la 201) y `LAD-18H` está inactivo (criterio 5 de la 003).
+- La columna «Proveedor habitual» queda sin uso desde la 201 (sección 4); `TUB-PVC4` no tiene ninguno. `LAD-18H` está inactivo (criterio 5 de la 003).
 - `id` del material = `e0000000-0000-4000-8000-0000000000NN` con el N.º de la tabla.
 
 ## 6. Obras
@@ -214,6 +215,7 @@ Cada planilla tiene una línea por cada partida de su obra; las que no figuran a
 | **Neto** | **290.134,80** | **365.764,40** | **330.149,10** |
 | `cobro_id` | `c2000000-…-000000000101` | `c2000000-…-000000000102` | `null` |
 | Fotos adjuntas | — | — | `…010302`, `…010402`, `…010502` |
+| `presentada_en` (501) | `null` | `null` | `D − 10, 15:00` |
 
 Acumulados contra lo contratado: P-02 120 + 60 = 180 de 180 (terminada); P-03 50 + 40 = 90 de 140; P-04 300 + 500 = 800 de 2.400; P-05 400 de 3.200 ✓ (ninguna supera lo contratado).
 
@@ -277,9 +279,20 @@ Una por planilla aprobada, en estado `CONSUMIDA` (la consumió el cobro): `c1000
 | `c2000000-…-000000000201` | obra 2 · N.º 1 | `COB-AAAA-0002` | 405.865,20 | D − 20 | D + 10 | `PENDIENTE` |
 | `c2000000-…-000000000102` | obra 1 · N.º 2 | `COB-AAAA-0003` | 365.764,40 | D − 12 | D + 18 | `PENDIENTE` |
 
-- **Número:** `AAAA` = año de `emitido_en`; el correlativo se asigna por orden de emisión dentro de cada año. Con D = 2026-10-28: `COB-2026-0001`, `-0002` y `-0003`. Si D cae a inicios de año y algún cobro queda en el año anterior, el correlativo empieza de nuevo en el año nuevo (regla del número de cobro). La semilla deja el mecanismo de correlativo de la 008 en el último número usado, para que el siguiente cobro emitido por la saga continúe la serie (con D = 2026-10-28, `COB-2026-0004`).
+- **Número:** `AAAA` = año de `emitido_en`; el correlativo se asigna por orden de emisión dentro de cada año. Con D = 2026-10-28: `COB-2026-0001`, `-0002` y `-0003`. Si D cae a inicios de año y algún cobro queda en el año anterior, el correlativo empieza de nuevo en el año nuevo (regla del número de cobro). La semilla no necesita dejar nada para el correlativo: la saga de la 008 toma el mayor número del año, así que el siguiente cobro continúa la serie (con D = 2026-10-28, `COB-2026-0004`).
 - **Estado:** `VENCIDO` si `vence_en` < D; si no, `PENDIENTE`.
 - **Resumen del tablero (`GET /cobros/resumen`):** vencidos 1 por 290.134,80; por vencer en 30 días 2 por 771.629,60.
+- **Pagos (201):** ninguno; los tres cobros tienen `pagado_en`, `comprobante`, `pago_registrado_por` y `pago_registrado_en` en `null`. El pago se registra en vivo en la demostración.
+
+### Envíos de la cobranza (`envio_cobro`, 201)
+
+Cada cobro tiene su envío `NOTA_COBRO` al correo de su cliente (sección 3), enviado el día de emisión a las 10:05 de La Paz (el cobro se emite a las 10:00, sección 1). Id fijo `c3000000-0000-4000-8000-000000000ONN` (mismo `ONN` que el cobro). Sin recordatorios ni constancias: en la demostración, «Recordar cobros» envía el recordatorio «vencido» del `COB-AAAA-0001` (obra 1) y ninguno «por vencer» (los otros dos vencen en D + 10 y D + 18, fuera de hoy + 3).
+
+| `id` | Cobro | Tipo | Destinatario | Enviado | `ejecucion_n8n` |
+|---|---|---|---|---|---|
+| `c3000000-…-000000000101` | `c2000000-…-000000000101` (`COB-AAAA-0001`) | `NOTA_COBRO` | cliente1@correo.test | D − 40, 10:05 | `null` |
+| `c3000000-…-000000000201` | `c2000000-…-000000000201` (`COB-AAAA-0002`) | `NOTA_COBRO` | demo1@constructora-andina.test | D − 20, 10:05 | `null` |
+| `c3000000-…-000000000102` | `c2000000-…-000000000102` (`COB-AAAA-0003`) | `NOTA_COBRO` | cliente1@correo.test | D − 12, 10:05 | `null` |
 
 ## 9. Materiales
 
@@ -410,7 +423,7 @@ Total: **1 `BAJO`**, 2 `JUSTO`, 11 `OK`.
 
 ### Usado frente a previsto
 
-Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.1). Todos los consumos quedan entre 98 % y 105 % de lo previsto, salvo uno:
+Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.1). Todos los consumos quedan entre 97 % y 105 % de lo previsto (el más bajo, `GRA-34` de la obra 1 en `M-2`, P-02: 47 frente a 48), salvo uno:
 
 | Obra · periodo · partida | Material | Previsto | Usado | % | Resultado |
 |---|---|---|---|---|---|
@@ -421,7 +434,7 @@ Previsto = cantidad de la planilla del periodo × insumo por unidad (sección 6.
 
 ## 10. Fotos de avance (Obras y bucket S3)
 
-Dos por partida en ejecución, todas registradas por maestro1 a las 11:00 de La Paz. `clave_archivo = fotos/{obraId}/{fotoId}.jpg`. Las adjuntas a una planilla presentada están publicadas para el cliente (`publicada_cliente = true`); las demás son internas. Los campos de la capa 3 (`clave_archivo_cliente`, `personas_detectadas`, `sin_casco`) quedan en `null`.
+Dos por partida en ejecución, todas registradas por maestro1 a las 11:00 de La Paz. `clave_archivo = fotos/{obraId}/{fotoId}.jpg`. Las adjuntas a una planilla presentada están publicadas para el cliente (`publicada_cliente = true`); las demás son internas. Detección de casco y chaleco (301): las diez figuran analizadas sin personas (`personas_detectadas`, `sin_casco` y `sin_chaleco` en 0, `version_modelo_epp = epp-1.0.0`, valor `fotosVersionModeloEpp` de `semilla/obras.json`), porque las imágenes generadas no tienen personas; en el ERP muestran «Sin alertas de EPP». `clave_archivo_cliente` (303) queda en `null`.
 
 | `id` (`f1000000-0000-4000-8000-0000000…`) | Obra · partida | Tomada | Publicada | Adjunta a |
 |---|---|---|---|---|
@@ -463,10 +476,10 @@ Todas las fotos adjuntas son del periodo de su planilla (regla `FOTO_FUERA_DEL_P
 La semilla escribe en cada servicio sus datos **ya coherentes** con los de los demás (mismos ids, mismos montos). No publica ningún evento ni comando, deja vacías las tablas `outbox_evento` y `mensaje_procesado`, y no arranca los consumidores. Motivos:
 
 1. **No hace falta:** lo que en uso real viaja por eventos (contrato creado por `ObraRegistrada`, copia `obra_acceso`, cobro emitido por la saga, cierre de periodo) ya se escribe directamente en el servicio dueño.
-2. **Publicar repetiría efectos:** `ObraRegistrada` haría que Finanzas intente crear el contrato otra vez y responda `ContratoRegistrado`; un `CobroEmitido` sin saga se registraría como incidente; un `StockBajo` dispararía en la capa 2 una orden de compra y un correo cada vez que se carga.
+2. **Publicar repetiría efectos:** `ObraRegistrada` haría que Finanzas intente crear el contrato otra vez y responda `ContratoRegistrado`; un `CobroEmitido` sin saga se registraría como incidente; un `StockBajo` generaría avisos de stock bajo (010) cada vez que se carga.
 3. **La carga dejaría de ser determinista e idempotente:** dependería del orden de llegada de los mensajes y de que todos los servicios estén corriendo.
 
-Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga del sistema base. Por eso cada capa que agrega una de esas piezas amplía la semilla (sección 13); por ejemplo, la base de reportes de la 401.
+Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga del sistema base. Por eso cada capa que agrega una de esas piezas amplía la semilla (sección 13) o, como la base de reportes de la 401, la llena con su carga inicial por REST.
 
 ### Cada servicio carga lo suyo
 
@@ -474,9 +487,9 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
 |---|---|---|
 | Keycloak | (al iniciar el contenedor) | El JSON del realm (fase 1, 1.4) trae los 9 usuarios (los 8 de la 001 y `demo1`) con su `id` fijo, nombres y contraseña. |
 | Obras | `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,semilla` (en Windows `mvnw.cmd`) | Perfil `semilla`: arranca sin servidor web, sin consumidores de RabbitMQ y sin publicador del outbox, carga y termina. Opción `--semilla.modo=recargar` para vaciar antes. |
-| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder` | Contratos, reservas y cobros (y los proveedores de la 201 cuando exista). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
+| Finanzas | `php artisan db:seed --class=DatosPruebaSeeder --force` | Contratos, reservas y cobros (y, desde la 201, el envío `NOTA_COBRO` de cada cobro). Vaciar: `php artisan datos-prueba:vaciar`. Desde PowerShell con el PHP de Herd. |
 | Materiales | `npm run semilla` | Script que crea un contexto de NestJS solo con Mongoose (sin HTTP ni RabbitMQ). Vaciar: `npm run semilla:vaciar`. |
-| Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. |
+| Bucket S3 de desarrollo | AWS CLI en un contenedor (`amazon/aws-cli:2.38.0`) con las credenciales del usuario IAM de desarrollo | `aws s3 sync` de `infra/semilla/fotos/` al bucket de desarrollo (`S3_BUCKET`, debe empezar con `supervision-dev-`) bajo `fotos/`. Con `SEMILLA_DEMO=si` (601), al bucket o al S3 compatible configurado (`S3_BUCKET` y su *endpoint*; en la «producción local», MinIO) con el `s3-cli` del grupo donde está. |
 
 - Cada servicio guarda su parte en un archivo de datos propio con la notación de fechas de la sección 1 (por ejemplo `"fechaInicio": "D-120"`, `"registradoEn": "M-1/09 10:00"`) y un pequeño resolvedor de fechas con pruebas. Valores y cálculos derivados (stock, saldo, número de cobro, estado del cobro) los calcula la semilla, no se copian.
 - **Idempotencia:** cada registro se inserta solo si su `id` no existe (`INSERT … ON CONFLICT (id) DO NOTHING` en PostgreSQL; *upsert* con `$setOnInsert` en MongoDB; el almacén S3 sobrescribe la misma clave y `aws s3 sync` no vuelve a subir lo que ya está igual). Correr la carga dos veces no duplica nada. La carga **no pisa** lo que ya existe: si en una demostración se aprobó una planilla, cargar de nuevo no la devuelve a `PRESENTADA`; para eso está `recargar`.
@@ -491,6 +504,7 @@ Consecuencia: lo que **solo** se alimenta de eventos no se llena con la carga de
   4. Obras → Finanzas → Materiales (cada uno con su comando; las rutas de los proyectos salen de variables del `.env`, por defecto las carpetas hermanas `../services/…`).
   5. Fotos al bucket S3 de desarrollo.
   6. Resumen: cuántos registros quedaron por servicio y la fecha D usada.
+- **Datos de demostración (601):** `semilla.ps1 -Entorno <archivo>` (`semilla.sh --entorno <archivo>`) lee ese archivo en lugar de `infra/.env` (por ejemplo `infra/produccion-local/.env`). Con `SEMILLA_DEMO=si` en él, cada servicio carga su parte con **su imagen de producción** en el grupo donde corre (`docker compose run --rm` con `SEMILLA_DEMO=si` y `SEMILLA_FECHA`; Obras con `SPRING_PROFILES_ACTIVE=prod,semilla`, Finanzas con `php artisan db:seed --class=DatosPruebaSeeder --force`, Materiales con `node dist/semilla/main.js cargar`), sin PHP ni las carpetas de los proyectos; las fotos van al S3 configurado. Después, la carga inicial de la base de reportes (401) con el comando `ia-carga-inicial` de la imagen de IA. Lo usa `infra/produccion-local/levantar` al terminar.
 - `semilla/recargar.ps1` y `semilla/recargar.sh` **vacían y vuelven a cargar**: piden confirmación («Esto borra todos los datos de desarrollo de obras_db, finanzas_db, materiales_db y del bucket supervision. ¿Continuar? (s/N)»; `-Si` / `--si` la omite), vacían cada servicio con su propio comando (todas las tablas o colecciones del negocio; nunca el historial de migraciones), vacían las colas de RabbitMQ de la plataforma (para que no lleguen mensajes viejos que apunten a datos borrados), borran los objetos del bucket, reimportan los usuarios del realm si sus `id` no coinciden y corren `semilla`. Se recomienda detener antes los servicios.
 
 ### Guardas
@@ -499,7 +513,13 @@ La semilla y el vaciado se niegan a correr (mensaje claro y código de salida di
 
 - el servicio corre con un perfil o entorno de producción (`prod` en Spring, `APP_ENV=production` en Laravel, `NODE_ENV=production` en Node);
 - la base no está en `localhost`, `127.0.0.1` o en el nombre de un contenedor del Docker Compose de infra;
-- en infra, la variable `SEMILLA_PERMITIDA=si` no está en el `.env` (el `.env.example` la trae; los entornos de la capa 6 no).
+- en infra, la variable `SEMILLA_PERMITIDA=si` no está en el `.env` (el `.env.example` la trae; los entornos de la capa 6 no);
+- en infra, el bucket de las fotos (`S3_BUCKET`) no empieza con `supervision-dev-`.
+
+**Excepción: datos de demostración (601).** Con `SEMILLA_DEMO=si` (en el `.env` de la «producción local» o de la nube; nunca en `infra/.env`):
+
+- la **carga** corre igual aunque el servicio esté en modo producción, la base no sea local, falte `SEMILLA_PERMITIDA=si` o el bucket no empiece con `supervision-dev-` (la guarda del prefijo queda «`supervision-dev-` o `SEMILLA_DEMO=si`»). Carga los mismos datos, sin duplicar ni pisar nada, igual que en desarrollo;
+- el **vaciado** sigue prohibido fuera de desarrollo, sin excepción: `recargar` se niega con `SEMILLA_DEMO=si` y los comandos de vaciar de cada servicio (`--semilla.modo=recargar` en Obras, `datos-prueba:vaciar` en Finanzas, `npm run semilla:vaciar` en Materiales) se niegan en modo producción o con una base que no es local, con o sin `SEMILLA_DEMO`. Para empezar de cero en la «producción local», `bajar -Datos`.
 
 ## 13. Ampliaciones por capa
 
@@ -507,9 +527,9 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 
 | Funcionalidad | Qué agrega a la semilla |
 |---|---|
-| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). |
-| 201 Compra automática | `DatosPruebaSeeder` llama a `ProveedorSeeder`. Opcional: una orden de compra para el `CEM-IP30` `BAJO` de la obra 2, cargada directamente (sin `StockBajo`). |
-| 301 y 303 (capa 3) | `personas_detectadas`, `sin_casco` y `clave_archivo_cliente` de las fotos (las imágenes generadas no tienen personas). |
-| 401 Base de reportes | Columna `zona` de las obras (sección 6). La base de reportes solo se llena con eventos, así que el servicio de IA agrega su propia semilla que escribe las filas `rpt_*` equivalentes a este documento. |
-| 402 y 403 | Predicciones y consumos atípicos de prueba coherentes con la obra 2 (riesgo) y con el `FIE-12` excedido de la obra 1. |
+| 103 Diario de obra | Entradas de diario de maestro1, sobre todo en la obra 2 (días de lluvia que explican el atraso; las usa la 502). Las carga `infra/semilla/agentes.mjs` por la API de Obras (como lo haría Sincronización), no la semilla de Obras: el diario se registra solo por la API (decisión de la implementación de la 502). |
+| 201 Cobranza automática | `DatosPruebaSeeder` carga el envío `NOTA_COBRO` de los 3 cobros (sección 8); sin recordatorios ni pagos. (Antes, la compra automática cargaba proveedores; ya no: sección 4.) |
+| 301 y 303 (capa 3) | 301 (hecho): detección 0 / 0 / 0 con `epp-1.0.0` en las diez fotos (sección 10). 303: `clave_archivo_cliente` de las fotos. |
+| 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
+| 402 y 403 | Predicciones: no se siembran; las calcula el modelo al terminar la carga inicial (motivo `CARGA_INICIAL`). Consumos atípicos de prueba coherentes con el `FIE-12` excedido de la obra 1 (la carga inicial no evalúa salidas pasadas). |
 | 502 Agentes | Revisa que estén sus casos: obra atrasada (obra 2), material bajo (`CEM-IP30` obra 2), salida que supera el stock (20018), cobro vencido (`COB-…-0001`), planilla presentada (obra 1 N.º 3), y agrega lo que falte. |

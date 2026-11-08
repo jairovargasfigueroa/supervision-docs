@@ -40,24 +40,24 @@ El ciclo completo de una obra, con conexión a internet:
 4. **Cobrar:** elaborar y presentar la planilla del mes; el cliente la aprueba (saga) o la observa.
 5. **Supervisar:** tablero simple de obras.
 
-Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiales, consultar obra, registrar ingreso de material, registrar salida de material, registrar foto de avance, elaborar y presentar planilla, revisar planilla (portal), consultar tablero.
+Funciones del sistema base: iniciar sesión, registrar obra, gestionar materiales, consultar obra, registrar ingreso de material, registrar salida de material, registrar foto de avance, elaborar y presentar planilla, revisar planilla (portal), consultar tablero y avisos al celular y al cliente (010: *push* de stock bajo al almacenero y recordatorio del diario al maestro, y correo «planilla para revisar» al cliente; los envía n8n, sin bandeja).
 
 ## Capas (se agregan sobre el sistema base)
 
 | Capa | Qué agrega |
 |---|---|
 | 1. Terreno sin señal | App offline, mala conexión, sincronización sin duplicados (DynamoDB); ERP como PWA para el borrador de planilla |
-| 2. Automatización | Stock bajo → orden de compra → correo al proveedor → cuenta por pagar (n8n) |
-| 3. IA en el dispositivo | Detección de casco y chaleco (TensorFlow Lite); voz a texto y rostros difuminados en el navegador |
+| 2. Automatización | Cobranza automática (n8n): nota de cobro al cliente al aprobarse la planilla, recordatorios de cobros por vencer y vencidos, registro de pago y constancia (201) |
+| 3. IA en el dispositivo | Detección de casco y chaleco (TensorFlow Lite); rostros difuminados en el navegador (opcional) |
 | 4. Datos y predicciones | Servicio de IA: riesgo de retraso (supervisado), consumos raros (no supervisado), base de reportes |
-| 5. Inteligencia en el ERP | Reportes por voz con exportación a Excel; 3 agentes; servidores MCP |
+| 5. Inteligencia en el ERP | Voz a texto en el navegador (Whisper); reportes generativos por voz con constructor de reportes, exportación a Excel y CSV; 3 agentes; servidores MCP en Obras, Materiales, Finanzas e IA |
 | 6. Despliegue | Contenedores repartidos en AWS, Google Cloud y Azure |
 
 ## Fuera del alcance
 
 - Registro de usuarios: se gestionan en el panel de Keycloak.
 - Alta de trabajadores y proveedores: vienen como datos iniciales.
-- Registro de pagos de clientes y a proveedores.
+- Pagos parciales de clientes y pagos a proveedores.
 - Aprobación de órdenes de compra de monto alto.
 - Incidentes, planos, órdenes de cambio, subcontratistas, control de calidad.
 - Contabilidad, facturación ante Impuestos Nacionales y trámites legales.

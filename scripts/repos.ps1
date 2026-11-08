@@ -8,7 +8,6 @@ $Repos = [ordered]@{
     'services/finanzas'       = 'supervision-ms-finanzas'
     'services/sincronizacion' = 'supervision-ms-sincronizacion'
     'services/ia'             = 'supervision-ms-ia'
-    'services/notificaciones' = 'supervision-ms-notificaciones'
     'gateway'                 = 'supervision-gateway'
     'frontend/erp-shell'      = 'supervision-erp-shell'
     'frontend/mf-obras'       = 'supervision-mf-obras'

@@ -6,8 +6,8 @@ Se usan **dos modelos TensorFlow Lite** que corren uno tras otro en el celular:
 
 | Etapa | Modelo | Quién lo entrena | Entrada | Salida |
 |---|---|---|---|---|
-| 1. Personas | EfficientDet-Lite0 (COCO), versión TFLite que publica MediaPipe para su *Object Detector* (`efficientdet_lite0.tflite`, variante int8) | Preentrenado (no se reentrena) | imagen 320 × 320, `uint8` | cajas, clases, puntajes y cantidad (posproceso NMS incluido en el modelo) |
-| 2. EPP por persona | Clasificador multietiqueta **MobileNetV3-Small** con ajuste fino (*transfer learning*) | El equipo, con TensorFlow / Keras | recorte de la persona, 224 × 224, `float32` (0–255) | 2 probabilidades: `casco`, `chaleco` |
+| 1. Personas | EfficientDet-Lite0 (COCO), versión TFLite que publica MediaPipe para su *Object Detector* (`efficientdet_lite0.tflite`, variante int8) | Preentrenado (no se reentrena) | imagen 320 × 320, `uint8` | salidas crudas: cajas `[1,19206,4]` y puntajes por clase `[1,19206,90]` (sin NMS; la app decodifica las cajas y aplica el NMS) |
+| 2. EPP por persona | Clasificador multietiqueta **MobileNetV3-Small** con ajuste fino (*transfer learning*) | El equipo, con TensorFlow / Keras | recorte de la persona, 224 × 224, `float32` (0–255) | una salida `[1,2]` = `[p_casco, p_chaleco]` |
 
 Por qué dos etapas y no un solo detector de casco/chaleco:
 
@@ -17,28 +17,28 @@ Por qué dos etapas y no un solo detector de casco/chaleco:
 
 Alternativa documentada (si el equipo prefiere un único detector): ajuste fino de un RetinaNet con *backbone* MobileNet de `tf-models-official` y exportación con su script de TFLite. No se elige por su complejidad.
 
-URL del modelo de personas (verificada el 28/10/2026): `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite`. El orden de los tensores de salida y el índice de la clase «person» se confirman al integrar (tarea de la app).
+URL del modelo de personas (verificada el 28/10/2026): `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite`. Al integrar se confirmó que esta variante **no trae el NMS dentro** (salidas crudas): la app decodifica las cajas con las anclas de EfficientDet-Lite0 y aplica el NMS en JavaScript, igual que el *Object Detector* de MediaPipe (`src/avance/epp/`). El modelo de la Task Library de TFLite sí lo trae, pero se mantuvo el de MediaPipe (decisión de la implementación, 01/11/2026).
 
 ## Flujo en la app
 
 ```
-Foto tomada → compresión 1600 px / JPEG 80 (005)
+Foto tomada → compresión 1280 px por lado (005 y 102)
   → redimensionar a 320×320 (expo-image-manipulator, base64) → decodificar JPEG a RGB (jpeg-js)
-  → EfficientDet-Lite0 → personas con puntaje ≥ 0,50 y alto ≥ 64 px en la foto de 1600 px
+  → EfficientDet-Lite0 → decodificar cajas + NMS (JS) → personas con puntaje ≥ 0,50 y alto ≥ 64 px en la foto comprimida
   → por cada persona (máx. 10, las de mayor puntaje): recorte con margen 10 % → 224×224 → RGB float32
   → clasificador EPP → casco = p_casco ≥ umbral_casco; chaleco = p_chaleco ≥ umbral_chaleco
   → { personas, sinCasco, sinChaleco, versionModelo } + recuadros para la vista previa
   → aviso (si corresponde) → «Enviar» (005, con el campo deteccion)
 ```
 
-- Umbrales: los fija el notebook al evaluar (se guardan en `etiquetas.json` del modelo); valor inicial 0,50.
+- Umbrales: los fija el notebook al evaluar (se guardan en `epp.json`): el de mayor precisión entre los que dan sensibilidad ≥ 0,85 en validación. Modelo entregado `epp-1.0.0`: casco 0,38, chaleco 0,21; la persona lleva el EPP si `p ≥ umbral`.
 - Personas pequeñas (alto < 64 px) no se cuentan: no hay detalle suficiente para clasificar (decisión del equipo).
 - Tiempo máximo de 5 s para todo el análisis (criterio 5); si se pasa, se descarta el resultado.
 
 ## App (`mobile/app-obra`)
 
 - Dependencias (instalar siempre con `npx expo install`):
-  - `react-native-fast-tflite` 3 (con su *config plugin* en `app.json`; agregar `tflite` a `resolver.assetExts` en `metro.config.js`).
+  - `react-native-fast-tflite` 3 (con su *config plugin* en `app.json`; agregar `tflite` a `resolver.assetExts` en `metro.config.js`) y `react-native-nitro-modules` 0.37, que la librería necesita.
   - `expo-dev-client` 58: la librería tiene código nativo y **no funciona en Expo Go**; se usa una *development build* (`npx expo run:android` o EAS Build con perfil `development`).
   - `jpeg-js` 0.4 (decodificar JPEG a píxeles en JavaScript) y `buffer` 6 (pasar de base64 a bytes).
 - Archivos de modelo en `assets/modelos/`: `efficientdet_lite0.tflite`, `clasificador_epp.tflite` y `epp.json` (versión, umbrales, tamaño de entrada).
@@ -47,7 +47,8 @@ Foto tomada → compresión 1600 px / JPEG 80 (005)
   - `analizarFoto(uri): Promise<ResultadoEpp>` con `{ personas, sinCasco, sinChaleco, versionModelo, cajas[] }`.
   - Funciones puras probadas sin modelo: conversión RGBA → RGB, filtro de cajas, conteo con umbrales, escalado de cajas a la foto original.
 - Pantalla `obras/[id]/foto` (005): después de la compresión muestra «Analizando…», luego el resumen y el aviso con recuadros sobre la vista previa. «Enviar» siempre habilitado.
-- El resultado se guarda junto con el `fotoId` y el archivo hasta confirmar el registro (para reintentar sin volver a analizar).
+- El resultado se guarda junto con el `fotoId` y el archivo hasta confirmar el registro (para reintentar sin volver a analizar). Sin señal, la operación `FOTO_AVANCE` de la cola (102) lleva `deteccion` en `datos` y Sincronización la reenvía a Obras.
+- Pantalla `obras/[id]/control-seguridad` (decisión de Jairo, 01/11/2026): botón «Control de seguridad» en el detalle de la obra de la app, visible para `maestro`. Tomar o elegir una foto → compresión de la 005 → `analizarFoto` → mismo resumen, aviso y recuadros que la foto de avance, con el botón «Otro control». La foto y el resultado se descartan al salir (no se envían, no entran a la cola ni se guardan). Reutiliza el módulo `src/avance/epp/` y el componente de resumen y recuadros de la foto de avance.
 - `versionModelo` = `epp-<versión del clasificador>` (por ejemplo `epp-1.0.0`), leído de `epp.json`.
 
 ## Obras (`services/obras`)
@@ -79,17 +80,21 @@ extend type Foto { deteccion: DeteccionEpp }
 
 ## mf-obras
 
-- Pestaña «Fotos» del detalle de obra: etiqueta sobre cada miniatura según el criterio 9 (color de advertencia si hay alertas, neutro si no). Texto de ayuda al pasar el cursor: «Detectado en el celular con el modelo epp-1.0.0».
+- Pestaña «Fotos» del detalle de obra: etiqueta sobre cada miniatura según el criterio 12 (color de advertencia si hay alertas, neutro si no). Texto de ayuda al pasar el cursor: «Detectado en el celular con el modelo epp-1.0.0».
 
 ## Entrenamiento (`services/ia/entrenamiento/epp/`)
 
-- Entorno aparte del servicio (el servicio de la capa 4 no instala TensorFlow): `requirements-entrenamiento.txt` con `tensorflow` 2.21, `keras` 3, `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `pillow`. Python 3.12. Se puede ejecutar en Google Colab con GPU o en local.
+- Entorno aparte del servicio (el servicio de la capa 4 no instala TensorFlow): `requirements-entrenamiento.txt` con `tensorflow` 2.21, `keras` 3, `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `pillow`. Python 3.12. Se ejecuta en local (la guía pide confirmar con el ingeniero si se entrena en la nube; con un clasificador pequeño sobre recortes, el procesador alcanza).
 - Archivos:
   - `preparar_recortes.py`: lee las anotaciones del dataset, recorta personas y les asigna etiquetas.
   - `entrenar_clasificador_epp.ipynb`: entrenamiento, evaluación, elección de umbrales y exportación.
-  - `salida/`: `clasificador_epp.tflite`, `epp.json`, `metricas.json`, matriz de confusión (PNG). Solo se versionan el `.tflite`, `epp.json` y `metricas.json`.
+  - `salida/`: `clasificador_epp.tflite`, `epp.json`, `metricas.json`, matriz de confusión (PNG). Se versionan el `.tflite`, `epp.json`, `metricas.json` y la matriz de confusión; el notebook se guarda ejecutado, con sus gráficos, como evidencia de las métricas.
   - `README.md`: cómo descargar el dataset, ejecutar y copiar los archivos a `mobile/app-obra/assets/modelos/`.
-- **Dataset** (decisión del equipo; se elige uno en la primera tarea tras revisar licencia y clases):
+- **Dataset** (decisión del equipo; se revisan licencia y clases en la primera tarea). **Usados** (implementación, 01/11/2026; los dos CC BY 4.0 y descargables sin cuenta):
+  - *Construction Safety* de Roboflow 100 (copia de Hugging Face `Francesco/construction-safety-gsnvb`): 1 206 imágenes, 2 614 recortes, pero solo 118 personas sin casco.
+  - *SHEL5K* (Mendeley Data, DOI 10.17632/9rcv8mm682.4; artículo en *Sensors* 2022): 5 000 imágenes, 15 776 recortes, 3 831 personas sin casco. No anota chalecos (en sus recortes el chaleco lleva peso 0).
+  - Con uno solo el casco no llegaba a las métricas mínimas (sensibilidad 0,58), por eso se usan los dos. Los de Kaggle y Roboflow Universe piden cuenta y no se usaron.
+- Candidatos revisados al especificar:
   - *Construction Site Safety Image Dataset* (Kaggle, exportado de Roboflow): clases de persona, casco, chaleco y sus negativos (`NO-Hardhat`, `NO-Safety Vest`).
   - *SH17* (Kaggle y GitHub `ahmadmughees/SH17dataset`, artículo de 2024): 17 clases, entre ellas persona, cabeza, casco y chaleco de seguridad.
   - Ambos existen (verificado el 28/10/2026); la licencia y la lista exacta de clases se confirman antes de usarlos y se citan en el `README.md`.
@@ -99,9 +104,10 @@ extend type Foto { deteccion: DeteccionEpp }
   - `chaleco = 1` si una caja de chaleco tiene ≥ 60 % de su área dentro de la persona; `chaleco = 0` si hay `NO-Safety Vest` (o, en datasets anotados por completo, si no hay chaleco).
   - Si un atributo no se puede decidir, ese atributo lleva peso 0 en el entrenamiento (`sample_weight` por salida); el otro se usa igual.
   - División 70 / 15 / 15 por **imagen** (no por recorte) para que una misma foto no quede en entrenamiento y prueba.
-- **Modelo:** `keras.applications.MobileNetV3Small(include_top=False, weights="imagenet", include_preprocessing=True)` + `GlobalAveragePooling` + `Dropout(0.2)` + dos salidas `Dense(1, sigmoid)` (`casco`, `chaleco`).
+- **Modelo:** `keras.applications.MobileNetV3Small(include_top=False, weights="imagenet", include_preprocessing=True)` + `GlobalAveragePooling` + `Dropout(0.2)` + dos salidas `Dense(1, sigmoid)` (`casco`, `chaleco`). Para exportar se unen en una sola salida `[1,2]` con orden fijo (el orden de varias salidas en TFLite no está garantizado).
   - Aumentos: volteo horizontal, brillo y contraste, rotación ±10°, recorte aleatorio.
-  - Fase 1: base congelada, 10 épocas, Adam 1e-3. Fase 2: se descongelan las últimas 30 capas, 10 épocas, Adam 1e-5, parada temprana por pérdida de validación.
+  - Fase 1: base congelada, 10 épocas, Adam 1e-3. Fase 2: se descongelan las últimas 60 capas, hasta 20 épocas, Adam 1e-4, parada temprana por pérdida de validación (ajustada al implementar: con 30 capas y 1e-5 no se alcanzaban las métricas).
+  - Pesos por clase balanceados; si una persona tiene a la vez la etiqueta positiva y la negativa de un atributo, ese atributo lleva peso 0.
 - **Exportación:** `model.export("salida/saved_model")` y `tf.lite.TFLiteConverter.from_saved_model(...)` con cuantización float16 (`Optimize.DEFAULT` + `supported_types=[tf.float16]`). Se comprueba que el `.tflite` da las mismas predicciones que el modelo de Keras sobre 50 recortes (diferencia máxima 0,02). Si la versión de TensorFlow instalada marca `tf.lite` como obsoleto, se usa el convertidor que indique su nota de versión (LiteRT).
 
 ## Métricas mínimas (decisión del equipo)
@@ -114,7 +120,7 @@ Sobre el conjunto de prueba (15 %), por atributo, tomando como clase positiva la
 | Precisión de «sin casco» y de «sin chaleco» | ≥ 0,75 |
 | Exactitud global por atributo | ≥ 0,85 |
 | Tamaño de los dos `.tflite` juntos | ≤ 10 MB |
-| Tiempo de análisis en el celular (criterio 13) | ≤ 2 s con hasta 5 personas |
+| Tiempo de análisis en el celular (criterio 16) | ≤ 2 s con hasta 5 personas |
 
 Se prioriza la sensibilidad: es peor no avisar de alguien sin casco que avisar de más. Si hay fotos propias de obra (20 a 50, tomadas con permiso), se reporta además el error absoluto medio del conteo por foto (objetivo ≤ 1), solo como referencia.
 

@@ -16,3 +16,6 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Configuración local de Claude Code (vista previa con rutas de cada máquina)
+.claude/launch.json

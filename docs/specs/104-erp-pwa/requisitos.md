@@ -1,6 +1,6 @@
 # 104 · ERP sin conexión (PWA) y borrador de planilla local
 
-**Estado:** borrador (por aprobar) · **Capa:** 1 · **Puntos del ingeniero:** 7 (PWA) y 9 · **Proyectos:** erp-shell, mf-obras, mf-materiales, mf-supervision
+**Estado:** aprobado (30/10/2026) · **Capa:** 1 · **Puntos del ingeniero:** 7 (PWA) y 9 · **Proyectos:** erp-shell, mf-obras, mf-materiales, mf-supervision
 
 ## Historia
 

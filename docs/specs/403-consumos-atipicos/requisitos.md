@@ -1,8 +1,10 @@
 # 403 · Consumos de material atípicos (ML no supervisado)
 
-**Estado:** borrador · **Capa:** 4 (Datos y predicciones) · **Punto:** 11 (no supervisado) · **Proyectos:** services/ia, gateway, mf-obras, mf-supervision
+**Estado:** aprobado (31/10/2026) · **Capa:** 4 (Datos y predicciones) · **Punto:** 11 (no supervisado) · **Proyectos:** services/ia, gateway, mf-obras, mf-supervision
 
-**Depende de:** 401 (servicio de IA y base de reportes).
+**Decisión de Jairo (31/10/2026):** el ML no supervisado del punto 11 son los consumos de material raros con Isolation Forest, entrenado con datos sintéticos (script reproducible que tarda segundos) y que se puede reentrenar después con datos reales. No usa modelo de lenguaje (eso es de la capa 5).
+
+**Depende de:** 401 (servicio de IA y base de reportes). Si la 402 está implementada, un consumo atípico recalcula el riesgo de retraso de la obra; si no, ese paso se omite.
 
 ## Historia
 
@@ -36,10 +38,13 @@ Como **residente** (y gerente o administración) quiero que el sistema marque so
 
 ### Modelo
 
-13. El modelo se entrena primero con **datos sintéticos** (salidas normales y anomalías inyectadas, documentados y reproducibles) y se puede reentrenar con las salidas reales de la base de reportes cuando haya al menos 500 (decisión del equipo), con un comando manual que genera una versión nueva.
+13. El modelo se entrena primero con **datos sintéticos** (salidas normales y anomalías inyectadas, documentados y reproducibles) y se puede reentrenar con las salidas reales de la base de reportes (las que llegaron por eventos y las de la carga inicial de la 401) cuando haya al menos 500 (decisión del equipo), con un comando manual que genera una versión nueva.
 14. El modelo cumple las métricas mínimas de `diseno.md` sobre los datos sintéticos de prueba; con datos reales, marca como atípicas como máximo el 3 % de las salidas (decisión del equipo).
+15. Generar los datos sintéticos y entrenar tarda **segundos** (menos de un minuto entre los dos) en la computadora del equipo, solo con CPU (sin GPU); reentrenar con datos reales, lo mismo.
 
 ## Fuera del alcance
+
+- Evaluar las salidas que trajo la carga inicial de la 401 sin evento (se evalúan solo las salidas que llegan por `MovimientoRegistrado`).
 
 - Bloquear salidas o pedir aprobación antes de registrarlas.
 - Evaluar ingresos, precios u órdenes de compra.

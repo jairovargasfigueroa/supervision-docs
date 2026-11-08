@@ -2,6 +2,8 @@
 
 **Estado:** borrador · **Capa:** 3 (IA en el dispositivo) · **Punto:** 6 · **Proyectos:** frontend/mf-obras, services/obras, gateway, frontend/portal, infra
 
+**Nota (31/10/2026):** funcionalidad **opcional** (decisión de Jairo); se decide si se hace al reevaluar la capa 3.
+
 ## Historia
 
 Como **residente** quiero que, al presentar una planilla, las fotos de respaldo se publiquen al cliente con los rostros de los trabajadores difuminados, para proteger su privacidad; y quiero que eso se haga en mi navegador, sin mandar las fotos a otro servicio para analizarlas.

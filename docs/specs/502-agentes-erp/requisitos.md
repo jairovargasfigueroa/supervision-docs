@@ -1,6 +1,8 @@
 # 502 · Agentes en el ERP
 
-**Estado:** borrador para aprobar · **Capa:** 5 (puntos 5, 15 y 16) · **Proyectos:** services/ia, gateway, mf-supervision, mf-obras, mf-materiales, infra · **Depende de:** 401, 402, 403 y 501
+**Estado:** aprobado (31/10/2026) · **Capa:** 5 (puntos 5, 15 y 16) · **Proyectos:** services/ia, gateway, mf-supervision, mf-obras, mf-materiales, infra · **Depende de:** 401, 402, 403, 501 y 503 (puerto `ModeloLenguaje` y motor de reportes)
+
+**Decisiones de Jairo (31/10/2026):** los 3 agentes quedan como estaban (misión, una vez al día y «Ejecutar ahora», límites, informe con formato fijo, sugerencias que una persona aprueba; aprobar solo registra). El host es el servicio de IA y **todas** sus herramientas son MCP (501): las de Obras, Materiales y Finanzas para el dato al instante, y las del servidor MCP del propio servicio de IA (`riesgo_retraso`, `consumos_atipicos` y `consultar_reporte`) en lugar de lecturas locales. El modelo de lenguaje se elige por configuración (Ollama local o la API de Anthropic) con el puerto `ModeloLenguaje` de la 503. Todo lo de los agentes se guarda en MongoDB `ia_db`.
 
 ## Historia
 
@@ -12,9 +14,9 @@ Los define el equipo; el gerente no los crea ni los configura.
 
 | Agente | Misión | Herramientas MCP (501) |
 |---|---|---|
-| Seguimiento de obras (`SEGUIMIENTO_OBRAS`) | Detectar obras atrasadas, que van camino a atrasarse o con riesgo alto según el modelo (402), buscar en el diario la causa probable y revisar si la planilla del mes está pendiente | `avance_obra`, `buscar_diario`, `planillas_estado` + lectura local del riesgo de retraso (402) |
-| Control de materiales (`CONTROL_MATERIALES`) | Detectar stock bajo o justo, salidas que superaron el stock, consumos por encima de lo previsto en el periodo y consumos atípicos sin revisar (403) | `stock_obra`, `consumos_partida`, `avance_obra` + lectura local de consumos atípicos (403) |
-| Control de cobros (`CONTROL_COBROS`) | Detectar cobros vencidos o por vencer y planillas presentadas sin respuesta del cliente u observadas sin corregir | `cobros_por_vencer`, `planillas_estado` |
+| Seguimiento de obras (`SEGUIMIENTO_OBRAS`) | Detectar obras atrasadas, que van camino a atrasarse o con riesgo alto según el modelo (402), buscar en el diario la causa probable y revisar si la planilla del mes está pendiente | Obras: `avance_obra`, `buscar_diario`, `planillas_estado` · IA: `riesgo_retraso`, `consultar_reporte` (obras y planillas) |
+| Control de materiales (`CONTROL_MATERIALES`) | Detectar stock bajo o justo, salidas que superaron el stock, consumos por encima de lo previsto en el periodo y consumos atípicos sin revisar (403) | Materiales: `stock_obra`, `consumos_partida` · Obras: `avance_obra` · IA: `consumos_atipicos`, `consultar_reporte` (material usado y movimientos) |
+| Control de cobros (`CONTROL_COBROS`) | Detectar cobros vencidos o por vencer y planillas presentadas sin respuesta del cliente u observadas sin corregir | Finanzas: `cobros_por_vencer` · Obras: `planillas_estado` · IA: `consultar_reporte` (cobros y planillas) |
 
 ## Criterios de aceptación
 
@@ -23,10 +25,10 @@ Los define el equipo; el gerente no los crea ni los configura.
 1. Los tres agentes se ejecutan solos una vez al día, a las 06:00 hora de La Paz, uno detrás de otro (origen `PROGRAMADA`).
 2. CUANDO un `admin` o `gerente` pulsa «Ejecutar ahora» en un agente, ENTONCES se crea una ejecución `MANUAL` en estado `EN_CURSO` y la pantalla muestra «En curso…» hasta que termina (consulta cada 3 s, máximo 5 minutos).
 3. SI ya hay una ejecución `EN_CURSO` del mismo agente, ENTONCES no se crea otra y se muestra «El agente ya se está ejecutando».
-4. Cada agente usa solo sus herramientas (las MCP de su lista y, si tiene, su lectura local de datos del propio servicio de IA: predicciones de la 402 o consumos atípicos de la 403). SI el modelo pide otra, ENTONCES la llamada se rechaza, se registra como paso con error y la ejecución sigue.
+4. Cada agente ve y usa solo sus herramientas MCP (las de su lista, incluidas las del servidor MCP del servicio de IA) y, en `consultar_reporte`, solo sus conjuntos de datos (mínimo privilegio). SI el modelo pide otra herramienta u otro conjunto, ENTONCES la llamada se rechaza, se registra como paso con error y la ejecución sigue.
 5. Cada ejecución tiene límites: como máximo 8 llamadas a herramientas y 3 minutos en total. SI se alcanza un límite, ENTONCES el agente cierra el reporte con lo que tiene; SI no logra un reporte válido, ENTONCES la ejecución queda `FALLIDA` con el motivo.
 6. Cada paso queda registrado: herramienta, argumentos, resumen del resultado, hora y duración.
-7. SI un servicio no responde, ENTONCES el agente sigue con las demás herramientas y lo indica en el resumen; SI no responde ninguno, ENTONCES la ejecución queda `FALLIDA` con «Sin herramientas disponibles».
+7. SI un servidor MCP no responde, ENTONCES el agente sigue con las demás herramientas y lo indica en el resumen; SI no responde ninguno, ENTONCES la ejecución queda `FALLIDA` con «Sin herramientas disponibles».
 
 ### Reporte
 
@@ -50,6 +52,10 @@ Los define el equipo; el gerente no los crea ni los configura.
 19. Hallazgos vigentes = los de la última ejecución `TERMINADA` de cada agente.
 20. El residente solo ve hallazgos y sugerencias de sus obras, y nunca los de Control de cobros.
 21. SI el servicio de IA no responde, ENTONCES solo las secciones de agentes muestran «No disponible por el momento».
+
+### Modelo de lenguaje
+
+22. Los agentes funcionan igual con cualquiera de los dos proveedores de modelo de lenguaje (Ollama local o la API de Anthropic, según la configuración del servicio); cada ejecución guarda el proveedor y el modelo que usó.
 
 ## Fuera del alcance
 

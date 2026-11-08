@@ -3,7 +3,7 @@
 ## Keycloak (infra)
 
 - Realm `supervision` del archivo de importación de la fase 1. Se agrega:
-  - Usuarios de prueba (contraseña `Prueba123!`, solo desarrollo): `admin1` (admin), `residente1`, `residente2` (residente), `gerente1` (gerente), `maestro1` (maestro), `almacenero1` (almacenero), `cliente1`, `cliente2` (cliente) y `demo1` (residente y cliente, para demostrar el paso entre el ERP y el portal sin volver a escribir la contraseña; sus obras las asigna la 011). Nombre y apellido completos para mostrarlos.
+  - Usuarios de prueba (contraseña `Prueba123!`, solo desarrollo): `admin1` (admin), `residente1`, `residente2` (residente), `gerente1` (gerente), `maestro1` (maestro), `almacenero1` (almacenero), `cliente1`, `cliente2` (cliente) y `demo1` (residente y cliente, para demostrar el paso entre el ERP y el portal sin volver a escribir la contraseña; sus obras las asigna la 011). Nombre y apellido completos para mostrarlos. Cada usuario tiene `id` fijo (`a0000000-0000-4000-8000-0000000000NN`), nombre, apellido y correo según `docs/datos-prueba.md` (sección 3), para que las obras de los datos de prueba los referencien.
   - Clientes: `erp` (redirect `http://localhost:4200/*`), `portal` (redirect `http://localhost:4300/*`), `app-obra` (redirect `exp://*` y el esquema `appobra://*`). Los tres públicos, *Standard flow* con PKCE `S256`, sin *direct access grants*.
   - Duración del token de acceso: 5 minutos; sesión SSO: 10 horas.
 
@@ -35,6 +35,7 @@
 - Navegación con Expo Router: grupo `(auth)` para el inicio de sesión y grupo `(app)` con pestañas según el rol (criterio 5).
 - Sin rol `maestro` ni `almacenero` → pantalla «No tienes acceso».
 - Cerrar sesión borra los tokens guardados y llama al `end_session_endpoint`.
+- Desde la 101 (capa 1), la app pide también el alcance `offline_access` (`scope=openid offline_access`): Keycloak entrega un *refresh token* «offline» que vale mientras la sesión offline no pase 30 días sin usarse (realm: `offlineSessionIdleTimeout` = 2592000 s; el cliente `app-obra` tiene el *scope* opcional `offline_access`). Al cerrar sesión, antes del `end_session_endpoint`, revoca el refresh token en el `revocation_endpoint` (`POST` con `client_id`, `token` y `token_type_hint=refresh_token`).
 
 ## Servicios y gateway
 

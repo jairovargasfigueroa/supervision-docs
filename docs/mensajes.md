@@ -6,12 +6,12 @@ En la columna **Origen**, «texto de la spec» indica que el mensaje se copió t
 
 ## Cómo se usa
 
-- Cada frontend tiene un archivo `errores.ts` (en mf-obras, un servicio de Angular equivalente) que mapea `codigo` → mensaje de este catálogo: shell (notificaciones), mf-obras, mf-materiales, mf-supervision, portal y app de obra. Cada uno incluye solo los códigos que puede recibir (columna **Se ve en**).
+- Cada frontend tiene un archivo `errores.ts` (en mf-obras, un servicio de Angular equivalente) que mapea `codigo` → mensaje de este catálogo: mf-obras, mf-materiales, mf-supervision, portal y app de obra. Cada uno incluye solo los códigos que puede recibir (columna **Se ve en**).
 - **Dónde está el código:** en REST, el campo `codigo` del Problem Details; en GraphQL, `errors[].extensions.codigo` (y `extensions.servicio` dice qué servicio falló); en la app de obra, el `codigo` del resultado de cada operación de `POST /lotes` (101).
 - **Código desconocido:** si el código no está en el mapa, se muestra el mensaje **genérico de su estado HTTP** (tabla «Genéricos»). El `detail` del servicio no se muestra al usuario; queda en el registro para soporte. Vale también para la app (101).
 - **Errores por campo:** si la respuesta trae `errores[]` (`400` o `422`), cada `mensaje` se muestra junto a su `campo`, y arriba el mensaje del código. Cuando un código puede deberse a reglas distintas (`COMENTARIO_INVALIDO`), la regla concreta llega en `errores[].mensaje` (convenciones).
 - **Marcadores** entre llaves (`{codigo}`, `{saldo}`, `{periodo}`…): los completa el frontend con datos que ya tiene en pantalla o que vienen en `errores[]`. Si no tiene el dato, usa la frase sin esa parte.
-- **Formato:** montos con «Bs» y 2 decimales; fechas `dd/mm/aaaa` (o `dd/mm` donde la spec lo dice); periodos `AAAA-MM` (en las notificaciones, «marzo 2027»), como en `docs/diseno-visual.md` y el `formato.ts` de cada proyecto.
+- **Formato:** montos con «Bs» y 2 decimales; fechas `dd/mm/aaaa` (o `dd/mm` donde la spec lo dice); periodos `AAAA-MM`, como en `docs/diseno-visual.md` y el `formato.ts` de cada proyecto.
 - Los mensajes no muestran nombres técnicos (servicio, endpoint, `codigo`); el `codigo` y el `X-Request-Id` van a la consola para soporte.
 
 ## Genéricos
@@ -27,7 +27,7 @@ Todo error lleva `codigo`; sin uno propio, el servicio usa el genérico de su es
 | `RUTA_NO_ENCONTRADA` | 404 | La ruta pedida no existe en el servicio (error de programación o de versión; con token válido) | «No encontramos lo que buscas. Puede que ya no exista o que no tengas acceso.» | Volver a la lista | convenciones (fase 1) · catálogo |
 | (código desconocido) | 404 | Un «no encontrado» que el frontend no conoce | «No encontramos lo que buscas. Puede que ya no exista o que no tengas acceso.» | Volver a la lista | catálogo |
 | (código desconocido) | 409 | Conflicto de estado o de versión que el frontend no conoce | «Los datos cambiaron mientras trabajabas. Recarga para ver la última versión.» | Recargar | catálogo |
-| `ARCHIVO_DEMASIADO_GRANDE` | 413 | El cuerpo supera el límite (lote de Sincronización de más de 256 KB, parte de más de 300 KB) | «El envío supera el tamaño permitido.» | Si es una foto, volver a tomarla; si se repite, avisar a soporte | convenciones, 101, 102 · catálogo |
+| `ARCHIVO_DEMASIADO_GRANDE` | 413 | El cuerpo supera el límite (lote de Sincronización de más de 256 KB) | «El envío supera el tamaño permitido.» | Si se repite, avisar a soporte | convenciones, 101 · catálogo |
 | (código desconocido) | 422 | Regla del negocio que el frontend no conoce | «No se pudo completar la operación porque no cumple una regla del sistema.» | Revisar los datos o consultar al residente o a administración | catálogo |
 | `DEMASIADAS_PETICIONES` | 429 | Ráfaga de pedidos | «Hiciste muchas solicitudes seguidas. Espera un momento e intenta de nuevo.» | Esperar y reintentar | convenciones · catálogo |
 | `ERROR_INTERNO` | 500 | Falla inesperada del servidor (también error de una herramienta MCP, 501) | «Ocurrió un error inesperado. Intenta de nuevo; si se repite, avisa a soporte.» | Reintentar | convenciones · catálogo |
@@ -40,7 +40,7 @@ Todo error lleva `codigo`; sin uno propio, el servicio usa el genérico de su es
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
-| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporteVoz`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). En la bandeja de notificaciones: «No disponible por el momento · Reintentar» (la campana queda sin número) | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 010 (criterio 16), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 (en `extensions`) | Un servicio no respondió, por error o por pasar los 3 s del gateway (60 s en `consultarReporte`); solo sus campos llegan en `null` | En una sección o pestaña: «No disponible por el momento». En el tablero: «—» con «Datos de {servicio} no disponibles» (`{servicio}`: Obras, Materiales, Finanzas o IA). | Pulsar «Actualizar» o «Reintentar» | ERP | 006 (criterio 4), 009 (criterio 5), 402 (criterio 12), 502 (criterio 21) · texto de la spec |
 
 Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los mismos códigos: `NO_AUTENTICADO`, `SIN_PERMISO`, `DATOS_INVALIDOS`.
 
@@ -54,7 +54,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 | `CONTRATO_INVALIDO` | 422 | Monto o plazo ≤ 0, anticipo o retención fuera de 0 a 100, o su suma ≥ 100 | «Los datos del contrato no son válidos: el monto y el plazo deben ser mayores a 0, y el anticipo y la retención deben estar entre 0 y 100 y sumar menos de 100.» | Corregir el paso «Contrato» | ERP · Obras | 002 · catálogo |
 | `OBRA_NO_ENCONTRADA` | 404 | La obra no existe o el usuario no puede verla (también en Materiales, IA y en las herramientas MCP) | «Obra no encontrada» | Volver a la lista de obras | ERP, portal, app | 006 (criterio 6) · texto de la spec |
 | `PARTIDA_NO_ES_DE_LA_OBRA` | 422 | La foto de avance indica una partida de otra obra | «La partida elegida no pertenece a esta obra.» | Pulsar «Actualizar datos» y elegir otra partida | App | 005 · catálogo |
-| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave del archivo no corresponde al registro (foto de avance 005, versión para el cliente 303, nota de remisión 102 en Materiales) | «No se pudo asociar el archivo a este registro.» | App: descartar y volver a tomar la foto. ERP: «Volver a preparar» | App, ERP · Obras | 005, 102, 303 · catálogo |
+| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave del archivo no corresponde al registro (foto de avance 005, también enviada por Sincronización en la 102; versión para el cliente 303) | «No se pudo asociar el archivo a este registro.» | App: descartar y volver a tomar la foto. ERP: «Volver a preparar» | App, ERP · Obras | 005, 102, 303 · catálogo |
 | `PLANILLA_ABIERTA_EXISTE` | 409 | Ya hay una planilla sin aprobar en la obra | «Ya hay una planilla sin aprobar en esta obra. Termínala antes de crear otra.» | Abrir la planilla existente desde la pestaña «Planillas» | ERP · Obras | 007 (criterio 2) · catálogo |
 | `PERIODO_NO_POSTERIOR` | 422 | El periodo no es posterior al de la última planilla | «El periodo debe ser posterior al de la última planilla ({periodoUltima}).» | Elegir un mes posterior | ERP · Obras | 007 (criterio 2) · catálogo |
 | `PERIODO_FUTURO` | 422 | El periodo es un mes futuro | «No se puede crear la planilla de un mes que todavía no llegó.» | Elegir el mes actual o uno anterior | ERP · Obras | 007 (criterio 2) · catálogo |
@@ -64,6 +64,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 | `SUPERA_CANTIDAD_CONTRATADA` | 422 | Acumulado anterior + cantidad del periodo > cantidad contratada (`errores[]` por partida) | En cada fila: «Supera lo contratado (saldo: {saldo})». Arriba: «Hay filas que superan lo contratado. Corrígelas para guardar.» | Bajar la cantidad de las filas marcadas | ERP · Obras | 007 (criterio 5) · texto de la spec (fila); catálogo (arriba) |
 | `FOTO_FUERA_DEL_PERIODO` | 422 | Se adjuntó una foto registrada fuera del periodo de la planilla | «Una de las fotos adjuntas no es de este periodo. Quítala para guardar.» | Quitar la foto | ERP · Obras | 007 · catálogo |
 | `SUBTOTAL_CERO` | 422 | Se intenta presentar una planilla con subtotal 0 | «No se puede presentar una planilla con subtotal 0. Indica las cantidades ejecutadas del periodo.» | Cargar cantidades y guardar | ERP · Obras | 007 (criterio 8) · catálogo |
+| `PLANILLA_NO_ENCONTRADA` | 404 | La planilla no existe, es de una obra que el usuario no ve o es un `BORRADOR` y la pide el cliente | «Planilla no encontrada» | Volver a la obra | ERP · Obras, portal | 007, 008 · catálogo |
 | `FOTO_SIN_VERSION_CLIENTE` | 422 | Al presentar, alguna foto adjunta no tiene versión con rostros difuminados (`errores[]` por `fotoId`) | Por foto: «Falta la versión para el cliente». Arriba: «Prepara la versión para el cliente de todas las fotos antes de presentar.» | Preparar las fotos que faltan o quitarlas | ERP · Obras | 303 (diseño) · texto de la spec (por foto); catálogo (arriba) |
 | `FOTO_NO_ENCONTRADA` | 404 | La foto no existe o no es de esa obra (303) | «No encontramos la foto. Puede que ya no esté adjunta a la planilla.» | Recargar la planilla | ERP · Obras | 303 · catálogo |
 | `ARCHIVO_NO_SUBIDO` | 422 | Se registra la versión para el cliente pero el archivo no está en el almacenamiento | «La versión para el cliente no terminó de subirse. Intenta de nuevo.» | Reintentar la foto | ERP · Obras | 303 · catálogo |
@@ -76,7 +77,7 @@ Los genéricos del propio gateway (token, rol del `RolesGuard`, datos) usan los 
 
 ### Motivos de observación que pone la saga
 
-No son códigos: es el texto que queda en la observación de la planilla (`origen = SAGA`) y que ven el cliente en el portal, el residente en el ERP y el aviso «No se pudo aprobar la planilla» (010).
+No son códigos: es el texto que queda en la observación de la planilla (`origen = SAGA`) y que ven el cliente en el portal y el residente en el ERP.
 
 | Situación | Texto | Origen |
 |---|---|---|
@@ -88,7 +89,7 @@ No son códigos: es el texto que queda en la observación de la planilla (`orige
 
 ### Motivos de rechazo del contrato
 
-Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detalle de la obra (002, criterio 9) y en el aviso «Contrato rechazado» (010). Si fallan varias reglas, se unen con «; ».
+Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detalle de la obra (002, criterio 9). Si fallan varias reglas, se unen con «; ».
 
 | Regla | Texto | Origen |
 |---|---|---|
@@ -106,26 +107,21 @@ Los publica Finanzas en `ContratoRechazado`; Administración los ve en el detall
 | `MATERIAL_INACTIVO` | 422 | Fijar mínimo (003) o registrar un movimiento (004) con un material desactivado | «El material está desactivado; no se puede usar en movimientos ni fijarle un mínimo.» | Elegir otro material o pedir a administración que lo active | ERP · Materiales, app | 003, 004 · catálogo |
 | `OBRA_NO_ENCONTRADA` | 404 | La obra no está en `obra_acceso` o el usuario no la ve | Ver «Obras» | — | ERP · Materiales, app | 003, 004 |
 | `PERIODO_CERRADO` | 409 | El periodo del movimiento ya lo cerró una planilla aprobada | «El periodo {periodo} ya está cerrado» | Consultar al residente; el registro queda «Rechazado» | App | 004 (criterio 7) · texto de la spec |
-| `MOVIMIENTO_NO_ENCONTRADO` | 404 | Se adjunta la foto de la nota a un movimiento que no existe o de una obra que no ve | «No se encontró el ingreso de esta nota de remisión.» | Descartar la foto | App | 102 · catálogo |
-| `MOVIMIENTO_NO_ES_INGRESO` | 422 | La foto de la nota se adjunta a una salida | «La foto de la nota solo se puede adjuntar a un ingreso.» | Descartar la foto | App | 102 · catálogo |
-| `CLAVE_ARCHIVO_INVALIDA` | 422 | La clave de la foto de la nota no es `notas-remision/{obraId}/{id}.jpg` | Ver «Obras» | — | App | 102 |
-| `ORDEN_COMPRA_NO_PENDIENTE` | 422 | El ingreso indica una orden ya recibida, de otra obra o de otro material | «La orden de compra no está pendiente para este material» | Volver a registrar el ingreso sin orden | App | 201 (criterio 16) · texto de la spec |
 
 ## Finanzas
 
-Los cinco códigos de la capa 2 los recibe n8n, no una persona en pantalla: quedan en la ejecución fallida del flujo, en el panel de n8n (201, criterio 9). El texto sirve para quien revisa las ejecuciones.
+Los cuatro códigos de la capa 2 (201). `NOTA_COBRO_INCONSISTENTE` lo recibe solo n8n, no una persona en pantalla: queda en la ejecución fallida del flujo, en el panel de n8n (201, criterio 19), y el texto sirve para quien revisa las ejecuciones. `COBRO_NO_ENCONTRADO` puede llegar al ERP (registrar pago) o a n8n.
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
-| `MATERIAL_SIN_PROVEEDOR` | 422 | Stock bajo de un material sin proveedor habitual | «El material no tiene proveedor habitual; no se generó la orden de compra.» | Elegir el proveedor habitual en el catálogo | n8n | 201 · catálogo |
-| `PROVEEDOR_NO_ENCONTRADO` | 422 | El proveedor habitual no existe en Finanzas | «El proveedor habitual del material no está en la lista de proveedores.» | Elegir otro proveedor en el catálogo | n8n | 201 · catálogo |
-| `PRECIO_INVALIDO` | 422 | Precio referencial del material ≤ 0 | «El material tiene precio referencial 0; no se puede generar la orden.» | Corregir el precio referencial | n8n | 201 · catálogo |
-| `ORDEN_COMPRA_NO_ENCONTRADA` | 404 | Se marca enviada o se registra la cuenta por pagar de una orden inexistente | «No se encontró la orden de compra.» | Revisar la ejecución en n8n | n8n | 201 · catálogo |
-| `ORDEN_YA_RECIBIDA` | 409 | La orden ya tiene cuenta por pagar de otro ingreso | «La orden de compra ya fue recibida con otro ingreso.» | Ninguna (no se duplica) | n8n | 201 · catálogo |
+| `COBRO_NO_ENCONTRADO` | 404 | El cobro no existe (registrar pago, anotar un envío o generar la nota de cobro) | «No se encontró el cobro.» | Recargar la pestaña «Cobros» (en n8n: revisar la ejecución) | ERP · Obras, n8n | 201 (diseño) · catálogo |
+| `COBRO_YA_PAGADO` | 409 | Se intenta registrar el pago de un cobro ya `PAGADO` | «El cobro ya está pagado.» | Recargar la pestaña «Cobros» | ERP · Obras | 201 (criterio 4) · texto de la spec |
+| `FECHA_PAGO_INVALIDA` | 422 | La fecha de pago es posterior a hoy (La Paz) o anterior a la emisión del cobro | «La fecha de pago no puede ser futura ni anterior a la emisión del cobro.» | Elegir otra fecha de pago | ERP · Obras | 201 (criterio 2) · catálogo |
+| `NOTA_COBRO_INCONSISTENTE` | 422 | Los datos de la planilla que manda n8n no coinciden con el cobro (otra planilla u obra, otro neto o totales que no cuadran) | «Los datos de la planilla no coinciden con el cobro.» | Revisar la ejecución en n8n | n8n | 201 (diseño) · catálogo |
 
 ## Sincronización (app de obra, capa 1)
 
-La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `ERROR`, `REINTENTAR`) o en las subidas. Los de `REINTENTAR` **no** se muestran: la operación vuelve a «Pendiente» y se reintenta sola (101). Los de `ERROR` dejan la operación «Rechazado» con el mensaje.
+La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `ERROR`, `REINTENTAR`) o al pedir la URL de subida de una foto (`POST /fotos/url-subida`, 102). Los de `REINTENTAR` **no** se muestran: la operación vuelve a «Pendiente» y se reintenta sola (101). Los de `ERROR` dejan la operación «Rechazado» con el mensaje.
 
 | Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
 |---|---|---|---|---|---|---|
@@ -137,18 +133,11 @@ La app recibe estos códigos en el resultado de cada operación (`PROCESADO`, `E
 | `OPERACION_EN_PROCESO` | 409 | Otra petición está procesando la misma operación | No se muestra (el registro sigue «Enviando» o vuelve a «Pendiente») | Ninguna | — | 101 |
 | `TOKEN_VENCIDO` | 401 | El servicio dueño rechazó el token | No se muestra; la app renueva el token. Si no puede, pide iniciar sesión sin perder los pendientes (101, criterio 7) | Iniciar sesión si se pide | App | 101 |
 | `TIEMPO_AGOTADO` | 504 | El servicio dueño no respondió en 5 s, o se agotaron los 20 s del lote | No se muestra (vuelve a «Pendiente») | Ninguna | — | 101 |
-| `SERVICIO_NO_DISPONIBLE` | 503 | Obras o Materiales fallaron (también en `GET /paquete-datos`) | No se muestra en el envío (vuelve a «Pendiente»). En el paquete de datos, la app sigue con los datos guardados: «Sin señal · datos del dd/mm hh:mm» | Ninguna | App | 101 (criterio 3) · texto de la spec |
-| `ARCHIVO_DEMASIADO_GRANDE` | 413 | Lote o parte por encima del límite | Ver «Genéricos» | — | App | 101, 102 |
-| `SUBIDA_INVALIDA` | 400 | Tipo de archivo, tamaño o huella mal formados | «La foto no se pudo preparar para el envío.» | Descartarla y tomarla de nuevo | App (Rechazado) | 102 · catálogo |
-| `SUBIDA_AJENA` | 403 | La subida la creó otro usuario | «Esta foto la empezó a enviar otro usuario.» | Descartarla | App (Rechazado) | 102 · catálogo |
-| `SUBIDA_DISTINTA` | 409 | Ya existe una subida con ese id pero otro tamaño o huella | No se muestra: la app descarta esa subida y empieza otra con un `idSubida` nuevo (mismo `fotoId`) | Ninguna | — | 102 |
-| `SUBIDA_NO_ENCONTRADA` | 404 | Se consulta o completa una subida que no existe | No se muestra (la app vuelve a crear la subida) | Ninguna | — | 102 |
-| `PARTE_INVALIDA` | 400 | Número o tamaño de parte incorrecto | No se muestra (la app vuelve a subir la parte) | Ninguna | — | 102 |
-| `SUBIDA_INCOMPLETA` | 409 | Al completar faltan partes | No se muestra (la app sube las que faltan) | Ninguna | — | 102 |
-| `SUBIDA_REINICIADA` | 409 | Las partes vencieron (7 días) y hay que subir de nuevo | No se muestra; la foto vuelve a subirse desde el principio (102, criterio 15) | Ninguna | — | 102 |
-| `HUELLA_NO_COINCIDE` | 422 | El archivo armado no coincide con la huella del celular | No se muestra hasta el tercer intento; luego: «El archivo de la foto está dañado» | Descartar y tomar la foto de nuevo | App (Rechazado) | 102 (criterio 10) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 | Obras o Materiales fallaron (también en `GET /paquete-datos` y `POST /fotos/url-subida`) | No se muestra en el envío (vuelve a «Pendiente»). En el paquete de datos, la app sigue con los datos guardados: «Sin señal · datos del dd/mm hh:mm» | Ninguna | App | 101 (criterio 3) · texto de la spec |
+| `ARCHIVO_DEMASIADO_GRANDE` | 413 | Lote por encima de 256 KB | Ver «Genéricos» | — | App | 101 |
+| `FOTO_NO_DISPONIBLE` | — | Código solo de la app (no lo envía ningún servicio): el archivo de la foto ya no está en el celular al ir a subirlo | «La foto no se pudo preparar para el envío.» | Descartarla y tomarla de nuevo | App (Rechazado) | 102 · decisión del equipo |
 
-Si `POST /subidas/{id}/completar` devuelve un `403`, `404` o `422` del servicio dueño (por ejemplo `404 OBRA_NO_ENCONTRADA`), la foto queda «Rechazado» con el mensaje de ese código (102).
+Si `POST /fotos/url-subida` devuelve un `400`, `403`, `404` o `422` de Obras (por ejemplo `404 OBRA_NO_ENCONTRADA`), la foto queda «Rechazado» con el mensaje de ese código; un `503` o `504` no se muestra y la foto se vuelve a subir más tarde (102).
 
 ## IA (capas 4 y 5)
 
@@ -166,14 +155,14 @@ Si `POST /subidas/{id}/completar` devuelve un `403`, `404` o `422` del servicio 
 | `SUGERENCIA_NO_ENCONTRADA` | 404 | La sugerencia no existe o el usuario no puede verla (residente: obra ajena o Control de cobros) | «No encontramos esa sugerencia o no tienes acceso a ella.» | Recargar la lista | ERP (las tres áreas) | 502 · catálogo |
 | `SUGERENCIA_YA_DECIDIDA` | 409 | Otra persona ya aprobó o rechazó la sugerencia | «Esta sugerencia ya fue aprobada o rechazada. Recarga la lista.» | Recargar | ERP (las tres áreas) | 502 (criterio 14) · catálogo |
 | `MOTIVO_INVALIDO` | 422 | Rechazo de sugerencia con motivo fuera de 10 a 500 caracteres | Ver «Obras» | — | ERP | 502 |
-| `TEXTO_INVALIDO` | 400 | Pedido de reporte por voz con menos de 3 o más de 500 caracteres | «El pedido debe tener entre 3 y 500 caracteres.» | Ajustar el texto | ERP · Supervisión | 503 (criterio 4) · catálogo |
-| `INTENCION_NO_RECONOCIDA` | 422 | El pedido no corresponde a ningún reporte de la lista | «No encontré un reporte para tu pedido» (con la lista de reportes y ejemplos) | Reformular con un ejemplo | ERP · Supervisión | 503 (criterio 6) · texto de la spec |
-| `FILTROS_INVALIDOS` | 422 | La intención trae filtros que el reporte no acepta o valores fuera de rango | «No encontré un reporte para tu pedido» (con la lista de reportes y ejemplos) | Reformular con un ejemplo | ERP · Supervisión | 503 (criterio 7) · texto de la spec |
-| `DEMASIADAS_CONSULTAS` | 429 | Más de 10 consultas por minuto del mismo usuario | «Demasiadas consultas; espera un momento» | Esperar un minuto | ERP · Supervisión | 503 (criterio 15) · texto de la spec |
-| `LLM_NO_DISPONIBLE` | 503 | El modelo de lenguaje no responde al interpretar el pedido | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `REPORTES_NO_DISPONIBLES` | 503 | No responde la base de reportes (o la consulta pasa de 5 s) | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `SERVICIO_NO_DISPONIBLE` | 503 | Materiales no responde y el pedido filtra por material | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar o pedir sin material | ERP · Supervisión | 503 (diseño) · texto de la spec |
-| `TIEMPO_AGOTADO` | 504 | El reporte por voz tardó más de 50 s dentro de IA | «El reporte tardó demasiado; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (criterio 11) · texto de la spec |
+| `TEXTO_INVALIDO` | 400 | Pedido de reporte con menos de 3 o más de 500 caracteres | «El pedido debe tener entre 3 y 500 caracteres.» | Ajustar el texto | ERP · Supervisión | 503 (criterio 3) · catálogo |
+| `INTENCION_NO_RECONOCIDA` | 422 | El pedido no corresponde a ningún conjunto del catálogo, o el modelo no devolvió una receta con el formato pedido | «No encontré un reporte para tu pedido» (con los conjuntos, ejemplos y los reportes comunes) | Reformular con un ejemplo o usar un reporte común | ERP · Supervisión | 503 (criterio 6) · texto de la spec |
+| `RECETA_INVALIDA` | 422 | La receta trae columnas, filtros, agrupaciones, métricas u orden que el conjunto no permite, o valores fuera de rango (`errores[]` con la ruta y la regla; reemplaza a `FILTROS_INVALIDOS` del borrador) | «No encontré un reporte para tu pedido» (con los conjuntos, ejemplos y los reportes comunes) | Reformular con un ejemplo o usar un reporte común | ERP · Supervisión | 503 (criterio 7) · texto de la spec |
+| `DEMASIADAS_CONSULTAS` | 429 | Más de 10 consultas por minuto del mismo usuario (también con reportes comunes) | «Demasiadas consultas; espera un momento» | Esperar un minuto | ERP · Supervisión | 503 (criterio 17) · texto de la spec |
+| `LLM_NO_DISPONIBLE` | 503 | El modelo de lenguaje (Ollama o Anthropic) no responde al interpretar el pedido | «El servicio de reportes no está disponible; intenta de nuevo» (con la sugerencia de usar un reporte común) | Reintentar o usar un reporte común | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `REPORTES_NO_DISPONIBLES` | 503 | No responde la base de reportes o `ia_db` (o la consulta pasa de 5 s) | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `SERVICIO_NO_DISPONIBLE` | 503 | Materiales no responde y el pedido filtra por material, o falta el directorio de clientes y el pedido filtra por cliente | «El servicio de reportes no está disponible; intenta de nuevo» | Reintentar o pedir sin ese filtro | ERP · Supervisión | 503 (diseño) · texto de la spec |
+| `TIEMPO_AGOTADO` | 504 | La consulta de reporte tardó más de 50 s dentro de IA | «El reporte tardó demasiado; intenta de nuevo» | Reintentar | ERP · Supervisión | 503 (criterio 11) · texto de la spec |
 
 ### Errores de la ejecución de un agente
 
@@ -186,27 +175,53 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 | `EJECUCION_TIEMPO_AGOTADO` | Ejecución | La ejecución pasó los 3 minutos | «El agente superó el tiempo máximo de 3 minutos.» | Volver a ejecutar | 502 · catálogo |
 | `INTERRUMPIDA` | Ejecución | El servicio se reinició con la ejecución en curso | «La ejecución se interrumpió porque el servicio se reinició.» | Volver a ejecutar | 502 · catálogo |
 | `HERRAMIENTA_NO_PERMITIDA` | Paso | El modelo pidió una herramienta que no es de ese agente | «El agente pidió una herramienta que no le corresponde; se ignoró.» | Ninguna | 502, 504 · catálogo |
-| `ARGUMENTO_INVALIDO` | Paso (y error de herramienta MCP) | El modelo pidió datos con parámetros no válidos | «El agente pidió datos con parámetros no válidos; se ignoró.» | Ninguna | 501, 502 · catálogo |
+| `ARGUMENTO_INVALIDO` | Paso (y error de herramienta MCP) | El modelo pidió datos con parámetros no válidos (también una receta inválida o un conjunto que no es del agente en `consultar_reporte`) | «El agente pidió datos con parámetros no válidos; se ignoró.» | Ninguna | 501, 502 · catálogo |
 | `OBRA_NO_ENCONTRADA` | Paso (error de herramienta MCP) | La herramienta no encontró la obra pedida | «La obra pedida no existe.» | Ninguna | 501 · catálogo |
-| `ERROR_INTERNO` | Paso (error de herramienta MCP) | La herramienta falló en el servicio | «La consulta falló en el servicio.» | Volver a ejecutar si el reporte quedó incompleto | 501 · catálogo |
-
-## Notificaciones (010)
-
-| Código | HTTP | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Se ve en | Origen |
-|---|---|---|---|---|---|---|
-| `NOTIFICACION_NO_ENCONTRADA` | 404 | Se marca como leída una notificación que no existe o es de otro usuario | «Ese aviso ya no está disponible.» | Recargar la bandeja | ERP (shell), portal, app | 010 · catálogo |
-| `SERVICIO_NO_DISPONIBLE` | 503 | El servicio de notificaciones no responde | «No disponible por el momento · Reintentar» (la campana queda sin número; el resto de la aplicación sigue igual) | «Reintentar» | ERP (shell), portal, app | 010 (criterio 16) · texto de la spec |
+| `ERROR_INTERNO` | Paso (error de herramienta MCP) y ejecución | En un paso: la herramienta falló en el servicio. En la ejecución: un fallo no previsto del ejecutor (`FALLIDA`) | Paso: «La consulta falló en el servicio.» · Ejecución: «La ejecución falló por un error inesperado.» (también para un código de ejecución desconocido sin mensaje) | Volver a ejecutar si el reporte quedó incompleto | 501, 502 (decisión técnica de la implementación) · catálogo |
+| `LLM_NO_DISPONIBLE` | Ejecución | El modelo de lenguaje (Ollama o Anthropic) no respondió durante la ejecución (`FALLIDA`) | «El modelo de lenguaje no respondió.» (el tipo de error va solo al registro de IA) | Volver a ejecutar más tarde | 502 (decisión técnica de la implementación) |
 
 ## Avisos y mensajes que no son errores
 
 Textos exactos de los requisitos y diseños (marcadores entre llaves donde la spec usa un valor de ejemplo). Los que la spec menciona sin texto quedan definidos aquí («catálogo»).
 
+### Consultar obra (006)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Ninguna obra coincide con la búsqueda.» (con «Quitar filtros») | ERP · Obras · lista | Los filtros no dejan ninguna obra | 006 · catálogo |
+| «No hay material previsto ni usado en este periodo.» | ERP · detalle · Material | El periodo no tiene previsto ni consumos | 006 · catálogo |
+| «Aún no hay fotos de avance.» · «Cargar más fotos» | ERP · detalle · Fotos | Sin fotos · hay más páginas | 006 · catálogo |
+| «Aún no hay planillas.» | ERP · detalle · Planillas | La obra no tiene planillas | 006 · catálogo |
+| «Aún no hay cobros.» | ERP · detalle · Cobros | La obra no tiene cobros | 006 · catálogo |
+| «Saldo y total cobrado: No disponible por el momento.» | ERP · detalle · Contrato | Finanzas no respondió | 006 · catálogo |
+| Etiquetas de estado: «Borrador», «Presentada», «En aprobación», «Aprobada», «Observada», «Pendiente», «Vencido», «Excedido», «En riesgo» | ERP (chips) | Estados de planilla, cobro, consumo y obra | 006 · catálogo |
+
+### Tablero (009)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Tablero de obras» | ERP · Supervisión · título | Siempre | 009 · catálogo |
+| «Obras en ejecución» · «Obras en riesgo» · «Materiales bajos» · «Cobros vencidos» | ERP · Supervisión · tarjetas | Siempre (la de cobros solo para `admin` y `gerente`) | 009 · catálogo |
+| «Aún no hay obras en ejecución.» | ERP · Supervisión · tabla | No hay obras en ejecución visibles | 009 · catálogo |
+| «Sin planillas» | ERP · Supervisión · tabla, columna última planilla | La obra todavía no tiene planillas | 009 · catálogo |
+| «—» con «Datos de {servicio} no disponibles» | ERP · Supervisión · tarjeta o celda | Ese servicio no respondió (respuesta parcial) | 009 |
+
+### Materiales y fotos (003, 005)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| «Aún no hay materiales.» | ERP · Materiales · Catálogo | El catálogo está vacío | 003 · catálogo |
+| «Elige una obra para ver su stock.» | ERP · Materiales · Stock | Todavía no se eligió una obra | 003 · catálogo |
+| «Esta obra todavía no tiene materiales con movimientos ni mínimo definido.» | ERP · Materiales · Stock | La obra no tiene filas de stock | 003 · catálogo |
+| «Foto enviada.» | App · Foto de avance | La foto se subió y quedó registrada (también si el registro ya existía) | 005 · catálogo |
+| «Para tomar la foto, permite el uso de la cámara en los ajustes del celular.» | App · Foto de avance | El usuario negó el permiso de la cámara | 005 · catálogo |
+| «Esta obra no tiene partidas.» | App · Foto de avance | La obra no tiene partidas para elegir | 005 · catálogo |
+
 ### Sesión y acceso (001)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
-| «No tienes acceso a esta aplicación» (con el nombre del usuario y el botón «Cerrar sesión») | ERP, portal | El usuario no tiene un rol permitido en esa aplicación | 001 (criterio 3) · texto de la spec |
-| «No tienes acceso» | App | Sin rol `maestro` ni `almacenero` | 001 (diseño) · texto de la spec |
+| «No tienes acceso a esta aplicación» (con el nombre del usuario y el botón «Cerrar sesión») | ERP, portal, app | El usuario no tiene un rol permitido en esa aplicación (app: sin `maestro` ni `almacenero`) | 001 (criterio 3) · texto de la spec |
 | «Abre esta pantalla desde el ERP» | Microfrontends | Microfrontend abierto solo, sin el shell | 001 (diseño) · texto de la spec |
 | «Esta sección no está disponible por el momento. Intenta recargar la página.» | ERP · shell (espacio del microfrontend) | Un microfrontend no carga | fase 1 (tarea 1.8), 104 · catálogo |
 | «Aplicaciones» con «Portal del cliente» | ERP · shell | Solo si el usuario tiene también el rol `cliente` | 001 (criterio 10) · texto de la spec |
@@ -216,6 +231,8 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Registrando contrato» (etiqueta en la lista) · «Registrando contrato…» (detalle) | ERP · Obras | Obra `SIN_CONTRATO` sin motivo de rechazo | 002 (criterio 7; diseño) · texto de la spec |
+| Selector «Zona» con «Sin zona» y las cinco zonas (Norte, Sur, Este, Oeste, Centro) | ERP · Obras (registro de obra, paso de datos) | Siempre; empieza en «Sin zona» (opcional) | 401 (criterio 1; diseño) · catálogo |
+| «Zona {Norte\|Sur\|Este\|Oeste\|Centro}» · «Sin zona» | ERP · Obras (lista y encabezado del detalle) | Zona de la obra, o sin zona | 401 (criterio 2; diseño) · catálogo |
 | «En riesgo» | ERP · Obras y Supervisión | Plazo transcurrido − avance > 10 puntos | 006, 009 · texto de la spec |
 | «Sin planilla en este periodo» | ERP · Obras (pestaña «Material») | No hay planilla en el periodo elegido | 006 (criterio 5) · texto de la spec |
 | «No disponible por el momento» | ERP · Obras (cada pestaña) | El servicio de esa sección no responde | 006 (criterio 4) · texto de la spec |
@@ -223,18 +240,44 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Observar» con el contador «{n} / 500» (mínimo 10) | Portal | Al pulsar «Observar» | 008 (criterio 4; diseño) · catálogo |
 | «En aprobación…» | Portal | Planilla `APROBANDO` (consulta cada 2 s, hasta 4 minutos) | 008 (criterio 5) · texto de la spec |
 | «La aprobación está tardando más de lo normal; puedes cerrar esta pantalla, el resultado aparecerá aquí» | Portal | Pasan 90 s en `APROBANDO` sin resultado | 008 (criterio 5) · texto de la spec |
+| «Planilla aprobada» con «Número de cobro: {cobroNumero}» | Portal · planilla | Planilla `APROBADA` | 008 (criterio 6) · catálogo |
+| «Planilla observada» con el motivo debajo | Portal · planilla | Planilla `OBSERVADA` (por el cliente o por la saga) | 008 (criterio 6) · catálogo |
+| «Detalle de la planilla» · «Fotos de respaldo» · «Fotos de la obra» · «Volver a mis obras» | Portal | Títulos y enlace de las pantallas | 008 · catálogo |
+| «Esta planilla no tiene fotos de respaldo.» | Portal · planilla | La planilla no tiene fotos adjuntas | 008 · catálogo |
+| «Aprobando…» · «Enviando…» | Portal | Botón mientras se envía la aprobación o la observación | 008 · catálogo |
+| «Actualizar» | Portal · planilla | Pasaron 4 minutos en `APROBANDO` y se dejó de consultar | 008 (criterio 5) · catálogo |
+| «Cobro {numero}» y columna «Cobro» («—» sin cobro) | ERP · Obras (editor y pestaña «Planillas») | Planilla `APROBADA` | 008 (criterio 14) · catálogo |
 | «Los rostros se difuminan para proteger la privacidad del personal» | Portal | Bajo la galería de la obra y de la planilla | 303 (criterio 11) · texto de la spec |
 
-### Materiales y compras (003, 004, 201)
+### Materiales (003, 004)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Registrado» | App | El servidor confirmó el movimiento | 004 (criterio 4) · texto de la spec |
 | «La salida supera el stock registrado (stock: {stock}). Queda como alerta para revisión» | App | Salida mayor al stock (`superaStock`) | 004 (criterio 5), 101 (criterio 10) · texto de la spec |
-| «Sin proveedor habitual: no se generarán órdenes automáticas» | ERP · Materiales (catálogo) | Material sin proveedor habitual | 201 (criterio 3) · texto de la spec |
-| «Correo no enviado» (ámbar) · `ENVIADA` (azul) · `RECIBIDA` (verde) | ERP · Materiales (órdenes de compra) | Estado de la orden | 201 (criterio 11; diseño) · texto de la spec |
-| «Todavía no hay órdenes de compra» | ERP · Materiales | Lista vacía | 201 (diseño) · texto de la spec |
-| «Orden de compra (opcional)» con «{numero} · {proveedor} · {cantidad} {unidadPlural}» | App (ingreso) | Hay órdenes pendientes del material | 201 (diseño) · texto de la spec |
+
+### Cobranza (201)
+
+| Texto | Dónde | Cuándo | Origen |
+|---|---|---|---|
+| Estado del cobro con color: «Pendiente» (neutro) · «Vencido» (rojo) · «Pagado el {dd/mm/aaaa}» (verde, con el comprobante debajo si lo hay) | ERP · detalle · Cobros | Cada cobro | 201 (criterio 3; diseño) · texto de la spec |
+| «Registrar pago» | ERP · detalle · Cobros | Cobro `PENDIENTE` o `VENCIDO`, solo `admin` | 201 (criterio 1) · texto de la spec |
+| Diálogo con «Fecha de pago» (por defecto hoy) y «N.º de comprobante (opcional)», botón «Registrar» | ERP · detalle · Cobros | Al pulsar «Registrar pago» | 201 (criterio 2; diseño) · texto de la spec |
+| «Pago registrado» | ERP · detalle · Cobros | El pago quedó registrado | 201 (diseño) · texto de la spec |
+| Columna «Correos»: «Nota enviada» · «Recordatorio por vencer» · «Recordatorio de vencido» · «Constancia enviada» (fecha y hora al pasar el cursor) | ERP · detalle · Cobros | Un envío anotado de ese tipo | 201 (criterio 17; diseño) · texto de la spec |
+| «Nota sin enviar» (ámbar) | ERP · detalle · Cobros | El cobro no tiene envío `NOTA_COBRO` | 201 (criterio 17; diseño) · texto de la spec |
+| «El cliente no tiene correo registrado» | n8n (motivo de la ejecución fallida) | El cliente de la obra no tiene correo en Keycloak (nota de cobro, constancia o, desde la 010, «planilla para revisar») | 201 (criterio 20), 010 (criterio 13) · texto de la spec |
+
+Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Constructora Andina»; montos `Bs 330.149,10` y fechas `dd/mm/aaaa`):
+
+| Correo | Asunto | Cuerpo | Origen |
+|---|---|---|---|
+| Nota de cobro (al cliente, con el PDF adjunto) | «Nota de cobro {numero} · {obra} · {periodo}» | «Estimado/a {nombre}: le enviamos la nota de cobro {numero} por la planilla N.º {n} de {periodo} de la obra {obra}. Neto a cobrar: Bs {neto}. Vence el {venceEn}. {EMPRESA_NOMBRE}» | 201 (criterio 7; diseño) · texto de la spec |
+| Nota de cobro (PDF) | — | Leyenda «Este documento no es una factura» | 201 (criterio 8) · texto de la spec |
+| Recordatorio por vencer (al cliente) | «Recordatorio: su cobro {numero} vence el {fecha}» | «Su cobro {numero} de Bs {monto} por la obra {obra} vence el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Recordatorio de vencido (al cliente) | «Cobro vencido: {numero} · {obra}» | «Su cobro {numero} de Bs {monto} por la obra {obra} venció el {fecha}. Si ya realizó el pago, no tome en cuenta este mensaje.» | 201 (criterio 12) · texto de la spec |
+| Resumen del día (a cobranzas, solo si hubo recordatorios) | «Resumen de cobranza del {fecha}» | Tabla con número, obra, monto, vencimiento y tipo de cada cobro recordado | 201 (criterio 13; diseño) · texto de la spec |
+| Constancia de pago (al cliente) | «Constancia de pago {numero} · {obra}» | «Registramos el pago del cobro {numero} de la obra {obra} por Bs {monto}, pagado el {pagadoEn}{, comprobante {comprobante}}. Gracias. {EMPRESA_NOMBRE}» (la parte del comprobante solo si lo hay) | 201 (criterio 15; diseño) · texto de la spec |
 
 ### App sin señal (005, 101, 102, 103)
 
@@ -245,16 +288,25 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «Necesitas señal la primera vez para descargar tus obras» | App | Primer uso sin señal | 101 (criterio 4) · texto de la spec |
 | «Guardado en el celular · se enviará cuando haya señal» | App | El servidor no confirmó en 5 s | 101 (criterio 8) · texto de la spec |
 | «Incluye {N} movimientos sin enviar» | App (stock) | Hay movimientos pendientes | 101 (criterio 9) · texto de la spec |
+| «Incluye 1 movimiento sin enviar» | App (stock) | Hay un solo movimiento pendiente (forma en singular) | 101 · decisión del equipo |
 | `Pendiente` · `Enviando` · `Enviado` · `Rechazado` (con el motivo) | App («Pendientes de envío») | Estado de cada registro | 101 (criterio 16) · texto de la spec |
 | «Salida · 12,5 bolsas de Cemento IP-30 · P-01» (formato: «{tipo} · {cantidad} {unidad} de {material} · {partida}») | App («Pendientes de envío») | Descripción de un movimiento | 101 (criterio 16) · texto de la spec |
 | «¿Descartar este registro? No se enviará y no se podrá recuperar.» con «Descartar» y «Cancelar» | App | Al descartar un registro | 101 (criterio 17) · catálogo |
+| «No hay registros pendientes de envío.» | App («Pendientes de envío») | El usuario no tiene registros en el celular | 101 · decisión del equipo |
 | «Tienes {N} registros sin enviar; se enviarán cuando vuelvas a iniciar sesión con este usuario» | App | Cerrar sesión con pendientes | 101 (criterio 18) · texto de la spec |
-| «Subiendo foto · {X} de {Y} partes» | App («Pendientes de envío») | Foto subiéndose | 102 (criterio 12) · texto de la spec |
-| «El ingreso asociado fue rechazado» | App | Rechazaron el ingreso de la foto de la nota | 102 (criterio 6) · texto de la spec |
-| «El archivo de la foto está dañado» | App | Tercer fallo de huella | 102 (criterio 10) · texto de la spec |
+| «Hay {N} registros de {nombre} sin enviar; se enviarán cuando esa persona vuelva a iniciar sesión» | App («Pendientes de envío») | Hay registros sin enviar de otro usuario en el celular | 101 (criterio 15) · texto de la spec |
+| «1 registro» en lugar de «{N} registros» en los dos avisos anteriores («Tienes 1 registro sin enviar…», «Hay 1 registro de {nombre} sin enviar…») | App | Hay un solo registro (forma en singular) | 101 · decisión del equipo |
+| «Subiendo foto…» | App («Pendientes de envío») | El archivo de la foto se está subiendo | 102 (criterio 7) · texto de la spec |
+| «Tienes {N} fotos sin enviar; busca señal para enviarlas» | App (foto de avance) | Hay más de 100 fotos sin enviar en el celular (no impide tomar más) | 102 (criterio 3) · texto de la spec |
 | «Ya registraste el diario del dd/mm» | App (diario) | Ya hay entrada ese día en el celular o el paquete | 103 (criterio 4) · texto de la spec |
 | «Sin enviar» · «Rechazada» | App (diario) | Estado de la entrada | 103 (criterio 7) · texto de la spec |
 | «Diario · 15/11 · Lluvia leve» (formato: «Diario · dd/mm · {clima}») | App («Pendientes de envío») | Descripción de una entrada | 103 (diseño) · texto de la spec |
+| «Aún no hay entradas del diario en los últimos 30 días.» | App (diario) | La obra no tiene entradas en el paquete ni en la cola | 103 · decisión del equipo |
+| «Elige el clima.» | App (diario, formulario) | Se guarda sin elegir el clima | 103 · decisión del equipo |
+| «Elige la fecha.» | App (diario, formulario) | Se guarda sin elegir la fecha | 103 · decisión del equipo |
+| «Escribe al menos 10 caracteres.» · «Escribe hasta 2000 caracteres.» | App (diario, formulario) | El texto tiene menos de 10 o más de 2000 caracteres (sin contar los espacios de los costados) | 103 · decisión del equipo |
+| «Corrigiendo la entrada del dd/mm» | App (diario, formulario) | Se está corrigiendo una entrada sin enviar | 103 · decisión del equipo |
+| «Esta entrada ya se está enviando y no se puede corregir.» | App (diario) | Se pulsa «Corregir» en una entrada que pasó a `ENVIANDO` | 103 · decisión del equipo |
 
 ### ERP sin conexión (104)
 
@@ -274,17 +326,21 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «La planilla cambió en el servidor» · «Aplicar mi borrador sobre la última versión» · «Descartar mi borrador» | ERP · Obras | `VERSION_DESACTUALIZADA` al enviar el borrador | 104 (criterio 14) · texto de la spec |
 | «La planilla ya no se puede editar (estado {estado})» | ERP · Obras | `PLANILLA_NO_EDITABLE` al enviar el borrador | 104 (criterio 15) · texto de la spec |
 | «Tienes {N} borradores de planilla sin enviar. Si cierras sesión se borrarán de este equipo» | ERP | Cerrar sesión con borradores | 104 (diseño) · texto de la spec |
+| «Tienes 1 borrador de planilla sin enviar. Si cierras sesión se borrará de este equipo» (diálogo con título «Cerrar sesión») | ERP | Cerrar sesión con un solo borrador | 104 · singular del texto anterior (decisión del equipo) |
 
 ### IA en el dispositivo y en el navegador (301, 302, 303)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Analizando…» | App (foto) | Mientras corre el modelo | 301 (diseño) · texto de la spec |
-| «Personas: {N} · Sin casco: {M} · Sin chaleco: {K}» | App (foto) | Terminó el análisis | 301 (criterio 1) · texto de la spec |
+| «Personas: {N} · Sin casco: {M} · Sin chaleco: {K}» | App (foto y control de seguridad) | Terminó el análisis | 301 (criterio 1) · texto de la spec |
 | «Hay personas sin equipo de protección. Recuerda el uso de casco y chaleco.» | App (foto) | Al menos una persona sin casco o chaleco | 301 (criterio 2) · texto de la spec |
 | «No se detectaron personas» | App (foto) | Ninguna persona | 301 (criterio 4) · texto de la spec |
 | «No se pudo analizar la foto» | App (foto) | Falla o tarda más de 5 s | 301 (criterio 5) · texto de la spec |
-| «{N} sin casco · {M} sin chaleco» · «Sin alertas de EPP» | ERP · Obras (fotos) | Foto analizada | 301 (criterio 9) · texto de la spec |
+| Recuadro «Persona sin equipo de protección» (texto accesible) | App (foto y control de seguridad) | Persona señalada en la vista previa | 301 (criterio 2) · decisión de la implementación |
+| «Control de seguridad» (botón y título) · «Otro control» | App (detalle de la obra, control de seguridad) | Maestro asignado | 301 (criterios 10 y 11) · texto de la spec |
+| «La foto se analiza en el celular y no se envía ni se guarda.» | App (control de seguridad) | Al abrir la pantalla | 301 (criterio 11) · decisión de la implementación |
+| «{N} sin casco · {M} sin chaleco» · «Sin alertas de EPP» | ERP · Obras (fotos) | Foto analizada | 301 (criterio 12) · texto de la spec |
 | «Detectado en el celular con el modelo {versionModelo}» | ERP · Obras (ayuda al pasar el cursor) | Foto analizada | 301 (diseño) · texto de la spec |
 | «Grabando…» (con el tiempo) · «Transcribiendo…» | ERP · Supervisión (dictado) | Grabación y transcripción | 302 (criterios 1 y 2) · texto de la spec |
 | «Preparando el dictado: {porcentaje} %» | ERP · Supervisión | Primera descarga del modelo | 302 (criterio 5) · texto de la spec |
@@ -292,6 +348,8 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | «El dictado no está disponible en este navegador; puedes escribir el texto.» (ayuda del micrófono desactivado) | ERP · Supervisión | Navegador sin micrófono, WebAssembly o Web Workers | 302 (criterio 8) · catálogo |
 | «No se pudo descargar el modelo de dictado; puedes escribir el texto.» (ayuda del micrófono desactivado) | ERP · Supervisión | El modelo no se puede descargar | 302 (criterio 8) · catálogo |
 | «No se entendió el audio, intenta de nuevo» | ERP · Supervisión | Grabación < 1 s o sin texto | 302 (criterio 9) · texto de la spec |
+| «Dictar con la voz» · «Detener la grabación» (ayuda del botón del micrófono) | ERP · Supervisión (campo de dictado) | Siempre, según si está grabando | 302 (diseño) · catálogo |
+| «Texto copiado» · «No se pudo copiar el texto» | ERP · Supervisión (dictado) | Tras «Copiar texto» | 302 (criterio 11) · catálogo |
 | «Preparando fotos para el cliente: {X} de {Y}» | ERP · Obras (presentar) | Preparación de versiones para el cliente | 303 (criterio 1) · texto de la spec |
 | «No se pudo cargar el detector de rostros. Reintenta o quita las fotos de la planilla.» | ERP · Obras | El modelo de rostros no carga | 303 (criterio 8) · catálogo |
 | «No se pudo preparar esta foto para el cliente. Reintenta o quítala de la planilla.» | ERP · Obras (en la foto) | Una foto no se puede procesar | 303 (criterio 8) · catálogo |
@@ -301,46 +359,82 @@ Textos exactos de los requisitos y diseños (marcadores entre llaves donde la sp
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Riesgo alto (modelo)» | ERP · Supervisión (tarjeta) | Siempre | 402 (criterio 6) · texto de la spec |
-| «Riesgo de retraso (modelo): {NIVEL} · {porcentaje} %» · «Sin datos suficientes» | ERP · Obras (encabezado) | Con o sin predicción | 402 (criterios 2 y 10) · texto de la spec |
+| «Riesgo de retraso (modelo): {NIVEL} · {porcentaje} %» · «Sin datos suficientes» | ERP · Obras (encabezado) | Con o sin predicción; los factores van en un *tooltip* | 402 (criterios 2 y 10) · texto de la spec |
+| Columna «Riesgo (modelo)» con chip «Bajo», «Medio», «Alto» o «Sin datos» y el porcentaje | ERP · Supervisión (tablero y «Riesgo de retraso») | Siempre (ordenable) | 402 (diseño) · catálogo |
+| «Riesgo de retraso» (menú interno) · «Riesgo de retraso por obra» (lista) · «Sobre el modelo» (panel) | ERP · Supervisión | Pantalla `/supervision/riesgo` | 402 (diseño) · catálogo |
+| «Datos sintéticos · {N} filas de entrenamiento» (o «Datos reales · …») · «Medio desde {X} % · Alto desde {Y} %» | ERP · Supervisión («Sobre el modelo») | Siempre | 402 (criterio 9) · catálogo |
+| «Estas métricas muestran que el modelo aprende las relaciones simuladas; no prueban que acierte con obras reales.» | ERP · Supervisión («Sobre el modelo») | Siempre | 402 (diseño, «Métricas mínimas») · texto de la spec |
 | «Datos de IA no disponibles» (con «—») | ERP · Supervisión y Obras | IA no responde | 402 (criterio 12), 403 (criterio 12) · texto de la spec |
-| «Modelo entrenado con datos sintéticos; es una estimación de apoyo, no reemplaza la revisión de la obra» | ERP · Supervisión («Riesgo de retraso») | Siempre | 402 (criterio 9) · texto de la spec |
-| «Consumos atípicos por revisar» | ERP · Supervisión (tarjeta) | Siempre | 403 (criterio 10) · texto de la spec |
+| «Modelo entrenado con datos sintéticos; es una estimación de apoyo, no reemplaza la revisión de la obra» (con un modelo reentrenado con datos reales: «Modelo entrenado con datos reales; …») | ERP · Supervisión («Riesgo de retraso») | Siempre; el texto depende de `datos` (`SINTETICOS` o `REALES`) | 402 (criterio 9) · texto de la spec |
+| «Consumos atípicos por revisar» (tarjeta) · columna «Atípicos» (pendientes por obra) | ERP · Supervisión (tablero) | Siempre | 403 (criterio 10) · texto de la spec |
 | «Detectado por comparación con el consumo habitual; es distinto de "excedido sobre lo previsto"» | ERP · Obras (pestaña «Material») | Ayuda de la sección | 403 (diseño) · texto de la spec |
+| «Consumos atípicos» (sección, con filtro «Estado», por defecto «Pendiente») · «No hay consumos atípicos con este estado.» | ERP · Obras (pestaña «Material») | Siempre · sin consumos con ese estado | 403 (diseño) · catálogo |
+| «Es normal» · «Confirmar problema» (diálogo con comentario: obligatorio al confirmar, contador de 5 a 300) | ERP · Obras (pestaña «Material») | Solo `residente` asignado y `admin`, y solo en `PENDIENTE` | 403 (criterios 7 y 9; diseño) · texto de la spec |
+| Motivos de un consumo atípico (los arma IA, de 1 a 3): «La cantidad es X veces la habitual de este material en la obra» · «… en todas las obras» · «El consumo del mes ya es X veces el promedio mensual» · «Se registró fuera del horario habitual (HH:MM)» · «Se registró en domingo» · «Salió más material del que había en stock» · «Hubo X salidas de este material en la última hora» · «Hubo X salidas de este material el mismo día» · «Salida muy seguida de la anterior (X minutos)» · «Combinación poco habitual de cantidad, horario y frecuencia» | ERP · Obras (columna «Motivos») | Cada consumo atípico | 403 (diseño, «Motivos») · texto de la spec |
 | «En curso…» | ERP · Supervisión (agentes) | Ejecución en curso (consulta cada 3 s, máx. 5 min) | 502 (criterio 2) · texto de la spec |
 | «No disponible por el momento» | ERP (secciones de agentes) | IA no responde | 502 (criterio 21) · texto de la spec |
+| «Agentes» (menú interno y título) · «Revisan cada día las obras, los materiales y los cobros, y sugieren acciones. Ninguna sugerencia se ejecuta sola: aprobarla solo registra tu decisión.» | ERP · Supervisión (`/supervision/agentes`) | Siempre | 502 (criterio 16) · catálogo |
+| Nombres de los agentes: «Seguimiento de obras» · «Control de materiales» · «Control de cobros» | ERP · Supervisión, Obras y Materiales | Siempre | 502 (diseño) · texto de la spec |
+| Tarjeta del agente: «Última ejecución» · «{dd/mm/aaaa hh:mm} · {Programada\|Manual}» (y « · {N} hallazgos» si terminó) · «Sin ejecuciones todavía» · «{N} sugerencias pendientes» · «Ejecutar ahora» (solo `admin` y `gerente`) · «Actualizar» (tras 5 minutos en curso sin resultado) | ERP · Supervisión (agentes) | Siempre | 502 (criterios 2 y 16) · catálogo |
+| Estado de la ejecución: «En curso…» · «Terminada» · «Fallida» · origen «Programada» · «Manual» | ERP · Supervisión (agentes) | Siempre | 502 (diseño) · catálogo |
+| Severidad del hallazgo: «Alta» · «Media» · «Baja» | ERP · Supervisión, Obras y Materiales | Cada hallazgo | 502 (diseño) · catálogo |
+| Tipos de hallazgo: «Atraso» · «Riesgo de atraso» · «Sin registro diario» · «Planilla pendiente» · «Stock bajo» · «Stock justo» · «Consumo excedido» · «Salida sin stock» · «Consumo atípico» · «Cobro vencido» · «Cobro por vencer» · «Planilla sin respuesta» · «Planilla observada sin corregir» | ERP · Supervisión, Obras y Materiales | Cada hallazgo | 502 (diseño) · catálogo |
+| Hallazgo: «Causa probable: {causa}» · «{herramienta}: {dato}» (evidencia) | ERP · Supervisión, Obras y Materiales | Cada hallazgo | 502 (diseño) · catálogo |
+| «Sugerencias» (con filtros «Agente» y «Estado»: «Pendientes» por defecto, «Aprobadas», «Rechazadas», «Todas») · «No hay sugerencias con estos filtros.» | ERP · Supervisión (agentes) | Siempre · sin sugerencias con esos filtros | 502 (criterio 16) · catálogo |
+| Sugerencia: «{obra} · {agente} · {dd/mm/aaaa hh:mm}» · «Hallazgo: {situación}» · «{Aprobada\|Rechazada} por {nombre} el {dd/mm/aaaa hh:mm} · {Comentario\|Motivo}: {texto}» · botones «Aprobar» y «Rechazar» | ERP · Supervisión, Obras y Materiales | Cada sugerencia (botones solo si está `PENDIENTE`) | 502 (criterios 12 y 13) · catálogo |
+| «Aprobar sugerencia» · «Rechazar sugerencia» (diálogo) · «Comentario (opcional)» · «Motivo» · «Cancelar» | ERP · Supervisión, Obras y Materiales | Al aprobar o rechazar | 502 (criterios 12 y 13) · catálogo |
+| «Aprobar solo registra tu decisión: no se crea ni se envía nada en otra área.» | ERP · Supervisión, Obras y Materiales (ayuda del diálogo «Aprobar sugerencia»); en mf-obras también bajo «Sugerencias pendientes» de la pestaña «Agentes» | Al aprobar (y siempre en la pestaña de mf-obras) | 502 (criterio 12; diseño: aprobar no crea notificaciones ni llama a otros servicios) · catálogo |
+| «Escribe por qué no corresponde esta sugerencia.» | ERP · Supervisión, Obras y Materiales (ayuda del diálogo «Rechazar sugerencia») | Al rechazar | 502 (criterio 13) · catálogo |
+| Contador «{n} / 300» (aprobar) o «{n} / 500 (mínimo 10)» (rechazar); en mf-obras «{n} / 300» o «{n} / 500» con la ayuda «Opcional, hasta 300 caracteres» u «Obligatorio, de 10 a 500 caracteres» | ERP · Supervisión, Obras y Materiales (diálogo) | Mientras se escribe | 502 (criterio 13) · catálogo |
+| «El comentario puede tener hasta 300 caracteres.» · «El motivo debe tener entre 10 y 500 caracteres.» (reglas locales; el motivo usa el texto de `MOTIVO_INVALIDO`, también si está vacío) | ERP · Supervisión, Obras y Materiales (diálogos de la sugerencia, junto al campo) | Comentario o motivo fuera de rango | 502 (criterios 12 y 13) · catálogo |
+| «Historial de ejecuciones» (filtros «Agente de la ejecución» y «Estado de la ejecución»: «Todos», «En curso», «Terminadas», «Fallidas») · «No hay ejecuciones con estos filtros.» | ERP · Supervisión (solo `admin` y `gerente`) | Siempre · sin ejecuciones con esos filtros | 502 (diseño) · catálogo |
+| Detalle de la ejecución: «{agente} · {dd/mm/aaaa hh:mm}» · «Modelo de lenguaje» ({Ollama\|Anthropic} · {modelo}) · «Resumen» · «Pasos» · «Hallazgos» · «Sin pasos registrados.» · «Sin hallazgos.» | ERP · Supervisión (solo `admin` y `gerente`) | Detalle de una ejecución | 502 (diseño) · catálogo |
+| Pestaña «Agentes» de la obra: «Cargando agentes…» · «Hallazgos» con la ayuda «Los de la última ejecución de cada agente.» · «No hay hallazgos vigentes en esta obra.» · «Sugerencias pendientes» · «No hay sugerencias pendientes en esta obra.» | ERP · Obras (detalle de la obra) | Siempre · sin hallazgos · sin sugerencias pendientes | 502 (criterios 17, 19 y 20; diseño) · catálogo |
+| Panel «Control de materiales»: «Hallazgos» · «No hay hallazgos vigentes en esta obra.» · «Sugerencias pendientes» · «No hay sugerencias pendientes en esta obra.» | ERP · Materiales (stock de la obra) | Siempre · sin hallazgos · sin sugerencias pendientes | 502 (diseño, mf-materiales) · catálogo |
 
-### Reportes por voz (503)
+### Reportes (503)
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
 | «Preparando el reporte…» | ERP · Supervisión | Mientras se consulta (hasta 60 s) | 503 (criterio 11) · texto de la spec |
 | «Se muestran las primeras 100 filas» | ERP · Supervisión | Resultado truncado | 503 (criterio 8) · texto de la spec |
 | «Nombres de materiales no disponibles» | ERP · Supervisión (avisos) | Materiales no responde y no se filtró por material | 503 (criterio 8) · texto de la spec |
-| «Se encontraron {N} filas para el reporte «{título}» con los filtros: {filtros}.» | ERP · Supervisión | La redacción con el modelo falla o tarda | 503 (diseño) · texto de la spec |
+| «Nombres de clientes no disponibles» | ERP · Supervisión (avisos) | El gateway no pudo armar el directorio de clientes y no se filtró por cliente | 503 (criterio 8) · texto de la spec |
+| «Las planillas sin periodo no se incluyen al filtrar por periodo» | ERP · Supervisión (avisos) | Conjunto Planillas con filtro de periodo y estado que incluye observadas | 503 (diseño) · catálogo |
+| «Se encontraron {N} filas para «{título}» con los filtros: {filtros}.» | ERP · Supervisión | El resumen con el modelo falla o tarda | 503 (criterio 10) · texto de la spec |
+| «Reportes comunes» (botones de los atajos) · «Exportar a Excel» · «Exportar a CSV» | ERP · Supervisión | Siempre | 503 (criterios 4, 12 y 13) · texto de la spec |
+| «Reportes» (menú interno, solo `admin` y `gerente`, y título) · «Por ejemplo: ¿Cuánto cemento se usó en Las Palmas este trimestre?» (campo del pedido) · contador «{n} / 500» · «Consultar» | ERP · Supervisión (`/supervision/reportes`) | Siempre | 503 (criterios 1 a 3) · catálogo |
+| «Puedes consultar» (conjuntos con «{título} · {descripción}» y sus ejemplos) · «Elige un ejemplo para cambiar tu pedido o usa uno de los reportes comunes.» | ERP · Supervisión (reportes) | Con «No encontré un reporte para tu pedido» (`INTENCION_NO_RECONOCIDA` o `RECETA_INVALIDA`) | 503 (criterios 6 y 7) · catálogo |
+| «Mientras tanto puedes usar los reportes comunes, que no necesitan interpretar el pedido.» | ERP · Supervisión (reportes) | Con `LLM_NO_DISPONIBLE` | 503 (diseño) · catálogo |
+| Resultado: «1 fila» · «{N} filas» · «Pedido: {pedido}» · etiquetas «{nombre}: {valor}» de lo aplicado · «Sí» / «No» en las columnas de tipo booleano y «—» en los vacíos | ERP · Supervisión (reportes) | Cada resultado | 503 (criterio 8; diseño) · catálogo |
+| «Últimas consultas» · «{dd/mm/aaaa hh:mm} · {1 fila\|{N} filas\|Con error\|No reconocida}» · «Aún no hiciste consultas.» | ERP · Supervisión (reportes) | Siempre · sin consultas | 503 (criterio 16) · catálogo |
+| Excel: hojas «Datos» y «Consulta» (filas «Pedido», «Conjunto», «Aplicado», «Resumen», «Avisos», «Fecha», «Usuario»); archivo `reporte-{conjunto}-{AAAA-MM-DD-HHmm}.xlsx` (o `.csv`) | Archivo descargado desde ERP · Supervisión | Al exportar | 503 (criterios 12 y 13; diseño) · texto de la spec |
 
-### Notificaciones (010)
+### Avisos al celular y al cliente (010)
+
+Los envía n8n (sin bandeja ni historial). `{EMPRESA_NOMBRE}` = «Constructora Andina»; montos `Bs 330.149,10`.
 
 | Texto | Dónde | Cuándo | Origen |
 |---|---|---|---|
-| Número sobre la campana; «9+» si son más de 9; sin número si no hay sin leer | ERP, portal, app («Avisos») | Siempre | 010 (criterio 9) · texto de la spec |
-| «No tienes notificaciones» | Bandeja | Sin avisos | 010 (criterio 10) · texto de la spec |
-| «Ver más» · «Marcar todas como leídas» | Bandeja | Siempre | 010 (criterios 10 y 12) · texto de la spec |
-| «Activar avisos en este navegador» | Bandeja (ERP, portal) | Permiso del navegador sin decidir y Firebase configurado | 010 (criterio 17) · texto de la spec |
-| «Los avisos están bloqueados en este navegador» | Bandeja (ERP, portal) | Permiso bloqueado | 010 (criterio 18) · texto de la spec |
-| Mensaje breve con el título del aviso y «Ver» | ERP, portal, app | Llega un aviso con la aplicación abierta | 010 (criterio 19; diseño) · texto de la spec |
-| «Sin señal · no se pueden cargar los avisos» | App («Avisos») | Sin señal | 010 (diseño) · texto de la spec |
+| Pedido de permiso para mostrar notificaciones (diálogo de Android 13 o posterior); si se niega, la app sigue igual, sin avisos | App | Primera vez que el maestro o el almacenero entra con señal | 010 (criterio 7) · texto del sistema |
+| Mensaje breve (`Snackbar`) con el texto del aviso y «Ver» (abre el stock o el diario de la obra) | App | Llega un aviso con la app abierta (en lugar de la notificación del sistema) | 010 (criterio 9; diseño) · texto de la spec |
 
-Títulos y mensajes de los avisos (los redacta el servicio Notificaciones; ejemplos con valores de la spec):
+Avisos *push* (Firebase Cloud Messaging, al tema de la obra; al tocarlos, la app abre la pantalla indicada):
 
-| Aviso | Título | Mensaje | Origen |
+| Aviso | A quién | Título | Cuerpo | Abre | Origen |
+|---|---|---|---|---|---|
+| Stock bajo | Almacenero de la obra (`obra-{obraId}-almacenero`) | «Stock bajo: {material}» | «{obra}: quedan {cantidad} {unidadPlural} (mínimo {minimo})» | Stock de la obra | 010 (criterio 1; diseño) · texto de la spec |
+| Diario pendiente (18:00 de La Paz, obra `EN_EJECUCION` sin diario de hoy) | Maestro de la obra (`obra-{obraId}-maestro`) | «Diario pendiente: {obra}» | «Todavía no registraste el diario de hoy. Si ya lo registraste sin señal, se enviará al volver la señal.» | Diario de la obra | 010 (criterios 4 y 6; diseño) · texto de la spec |
+
+Correo (solo al cliente, sin copia a cobranzas; Mailpit en desarrollo):
+
+| Correo | Asunto | Cuerpo | Origen |
 |---|---|---|---|
-| Planilla presentada | «Planilla para revisar» (si se corrigió: «Planilla corregida para revisar») | «Se presentó la planilla N.º {numero} ({periodo}) de {obra} por Bs {neto}. Revísala para aprobarla u observarla.» (corregida: «Se corrigió y volvió a presentar la planilla N.º {numero} …») | 010 (diseño) · texto de la spec |
-| Planilla aprobada | «Planilla aprobada» | «Se aprobó la planilla N.º {numero} ({periodo}) de {obra}. Neto: Bs {neto}.» | 010 (diseño) · texto de la spec |
-| Planilla observada por el cliente | «Planilla observada» | «El cliente observó la planilla N.º {numero} ({periodo}) de {obra}: «{motivo}».» | 010 (diseño) · texto de la spec |
-| Planilla observada por la saga | «No se pudo aprobar la planilla» | «La aprobación de la planilla N.º {numero} ({periodo}) de {obra} falló y quedó observada: {motivo}.» (motivos en «Motivos de observación que pone la saga») | 010 (diseño) · texto de la spec |
-| Stock bajo | «Stock bajo: {material}» (sin datos del material: «Stock bajo») | «En {obra} quedan {cantidad} {unidadPlural} de {material} (mínimo {minimo}).» (sin datos: «En {obra} un material quedó por debajo del mínimo») | 010 (diseño) · texto de la spec |
-| Cobro vencido | «Cobro vencido {numero}» | «El cobro {numero} de {obra} por Bs {monto} venció el {fecha}.» | 010 (diseño) · texto de la spec |
-| Contrato rechazado | «Contrato rechazado» | «Finanzas rechazó el contrato de {obra}: {motivo}.» (motivos en «Motivos de rechazo del contrato») | 010 (diseño) · texto de la spec |
+| Planilla para revisar (al cliente de la obra, al presentarse la planilla) | «Planilla para revisar: N.º {numero} · {obra} · {periodo}» (si se vuelve a presentar después de una observación: «Planilla corregida para revisar: N.º {numero} · {obra} · {periodo}») | «Estimado/a {nombre}: le presentamos la planilla N.º {numero} de {periodo} de la obra {obra}, con un neto de Bs {neto}. Puede revisarla y aprobarla u observarla en el portal: {PORTAL_URL}/planillas/{planillaId}. {EMPRESA_NOMBRE}» | 010 (criterio 11; diseño) · texto de la spec |
+
+En los correos de n8n (201 y 010), `{periodo}` va con el mes en letras y el año («octubre 2026»), como en la nota de cobro.
+
+Si el cliente no tiene correo, la ejecución queda fallida en n8n con «El cliente no tiene correo registrado» (como en la 201, arriba).
 
 ## Inconsistencias encontradas
 
@@ -350,13 +444,15 @@ Las que se encontraron al armar este catálogo quedaron resueltas en las specs, 
 2. **`MOTIVO_INVALIDO` tenía dos rangos.** Ahora es de 10 a 500 caracteres en todas partes (502: requisitos y diseño).
 3. **`COMENTARIO_INVALIDO` tenía dos reglas.** Se mantienen (son casos distintos), pero la regla concreta viaja en `errores[].mensaje` (403 y 502, convenciones).
 4. **El reporte por voz tenía dos textos para `TIEMPO_AGOTADO`.** Manda el requisito: «El reporte tardó demasiado; intenta de nuevo» (503, diseño corregido).
-5. **`ORDEN_COMPRA_NO_PENDIENTE` tenía dos textos.** Manda el requisito (201, diseño corregido).
+5. **`ORDEN_COMPRA_NO_PENDIENTE` tenía dos textos.** Manda el requisito (201, diseño corregido). Ya no aplica: la 201 dejó de ser la compra automática (01/11/2026) y el código se quitó con los demás de órdenes de compra.
 6. **La app mostraba el `detail` ante un código desconocido.** Ahora muestra el genérico del estado HTTP (101, diseño).
 7. **Los errores genéricos no tenían código y faltaba el motivo de `ContratoRechazado`.** Códigos genéricos en `convenciones.md` (`DATOS_INVALIDOS`, `NO_AUTENTICADO`, `SIN_PERMISO`, `ARCHIVO_DEMASIADO_GRANDE`, `DEMASIADAS_PETICIONES`, `ERROR_INTERNO`, `SERVICIO_NO_DISPONIBLE`); motivos del contrato en la 002 (diseño).
 8. **Faltaban los textos de `CierreFallido` y `CobroFallido`, y el portal dejaba de consultar a los 90 s.** Textos en la 008 (diseño); el portal consulta hasta 4 minutos y a los 90 s muestra el aviso de espera (008: requisitos, diseño y tareas del portal).
 9. **La detección de EPP no viajaba por Sincronización.** La 301 agrega, en «Cambios a contratos y datos», `deteccion` a los `datos` de `FOTO_AVANCE` de la 102.
-10. **No estaba definido qué hacer con `SUBIDA_DISTINTA`.** La app descarta la subida y empieza otra con un `idSubida` nuevo y el mismo `fotoId` (102: diseño y tareas de la app).
+10. **No estaba definido qué hacer con `SUBIDA_DISTINTA`.** La app descarta la subida y empieza otra con un `idSubida` nuevo y el mismo `fotoId` (102: diseño y tareas de la app). Ya no aplica: la 102 se simplificó el 30/10/2026 y no tiene subida por partes.
 11. **El tablero podía pasar el límite de 100 obras de IA.** El gateway parte las llamadas en lotes de 100 (402 y 403: diseño y tareas del gateway).
 12. **Faltaban textos de interfaz y `PERIODO_INVALIDO` cubría dos causas.** Los textos están en este catálogo; el código se separó en `PERIODO_NO_POSTERIOR` y `PERIODO_FUTURO` (007: requisitos y diseño; contratos de Obras).
+
+13. **Capa 5 (31/10/2026): `FILTROS_INVALIDOS` ya no alcanzaba.** Con el constructor de reportes, la receta puede fallar en columnas, agrupación, métricas u orden, no solo en filtros: el código pasó a `RECETA_INVALIDA` (503, con `errores[]`). Los criterios de la 503 se renumeraron: el largo del texto es el criterio 3 y el límite por minuto, el 17.
 
 Resuelto: una `deteccion` inválida ya no rechaza la foto; se guarda sin detección con el aviso `DETECCION_DESCARTADA` (301).

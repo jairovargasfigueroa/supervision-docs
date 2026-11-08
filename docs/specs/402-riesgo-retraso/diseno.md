@@ -5,6 +5,7 @@
 - **Etiqueta** (decisión del equipo): una obra «se retrasa» si termina después de `plazo_dias × 1,10` (más de 10 % de retraso sobre el plazo).
 - **Momento de la predicción:** cualquier día de la obra entre 5 % y 100 % de plazo transcurrido; el modelo responde «¿con lo que se sabe hoy, qué probabilidad hay de que se retrase?».
 - **Modelo:** clasificador binario `xgboost.XGBClassifier` (XGBoost 3), salida = probabilidad de la clase «se retrasa».
+- **Datos:** se entrena con datos sintéticos (la constructora no tiene historial de obras terminadas) y se puede reentrenar con datos reales (sección «Entrenamiento»). Es ML clásico en CPU: no usa GPU ni modelo de lenguaje.
 
 ## Variables (las mismas para entrenar y predecir)
 
@@ -20,7 +21,7 @@ Se calculan en `src/ia/riesgo/dominio/variables.py` con una función pura `calcu
 | `relacion_ritmo` | `min(ritmo_reciente / ritmo_requerido, 3)` (3 si `ritmo_requerido` = 0) | «El ritmo de avance de los últimos meses es menor al necesario para terminar a tiempo» |
 | `meses_sin_planilla` | meses entre el último periodo aprobado (o `fecha_inicio`) y el mes actual | «Hace X meses que no se aprueba una planilla» |
 | `planillas_observadas` | Σ `rpt_planilla.veces_observada` de la obra | «Se observaron X planillas» |
-| `atipicos_90d` | documentos de `consumo_atipico` (403) de la obra detectados en los últimos 90 días con estado distinto de `NORMAL` (0 si la 403 no está hecha) | «Hubo X consumos de material atípicos en los últimos 90 días» |
+| `atipicos_90d` | documentos de `consumo_atipico` (403) de la obra detectados en los últimos 90 días con estado distinto de `NORMAL` (0 mientras la 403 no esté implementada; el generador sintético sí la simula, así el modelo ya la conoce cuando la 403 empiece a llenarla) | «Hubo X consumos de material atípicos en los últimos 90 días» |
 | `supera_stock_90d` | salidas con `supera_stock` en `rpt_movimiento` en los últimos 90 días | «Hubo X salidas de material sin stock suficiente» |
 | `plazo_dias` | `rpt_obra_resumen.plazo_dias` | «El plazo de la obra es largo (X días)» |
 | `log_monto` | `ln(monto_contrato)` | «La obra es de monto alto» |
@@ -46,15 +47,19 @@ La constructora no tiene historial de obras terminadas, así que se simulan obra
 ## Entrenamiento (`ml/riesgo/entrenar.py`)
 
 - División por **obra** (`GroupShuffleSplit` de scikit-learn, 80 % / 20 %): los 3 cortes de una misma obra quedan del mismo lado.
-- Búsqueda pequeña de hiperparámetros con validación cruzada por grupos (5 pliegues) sobre `max_depth ∈ {3, 4, 5}`, `learning_rate ∈ {0,05; 0,1}`, `n_estimators` hasta 600 con parada temprana (métrica `logloss`); `subsample = 0,8`, `colsample_bytree = 0,8`.
+- Búsqueda pequeña de hiperparámetros con validación cruzada por grupos (5 pliegues) sobre `max_depth ∈ {3, 4, 5}`, `learning_rate ∈ {0,05; 0,1}`, `n_estimators` hasta 600 con parada temprana (métrica `logloss`); `subsample = 0,8`, `colsample_bytree = 0,8`; `tree_method = "hist"` en CPU.
+- **Tiempo y recursos:** ≈ 12 000 filas × 12 variables y 30 ajustes pequeños: generar y entrenar tarda segundos (objetivo: menos de 1 minuto entre los dos) en la computadora del equipo, **sin GPU** ni servicios en la nube. Si pasa del minuto, se reduce la búsqueda (no se agrega hardware).
 - **Línea base:** la regla actual de Obras usando `brecha` como puntaje (AUC) y `brecha > 10` como decisión (sensibilidad y precisión).
 - **Explicación:** factores con las contribuciones por variable que da XGBoost (`predict(..., pred_contribs=True)`), sin librerías extra. Se muestran las 3 variables con mayor contribución positiva y valor > 0,05 en la escala del modelo.
 - Comandos:
 
 ```sh
 uv run python -m ml.riesgo.generar --obras 4000 --semilla 2026
-uv run python -m ml.riesgo.entrenar --version rr-1.0.0
+uv run python -m ml.riesgo.entrenar --fuente sintetica --version rr-1.0.0
+uv run python -m ml.riesgo.entrenar --fuente real --archivo <ruta.csv> --version rr-1.1.0   # reentrenar con datos reales
 ```
+
+- **Reentrenar con datos reales** (criterio 17): `--fuente real` lee un CSV con **las mismas columnas** que `riesgo_sintetico.csv`: `obra_id`, `fecha_corte`, las 12 variables de la tabla y `se_retrasa` (0 o 1, con la misma etiqueta: terminó después de `plazo_dias × 1,10`). Lo arma el equipo con obras terminadas de la constructora (fuera de la plataforma, porque no hay `CONCLUIDA`), calculando las variables con `calcular_variables` en cada corte; el formato y un ejemplo quedan en `ml/riesgo/README.md`. Se exige un mínimo de 50 obras distintas (decisión del equipo) para que la división por obra tenga sentido; con menos, el comando termina con error. Mismas métricas mínimas; la versión nueva se publica solo si las cumple. `metricas.json` guarda `datos: "REALES"` y las filas usadas.
 
 - Artefactos versionados en el repositorio (decisión del equipo; pesan menos de 1 MB) en `modelos/riesgo_retraso/rr-1.0.0/`:
   - `modelo.ubj` (formato nativo de XGBoost; no se usa `pickle`);
@@ -82,7 +87,7 @@ Advertencia que se repite en la pantalla y en el documento: estas métricas mues
 ## Cálculo en el servicio (`ia-worker`)
 
 - Al iniciar, `riesgo/infraestructura/modelo_xgboost.py` carga la versión de `actual.txt` (o la de `IA_MODELO_RIESGO_VERSION` si está definida). Si no hay modelo, las predicciones quedan `SIN_DATOS` y se registra el error.
-- **Disparadores** (criterio 4): después de aplicar `PlanillaAprobada`, `PlanillaObservada` o `ContratoRegistrado` de una obra, y después de registrar un consumo atípico (403); y la tarea diaria de la 01:00 (La Paz) para todas las obras `EN_EJECUCION`.
+- **Disparadores** (criterio 4): después de aplicar `PlanillaAprobada`, `PlanillaObservada` o `ContratoRegistrado` de una obra; después de registrar un consumo atípico (lo agrega la 403, si se implementa); al terminar la carga inicial de la 401 (todas las obras, motivo `CARGA_INICIAL`; lo llama el mismo comando `ia-carga-inicial`); y la tarea diaria de la 01:00 (La Paz) para todas las obras `EN_EJECUCION`.
 - La predicción se calcula **después** de confirmar la transacción del evento (necesita los datos ya actualizados). Si el cálculo falla, se registra el error y lo corrige la siguiente ejecución diaria; el evento no se reintenta por esto.
 - Reglas de `SIN_DATOS`: obra `SIN_CONTRATO` o `plazo_pct < 5`.
 - Nivel: `BAJO` < 0,30 ≤ `MEDIO` < 0,60 ≤ `ALTO`.
@@ -93,14 +98,14 @@ Advertencia que se repite en la pantalla y en el documento: estas métricas mues
 | Campo | Tipo | Notas |
 |---|---|---|
 | _id | ObjectId | |
-| clave | string | único: `{obraId}:{eventoId}` o `{obraId}:diario:{AAAA-MM-DD}` (idempotencia) |
+| clave | string | único: `{obraId}:{eventoId}`, `{obraId}:diario:{AAAA-MM-DD}` o `{obraId}:carga:{cargaId}` (idempotencia) |
 | obra_id | string | índice (`obra_id`, `calculada_en` descendente) |
 | riesgo_retraso | double | probabilidad 0 a 1; null si `SIN_DATOS` |
 | nivel | string | `BAJO`, `MEDIO`, `ALTO`, `SIN_DATOS` |
 | factores | arreglo de `{ variable, descripcion, peso }` | hasta 3 |
 | variables | objeto | valores usados (para auditar) |
 | version_modelo | string | `rr-1.0.0` |
-| motivo | string | `PLANILLA_APROBADA`, `PLANILLA_OBSERVADA`, `CONTRATO_REGISTRADO`, `CONSUMO_ATIPICO`, `DIARIO` |
+| motivo | string | `PLANILLA_APROBADA`, `PLANILLA_OBSERVADA`, `CONTRATO_REGISTRADO`, `CONSUMO_ATIPICO` (403), `CARGA_INICIAL` (401), `DIARIO` |
 | calculada_en | date | |
 
 ## REST del servicio de IA
@@ -119,13 +124,14 @@ Errores: 400 DEMASIADAS_OBRAS (más de 100) · 401 · 403
 
 ### GET /obras/{obraId}/prediccion?historial=30 · 402
 Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente` (que pueda ver la obra)
-Devuelve: 200 { …mismo objeto…, "historial": [{ "probabilidad": 0.65, "calculadaEn": "…" }] }   (historial de 1 a 90, por defecto 30, del más antiguo al más reciente)
+Devuelve: 200 { …mismo objeto…, "historial": [{ "probabilidad": 0.65, "calculadaEn": "…" }] }   (historial de 1 a 90, por defecto 30, del más antiguo al más reciente; omite los cálculos `SIN_DATOS`)
+Obra visible sin predicción todavía: 200 con "nivel": "SIN_DATOS", "probabilidad": null, "factores": [], "versionModelo": null, "calculadaEn": null, "historial": []
 Errores: 404 OBRA_NO_ENCONTRADA (también si no la puede ver) · 401 · 403
 
 ### GET /modelos/riesgo-retraso · 402
 Servicio: IA · Quién llama: Gateway · Roles: `admin`, `gerente`, `residente`
 Devuelve: 200 {
-  "versionModelo": "rr-1.0.0", "entrenadoEn": "2026-11-20T15:00:00Z", "datos": "SINTETICOS", "filasEntrenamiento": 9600,
+  "versionModelo": "rr-1.0.0", "entrenadoEn": "2026-11-20T15:00:00Z", "datos": "SINTETICOS", "filasEntrenamiento": 9600,   ("datos": "SINTETICOS" o "REALES")
   "metricas": { "aucRoc": 0.86, "aucRocRegla": 0.74, "recallMedio": 0.83, "precisionAlto": 0.74, "brier": 0.14 },
   "umbrales": { "medio": 0.30, "alto": 0.60 },
   "variables": [{ "nombre": "relacion_ritmo", "descripcion": "Ritmo reciente / ritmo necesario" }]
@@ -174,7 +180,7 @@ extend type Query { modeloRiesgo: ModeloRiesgo }                  # IA · 402 ·
 - Pantalla `/supervision/riesgo` (enlace en el menú interno):
   - Lista con la misma consulta `tablero { obras { … riesgoRetraso { … } } }`, ordenada por probabilidad.
   - Panel de la obra elegida: factores y gráfico de línea del historial (`obra(id) { historialRiesgo }`) hecho con SVG propio (sin librería de gráficos; decisión del equipo).
-  - Panel «Sobre el modelo» con `modeloRiesgo` y el aviso del criterio 9.
+  - Panel «Sobre el modelo» con `modeloRiesgo` y el aviso del criterio 9 (el texto depende de `datos`: `SINTETICOS` o `REALES`).
 - Avisos de datos parciales como en la 009 («Datos de IA no disponibles»).
 
 ## mf-obras
@@ -185,13 +191,15 @@ extend type Query { modeloRiesgo: ModeloRiesgo }                  # IA · 402 ·
 
 - IA (dominio): `calcular_variables` con casos fijos (sin planillas, con 1 y con 3 planillas, plazo vencido, `ritmo_requerido` = 0); niveles en los bordes 0,30 y 0,60; `SIN_DATOS`.
 - IA (generador): misma semilla produce el mismo CSV (hash); proporción de retrasadas dentro del rango; las variables salen de `calcular_variables`.
-- IA (entrenamiento): con un conjunto pequeño, el script escribe los 4 artefactos; falla y no toca `actual.txt` si no se cumplen las métricas (umbral forzado en la prueba).
-- IA (servicio): carga del modelo y predicción de una fila conocida; idempotencia por `clave`; recalculo tras `PlanillaAprobada`; tarea diaria; endpoints con visibilidad (residente no ve obras ajenas), `DEMASIADAS_OBRAS`, `MODELO_NO_DISPONIBLE`.
+- IA (entrenamiento): con un conjunto pequeño, el script escribe los 4 artefactos; falla y no toca `actual.txt` si no se cumplen las métricas (umbral forzado en la prueba); `--fuente real` con un CSV de ejemplo escribe `datos: "REALES"` y rechaza un CSV con columnas que faltan o con menos de 50 obras. Medición documentada en el README: generar y entrenar `rr-1.0.0` tarda menos de un minuto en CPU.
+- IA (servicio): carga del modelo y predicción de una fila conocida; idempotencia por `clave`; recalculo tras `PlanillaAprobada`; predicciones de todas las obras al terminar la carga inicial (`CARGA_INICIAL`); tarea diaria; endpoints con visibilidad (residente no ve obras ajenas), obra visible sin predicción (`SIN_DATOS`), `DEMASIADAS_OBRAS`, `MODELO_NO_DISPONIBLE`.
 - Gateway: lote de predicciones partido en grupos de 100 (100 obras → 1 llamada; 101 → 2); obra sin predicción → `SIN_DATOS`; IA caída → campos `null` con `SERVICIO_NO_DISPONIBLE` y tablero parcial.
 - mf-supervision: chip por nivel, orden por riesgo, tarjeta, aviso de datos parciales, gráfico con 1 y con 30 puntos.
 - mf-obras: encabezado con nivel, sin datos y con IA caída.
 
 ## Cambios a contratos y datos
+
+Comprobado el 31/10/2026: no usa eventos ni endpoints de otros servicios; solo lee lo que deja la 401 (y la 403, si existe).
 
 ### `docs/contratos/rest.md` (sección «IA (puerto 8085)») y `services/ia/docs/contratos.md`
 

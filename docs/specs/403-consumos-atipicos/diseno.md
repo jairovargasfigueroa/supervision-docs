@@ -2,7 +2,8 @@
 
 ## Qué hace el modelo
 
-- **Modelo:** `sklearn.ensemble.IsolationForest` (scikit-learn 1). No necesita etiquetas: aprende cómo son las salidas habituales y aísla las que se separan del resto.
+- **Modelo:** `sklearn.ensemble.IsolationForest` (scikit-learn 1). No necesita etiquetas: aprende cómo son las salidas habituales y aísla las que se separan del resto. Es ML clásico en CPU: no usa GPU ni modelo de lenguaje.
+- **Datos:** se entrena con datos sintéticos y se reentrena con las salidas reales de `rpt_movimiento` cuando haya suficientes (sección «Entrenamiento»).
 - **Unidad evaluada:** cada `SALIDA` de material, en el momento en que llega `MovimientoRegistrado`, comparada con el historial de salidas **anteriores** a ella.
 - **Puntaje:** `puntaje = −score_samples(x)` (valor entre 0 y 1; más alto = más raro). **Atípica** si `predict(x) = −1`, con `contamination = 0,02` (decisión del equipo: se espera que alrededor del 2 % de las salidas merezca revisión).
 
@@ -22,6 +23,10 @@ Función pura `calcular_variables_salida(salida, historial)` en `src/ia/atipicos
 | `supera_stock` | 1 si la salida superó el stock (004) |
 | `log_horas_anterior` | `ln(1 + horas desde la salida anterior del mismo material en la obra)`, máximo 720 h |
 | `salidas_dia` | salidas del mismo material en la obra ese día (incluida esta) |
+| `salidas_1h` | salidas del mismo material en la obra en la última hora (incluida esta) |
+| `salidas_3h` | salidas del mismo material en la obra en las últimas 3 horas (incluida esta) |
+
+`salidas_1h` y `salidas_3h` se agregaron al implementar (decisión de Jairo, 31/10/2026): con solo las 11 primeras, las ráfagas no se distinguían de un día normal con varias salidas. En total son 13 variables.
 
 ### Motivos (texto para la persona)
 
@@ -35,6 +40,7 @@ El Isolation Forest no explica sus decisiones, así que los motivos salen de reg
 | `fuera_horario = 1` | «Se registró fuera del horario habitual (HH:MM)» |
 | `domingo = 1` | «Se registró en domingo» |
 | `supera_stock = 1` | «Salió más material del que había en stock» |
+| `salidas_1h ≥ p99` (y al menos 2) | «Hubo X salidas de este material en la última hora» |
 | `salidas_dia ≥ p99` | «Hubo X salidas de este material el mismo día» |
 | `log_horas_anterior ≤ p1` | «Salida muy seguida de la anterior (X minutos)» |
 | ninguna | «Combinación poco habitual de cantidad, horario y frecuencia» |
@@ -47,13 +53,14 @@ Parámetros en `ml/atipicos/parametros.yaml` (decisión del equipo), semilla 202
 2. Cada material tiene una cantidad típica por salida (mediana log-uniforme entre 2 y 200 unidades); cada obra la escala por un factor uniforme entre 0,5 y 2.
 3. Salidas normales: de 3 a 15 por semana por material activo; cantidad `LogNormal(ln(mediana_obra), 0,35)`; lunes a sábado; hora `Normal(10, 2,5)` recortada a 07:00–18:00; `supera_stock` con probabilidad 0,01.
 4. **Anomalías inyectadas** (2 % de las salidas), de cuatro tipos en partes iguales: cantidad × 4 a 10; horario entre 21:00 y 05:00 o en domingo; ráfaga de 3 a 6 salidas del mismo material en una hora; `supera_stock` con cantidad × 2 o más.
-5. Las salidas se recorren en orden de fecha y, para cada una, se calculan las variables con su historial anterior (≈ 50 000 salidas).
+5. Las salidas se recorren en orden de fecha y, para cada una, se calculan las variables con su historial anterior (≈ 50 000 salidas). Para que tarde segundos, el historial se mantiene por obra y material en memoria mientras se recorre (ventanas de las últimas 50 salidas), sin volver a filtrar toda la tabla en cada salida.
 6. Salida: `ml/atipicos/datos/salidas_sinteticas.csv` (no se versiona) con la marca `anomalia` (solo para evaluar; el modelo no la usa).
 
 ## Entrenamiento (`ml/atipicos/entrenar.py`)
 
 - División por obra 80 % / 20 %. El entrenamiento incluye las anomalías (como pasaría con datos reales, que nadie etiquetó).
-- `IsolationForest(n_estimators=200, contamination=0.02, random_state=2026)`.
+- `IsolationForest(n_estimators=200, contamination=0.02, max_samples=4096, random_state=2026)`. `max_samples = 4096` (decisión de Jairo, 31/10/2026; el de scikit-learn es 256): con muestras de 256, las salidas de noche, en domingo o en ráfaga casi nunca entraban en la muestra de cada árbol y el bosque no las aislaba (con las variables y la muestra originales la sensibilidad era 0,53).
+- **Tiempo y recursos:** generar y entrenar tarda segundos (objetivo: menos de 1 minuto entre los dos) en la computadora del equipo, **sin GPU**; igual al reentrenar con datos reales.
 - Comandos:
 
 ```sh
@@ -62,7 +69,7 @@ uv run python -m ml.atipicos.entrenar --fuente sintetica --version ca-1.0.0
 uv run python -m ml.atipicos.entrenar --fuente real --version ca-1.1.0      # requiere ≥ 500 salidas en rpt_movimiento
 ```
 
-- Con `--fuente real` lee `rpt_movimiento` (solo salidas) y calcula las variables en orden de fecha. No hay etiquetas: se reporta la proporción marcada y, si ya hay revisiones, la proporción de `CONFIRMADO` entre los revisados (precisión observada), como referencia.
+- Con `--fuente real` lee `rpt_movimiento` (solo salidas; incluye las que trajo la carga inicial de la 401) y calcula las variables en orden de fecha. No hay etiquetas: se reporta la proporción marcada y, si ya hay revisiones, la proporción de `CONFIRMADO` entre los revisados (precisión observada), como referencia.
 - Artefactos en `modelos/consumos_atipicos/ca-1.0.0/`: `modelo.joblib`, `percentiles.json`, `metricas.json`, `parametros.yaml`. `modelos/consumos_atipicos/actual.txt` indica la versión que carga el servicio.
 - `modelo.joblib` usa `pickle` por dentro: el servicio **solo** carga archivos de su propio repositorio, nunca archivos subidos o recibidos por la red.
 - El script termina con error y no cambia `actual.txt` si no se cumplen las métricas mínimas.
@@ -80,17 +87,19 @@ Sobre el 20 % de prueba sintético (con la marca `anomalia` solo para medir):
 
 Con datos reales (`--fuente real`): proporción marcada ≤ 3 % (criterio 14).
 
+**Resultado de `ca-1.0.0` (semilla 2026, 31/10/2026):** sensibilidad 0,72, precisión 0,80, AUC-ROC 0,97 y 2,1 % marcadas. La sensibilidad cumple con **margen justo**: con otras semillas del generador (1 a 4) va de 0,65 a 0,75, así que puede quedar bajo el mínimo si se regeneran los datos. Por tipo: cantidad 0,81, horario 0,98, *stock* 0,81 y ráfagas 0,41; las ráfagas quedan bajas por naturaleza (la primera salida de una ráfaga no se distingue de una normal). Detalle y tiempos medidos en `services/ia/README.md`.
+
 ## Detección en el servicio (`ia-worker`)
 
 Al aplicar `MovimientoRegistrado` con `tipo = SALIDA` (401), en este orden:
 
-1. Lee el historial anterior de `rpt_movimiento` y calcula las variables.
+1. Lee el historial anterior de `rpt_movimiento` (salidas con `registrado_en` anterior a la evaluada y otro `movimiento_id`) y calcula las variables.
 2. Evalúa con el modelo de `actual.txt` (o `IA_MODELO_ATIPICOS_VERSION`). Si no hay modelo, registra el error y sigue sin detectar.
 3. Si es atípica: `consumo_atipico` con `_id = movimientoId` y `$setOnInsert` (idempotente, criterio 4).
 4. Transacción de PostgreSQL de la 401 (inbox, `rpt_movimiento`, `rpt_consumo_material`).
-5. Después de confirmar, si fue atípica: recalcula el riesgo de retraso de la obra (402, motivo `CONSUMO_ATIPICO`).
+5. Después de confirmar, si fue atípica y la 402 está implementada: recalcula el riesgo de retraso de la obra (402, motivo `CONSUMO_ATIPICO`). Sin la 402, este paso no existe.
 
-El historial se lee antes de insertar la salida, así que la salida no se compara consigo misma. Un reintento repite los pasos 1 a 3 sin duplicar.
+El historial excluye la propia salida aunque ya esté en `rpt_movimiento` (por ejemplo, si la trajo la carga inicial de la 401 y su evento llega después desde la cola): así nunca se compara consigo misma. Un evento ya aplicado (está en `evento_aplicado`) se confirma sin evaluar. Un reintento repite los pasos 1 a 3 sin duplicar.
 
 ### `ia_db.consumo_atipico`
 
@@ -184,14 +193,16 @@ extend type Mutation {
 
 - IA (dominio): `calcular_variables_salida` con historial vacío, corto (< 5) y largo; borde de horario (05:59, 06:00, 19:59, 20:00); domingo; motivos con percentiles fijos.
 - IA (generador): reproducible con la semilla; 2 % de anomalías de los 4 tipos.
-- IA (entrenamiento): artefactos escritos; falla sin tocar `actual.txt` si no se cumplen las métricas; `--fuente real` rechaza con menos de 500 salidas.
-- IA (servicio): salida atípica crea `PENDIENTE`; salida normal no crea nada; ingreso no se evalúa; mismo evento dos veces deja un solo documento; sin modelo la proyección sigue; recálculo de riesgo tras un atípico.
+- IA (entrenamiento): artefactos escritos; falla sin tocar `actual.txt` si no se cumplen las métricas; `--fuente real` rechaza con menos de 500 salidas. Medición documentada en el README: generar y entrenar `ca-1.0.0` tarda menos de un minuto en CPU.
+- IA (servicio): salida atípica crea `PENDIENTE`; salida normal no crea nada; ingreso no se evalúa; mismo evento dos veces deja un solo documento; una salida que ya trajo la carga inicial no se compara consigo misma; sin modelo la proyección sigue; recálculo de riesgo tras un atípico (y sin la 402, no se llama).
 - IA (API): visibilidad por rol; filtros; revisión `CONFIRMADO` sin comentario (422), segunda revisión (409), `gerente` (403), revisión correcta guarda autor y fecha.
 - Gateway: lote del resumen partido en grupos de 100; nombres de material y de revisor; mutación con mapeo de errores; IA caída.
 - mf-obras: tabla con filtro, botones según rol y estado, diálogo y aviso de ya revisado.
 - mf-supervision: tarjeta y columna, con datos parciales.
 
 ## Cambios a contratos y datos
+
+Comprobado el 31/10/2026: el único evento que usa es `MovimientoRegistrado`, con los campos actuales de `docs/contratos/eventos.md` más `precioReferencial` (lo agrega Materiales en la 401; esta spec no lo necesita para detectar). No llama a endpoints de otros servicios salvo el gateway, que resuelve el nombre del material con `GET /materiales`.
 
 ### `docs/contratos/rest.md` (sección «IA (puerto 8085)») y `services/ia/docs/contratos.md`
 
