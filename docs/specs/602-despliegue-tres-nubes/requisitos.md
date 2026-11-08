@@ -1,6 +1,6 @@
 # 602 · Despliegue en tres nubes
 
-**Estado:** borrador para aprobar (reescrito el 08/11/2026 a partir de la 601) · **Capa:** 6 (requisito del ingeniero) · **Proyectos:** infra y app-obra (la configuración de producción de los demás ya está hecha en la 601)
+**Estado:** aprobada por Jairo el 08/11/2026 (reescrita ese día a partir de la 601) · **Capa:** 6 (requisito del ingeniero) · **Proyectos:** infra y app-obra (la configuración de producción de los demás ya está hecha en la 601)
 
 ## Historia
 

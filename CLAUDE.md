@@ -75,7 +75,7 @@ Si algo de lo pedido no está especificado o es ambiguo, pregunta antes de progr
 
 ## Cómo trabajar en cada chat
 
-Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; de las capas, las de la capa 1, la 4, la 5 (302 y 501–504), la 301, la 201, la nueva 010 y la nueva 601 están **aprobadas** y las demás (303 y 602) en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
+Las especificaciones están escritas: las del sistema base (fase 1 y 001–011) están **aprobadas**; de las capas, las de la capa 1, la 4, la 5 (302 y 501–504), la 301, la 201, la nueva 010, la nueva 601 y la nueva 602 están **aprobadas** y la 303 en **borrador** hasta que Jairo las revise. No hay que volver a planificar lo aprobado: se implementa.
 
 1. Lee `docs/plan.md` y toma la **siguiente tarea `pendiente`** (fase 1) o la **siguiente funcionalidad `pendiente`** (fases 2 en adelante).
 2. Para una funcionalidad, lee su `docs/specs/NNN-nombre/requisitos.md` y `diseno.md`, los contratos y datos de cada proyecto afectado, y sus `tareas.md` (`<proyecto>/docs/specs/NNN-nombre/tareas.md`; las de proyectos que todavía no existen están en `docs/specs/NNN-nombre/tareas-<proyecto>.md`).
