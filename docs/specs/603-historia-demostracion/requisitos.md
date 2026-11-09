@@ -27,12 +27,13 @@ Como **equipo** que presenta la plataforma quiero que los datos de demostración
    - fotos de avance de cada periodo adjuntas a sus planillas.
 4. Salidas raras para los consumos atípicos (403): en la obra 5, una de noche, una en domingo y una que supera el stock; en la obra 6, una de cantidad muy grande. Lo decide el modelo; no se fuerza.
 5. Diario de obra de lunes a sábado en las **seis** obras (desde su inicio), con clima y texto coherentes con su escenario: en la obra 5, días de lluvia, falta de material y de personal.
-6. Después de la carga inicial (401), se evalúan **todas** las salidas con el modelo de consumos atípicos, en orden cronológico, y se recalcula el riesgo. Se espera: obra 4 `BAJO`, obra 5 `ALTO`, obra 6 `MEDIO` o más.
+6. Después de la carga inicial (401), se evalúan con el modelo de consumos atípicos, en orden cronológico, todas las salidas de las obras 4 a 6 y las dos de la 011 (10033 y 20018), y se recalcula el riesgo. Las demás salidas de las obras 1 a 3 no: son grandes lotes y, junto a las salidas diarias de la historia, el modelo las marcaría casi todas como raras. Se espera: obra 4 `BAJO`, obra 5 `ALTO`, obra 6 `MEDIO` o más.
+7. Los agentes trabajan con las seis obras: el reporte de un agente con muchos hallazgos se ajusta a sus largos (resumen de 600 caracteres, hasta 10 hallazgos) en lugar de fallar.
 
 ### Coherencia y fechas
 
-7. Fechas relativas a D, como en la 011. La historia está pensada para cargarse entre el día 5 y el 25 del mes; los días de la semana siguen el calendario de noviembre de 2026 (mes en que se generó): en otro mes alguna salida puede caer en domingo.
-8. Ids fijos, carga idempotente y sin eventos, como en la 011. Las mismas validaciones de cada servicio (presupuesto, acumulados, stock fila por fila, cobro solo en planillas aprobadas) se aplican a los datos de la 011 más la historia.
+8. Fechas relativas a D, como en la 011. La historia está pensada para cargarse entre el día 5 y el 25 del mes; los días de la semana siguen el calendario de noviembre de 2026 (mes en que se generó): en otro mes alguna salida puede caer en domingo.
+9. Ids fijos, carga idempotente y sin eventos, como en la 011. Las mismas validaciones de cada servicio (presupuesto, acumulados, stock fila por fila, cobro solo en planillas aprobadas) se aplican a los datos de la 011 más la historia.
 
 ## Fuera del alcance
 

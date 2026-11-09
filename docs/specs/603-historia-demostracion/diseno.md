@@ -29,7 +29,8 @@ Con `SEMILLA_HISTORIA=si`, cada servicio **une** su archivo de la 011 con el de 
 - **Obras:** `semilla.historia` (`SEMILLA_HISTORIA`); `DatosSemilla.leer(historia)` une `obras-historia.json`.
 - **Finanzas:** con `SEMILLA_HISTORIA=si`, `DatosPruebaSeeder` une `finanzas-historia.json`. Los cobros aceptan `pagadoEn` (`D-n`) y `comprobante`: estado `PAGADO`, `pago_registrado_por` = admin1 y `pago_registrado_en` = ese día a las 11:00 de La Paz.
 - **Materiales:** con `SEMILLA_HISTORIA=si`, `datos-semilla` une `materiales-historia.json`.
-- **infra:** `semilla.ps1`/`.sh` pasan `SEMILLA_HISTORIA` a los tres; `agentes.mjs` con `SEMILLA_HISTORIA=si` registra además el diario de lunes a sábado de las seis obras (texto y clima según el escenario y el mes, generados al correr con la fecha D real); `eventos-ia.mjs --todas` publica el `MovimientoRegistrado` de **todas** las salidas en orden cronológico (id de evento `fa000000-…` con el número del movimiento).
+- **infra:** `semilla.ps1`/`.sh` pasan `SEMILLA_HISTORIA` a los tres; `agentes.mjs` con `SEMILLA_HISTORIA=si` registra además el diario de lunes a sábado de las seis obras (texto y clima según el escenario y el mes, generados al correr con la fecha D real); `eventos-ia.mjs --todas` publica el `MovimientoRegistrado` de todas las salidas de las obras 4 a 6 y de las dos de la 011, en orden cronológico (id de evento `fa000000-…` con el número del movimiento).
+- **IA (agentes):** el proveedor no acepta `maxLength` ni `maxItems` en el esquema; las instrucciones del reporte dicen los límites y `ajustar_largos` corta los textos en una oración completa y deja los 10 primeros hallazgos (con sus sugerencias) antes de validar; 8192 fichas de salida.
 
 ## Pruebas
 
