@@ -95,6 +95,7 @@ PHP 8.4 o superior: el `composer.lock` trae Symfony 8.1, que pide PHP 8.4.1 o m�
 | GraphQL | `@apollo/client` 4 + `graphql` 16 | — |
 | Voz a texto en el navegador (solo mf-supervision, capa 5, 302) | `@huggingface/transformers` (transformers.js, modelo `onnx-community/whisper-base` `q8` en un Web Worker; WebGPU o WASM) | 4 |
 | Exportar a Excel y CSV (solo mf-supervision, capa 5, 503) | SheetJS `xlsx`, desde el CDN oficial (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`; el paquete del registro de npm quedó en 0.18.5) | 0.20.3 |
+| Exportar a PDF y Word (solo mf-supervision, capa 5, 505) | `jspdf` + `jspdf-autotable` (PDF) y `docx` (Word), MIT, cargados al pulsar | 4.2 / 5.0 / 9.15 |
 | Pruebas | Vitest + `@testing-library/react` + `jsdom` | — / 16 |
 
 ## frontend/portal (React 19 · Vite 8)

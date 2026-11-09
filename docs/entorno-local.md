@@ -150,18 +150,17 @@ Si la laptop no alcanza, se levanta **por grupos** (primero `azure`, el centro, 
 
 El despliegue en las tres nubes vive en `infra/nube/` y se maneja desde la PC con `node infra/nube/nube.mjs <acción> [nube]`: `secretos`, `crear`, `desplegar`, `encender`, `apagar`, `estado`, `registros`, `ssh`, `dns` y `contextos`. Detalle, pasos manuales y costos: `infra/nube/README.md`; diseño: `docs/specs/602-despliegue-tres-nubes/diseno.md`.
 
-Hace falta, además de lo de desarrollo: la CLI de Azure (`az`), la de AWS (`aws`, con el usuario IAM `jairo-cli` en `us-east-2`, la única región que permite la organización de la cuenta), la de Google (`gcloud`, cuando esté la cuenta) y OpenSSH (viene con Windows 11).
+Hace falta, además de lo de desarrollo: la CLI de Azure (`az`), la de AWS (`aws`, con el usuario IAM `jairo-cli` en `us-east-2`, la única región que permite la organización de la cuenta), la de Google (`gcloud`: `winget install -e --id Google.CloudSDK` y `gcloud auth login` con la cuenta de los créditos) y OpenSSH (viene con Windows 11).
 
 Variables nuevas (en `infra/nube/.env`, que no se sube; `.env.example` sin secretos):
 
 | Variable | Para qué |
 |---|---|
 | Direcciones (`KEYCLOAK_URL`, `GATEWAY_URL`…) | Las mismas de la «producción local», con `https://<pieza>.supervision.workflow-tramites.site` |
-| `ACME_CORREO` | Correo para Let's Encrypt (avisos de vencimiento) |
 | `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Correo de n8n: el Gmail de la plataforma (`smtp.gmail.com`, 587, `false` = STARTTLS, contraseña de aplicación). Vacías: Mailpit. También existen en desarrollo y en el ensayo local, con Mailpit por defecto |
 | `CLIENTE1_CORREO` | Buzón real de `cliente1` para la demostración |
 | `MAILPIT_USUARIO`, `MAILPIT_CLAVE` y `MAILPIT_CLAVE_HASH` | Autenticación básica de la interfaz de Mailpit en Caddy |
 | `MONGO_IMAGEN` | `mongo:8.0`, o `mongo:7.0` si el *kernel* de la máquina de Google es 6.19 o más |
 | `SEMILLA_CONTEXTO_OBRAS`, `_FINANZAS` y `_MATERIALES` | Contexto de Docker (por SSH) donde la semilla de demostración corre la carga de cada servicio. Vacías: el Docker local, como en la 601 |
-| `NUBE_ALERTAS_CORREO` | Correo de los avisos de presupuesto |
+| `NUBE_ALERTAS_CORREO` | Correo de los avisos de presupuesto (opcional: vacío, no se crean los presupuestos) |
 

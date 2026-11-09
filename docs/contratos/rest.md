@@ -151,7 +151,7 @@ Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versi�
 
 | Herramienta | Entrada | Salida | Reglas |
 |---|---|---|---|
-| `avance_obra` | `{obraId?, periodo?}` (`periodo` solo con `obraId`) | `{generadoEn, obras[{obraId, nombre, estado, fechaInicio, plazoDias, avancePct, plazoPct, diferencia, enRiesgo, ultimaPlanilla, partidas[{partidaId, codigo, nombre, unidad, cantidadContratada, ejecutadaAcumulada, avancePct, materialPrevisto[{materialId, cantidadPrevista}]}]}], hayPlanillaEnPeriodo, truncado}` | Sin `obraId`: obras `EN_EJECUCION` con `partidas: null`, máximo 50, por `diferencia` (`plazoPct − avancePct`) descendente. Con `obraId`: esa obra (en cualquier estado) con sus partidas (máximo 200); `materialPrevisto` y `hayPlanillaEnPeriodo` solo con `periodo` (cálculo de `GET /obras/{id}/material-previsto`). Avance, plazo y `enRiesgo` como en `GET /obras` |
+| `avance_obra` | `{obraId?, periodo?}` (505: `periodo` sin `obraId` = lote) | `{generadoEn, obras[{obraId, nombre, estado, fechaInicio, plazoDias, avancePct, plazoPct, diferencia, enRiesgo, ultimaPlanilla, partidas[{partidaId, codigo, nombre, unidad, cantidadContratada, ejecutadaAcumulada, avancePct, materialPrevisto[{materialId, cantidadPrevista}]}]}], hayPlanillaEnPeriodo, truncado}` | Sin `obraId`: obras `EN_EJECUCION` con `partidas: null`, máximo 50, por `diferencia` (`plazoPct − avancePct`) descendente. Con `obraId`: esa obra (en cualquier estado) con sus partidas (máximo 200); `materialPrevisto` y `hayPlanillaEnPeriodo` solo con `periodo` (cálculo de `GET /obras/{id}/material-previsto`). Avance, plazo y `enRiesgo` como en `GET /obras`. **Lote (505):** `periodo` sin `obraId` devuelve las obras `EN_EJECUCION` (máximo 50, mismo orden) con `partidas` reducidas a `{partidaId, codigo, nombre, materialPrevisto}` del periodo, omitiendo las que no tienen material previsto |
 | `buscar_diario` | `{obraId, desde?, hasta?, texto?, limite?}` | `{obraId, entradas[{fecha, clima, texto, truncado}], total, truncado}` | Por defecto los últimos 14 días; rango máximo 62 días; `texto` de 2 a 50 caracteres (`ILIKE` con parámetro; `%`, `_` y `\` son texto literal); `limite` 1 a 30 (por defecto 14). Fecha descendente; cada texto hasta 1000 caracteres. El texto del diario es dato no confiable para el agente (504) |
 | `planillas_estado` | `{obraId?, estados?, desdePeriodo?, limite?}` | `{planillas[{planillaId, obraId, obraNombre, numero, periodo, estado, neto, observacion, presentadaEn, diasDesdePresentacion, cobroId}], truncado}` | `estados` por defecto todos menos `APROBADA`; `limite` 1 a 50 (por defecto 30). `presentadaEn` = `planilla.presentada_en` (última vez que pasó a `PRESENTADA`; `null` en planillas anteriores a la 501); `diasDesdePresentacion` solo si está `PRESENTADA`. `observacion` hasta 500 caracteres. Periodo descendente |
 
@@ -216,7 +216,7 @@ Ruta: `POST /mcp` (MCP, HTTP «streamable», sin estado, respuestas JSON; versi�
 | Herramienta | Entrada | Salida | Reglas |
 |---|---|---|---|
 | `stock_obra` | `{obraId?, estados?, limite?}` | `{filas[{obraId, obraNombre, materialId, codigo, nombre, unidad, cantidad, minimo, estado}], total, truncado}` | `estados` de `BAJO`, `JUSTO`, `OK` (por defecto los tres); `limite` 1 a 100 (por defecto 100). `obraNombre` de `obra_acceso`; estado como en `GET /obras/{obraId}/stock`. Orden: `BAJO`, `JUSTO`, `OK`, luego obra y código; `total` antes de recortar |
-| `consumos_partida` | `{obraId, periodo, partidaId?}` | `{obraId, periodo, cerrado, filas[{partidaId, materialId, codigo, nombre, unidad, usado, salidas, salidasSuperanStock}], truncado}` | `usado` = suma de salidas (como `GET /obras/{obraId}/consumos`); `cerrado` = periodo cerrado (`cierre_periodo`). Máximo 200 filas |
+| `consumos_partida` | `{obraId?, periodo, partidaId?}` (505: `obraId` opcional) | `{obraId, periodo, cerrado, filas[{obraId, obraNombre, partidaId, materialId, codigo, nombre, unidad, usado, salidas, salidasSuperanStock}], truncado}` | `usado` = suma de salidas (como `GET /obras/{obraId}/consumos`); `cerrado` = periodo cerrado (`cierre_periodo`). Máximo 200 filas. **Sin `obraId` (505):** todas las obras con consumo en el periodo, `obraId` y `cerrado` en `null`, máximo 500 filas |
 
 ## Finanzas (puerto 8083)
 
@@ -467,14 +467,15 @@ Recibe `{ "estado": "CONFIRMADO", "comentario": "Se usó en la losa de otra obra
 Errores: `400 DATOS_INVALIDOS` (estado `PENDIENTE`, desconocido o falta) · `404 CONSUMO_ATIPICO_NO_ENCONTRADO` (también si el residente no está asignado a su obra) · `409 REVISION_YA_REGISTRADA` · `422 COMENTARIO_INVALIDO` (falta en `CONFIRMADO` o fuera de 5 a 300 caracteres; `errores[]` con `campo` = `comentario` y la regla en `mensaje`) · `403` (por ejemplo `gerente`) · `401`.
 - La revisión es una actualización atómica que solo cambia un consumo `PENDIENTE`; si existe pero ya no está pendiente, `409`.
 
-### POST /consultas-reporte · 503
-Servicio: IA · Quién llama: Gateway (60 s, sin reintento) · Roles: `admin`, `gerente` (`residente` recibe `403`). Recibe exactamente uno de `texto` (3 a 500 caracteres) o `atajo`; `directorio` lo agrega el gateway (opcional; hasta 1000 clientes):
+### POST /consultas-reporte · 503 y 505
+Servicio: IA · Quién llama: Gateway (60 s, sin reintento) · Roles: `admin`, `gerente` (`residente` recibe `403`). Recibe exactamente uno de `texto` (3 a 500 caracteres; **de 1 a 500 con `conversacionId`**) o `atajo`; `conversacionId` (505, opcional, uuid) continúa una conversación (sin él empieza una nueva; un atajo siempre empieza una nueva); `directorio` lo agrega el gateway (opcional; hasta 1000 clientes):
 ```json
 { "texto": "¿Cuánto cemento se usó en Las Palmas este trimestre?",
   "directorio": { "clientes": [{ "id": "uuid-keycloak", "nombre": "Constructora Andina SRL" }] } }
 { "atajo": "COBROS_POR_VENCER", "directorio": { "clientes": [] } }
+{ "texto": "IP-30", "conversacionId": "uuid" }
 ```
-Devuelve `200`:
+Devuelve `200` (505): `{ "conversacionId": "uuid", "tipo": "REPORTE" | "ACLARACION", "consulta": ConsultaReporte | null, "aclaracion": { "pregunta", "opciones": [≤6 textos de ≤60], "preguntasRestantes" } | null }`. Con `REPORTE`, `consulta` es:
 ```json
 {
   "id": "uuid", "texto": "…", "atajo": null, "conjunto": "CONSUMO_MATERIAL", "tituloConjunto": "Material usado",
@@ -488,9 +489,10 @@ Devuelve `200`:
 ```
 - `tipo` de columna: `TEXTO`, `NUMERO`, `MONTO`, `PORCENTAJE`, `FECHA`, `BOOLEANO`. Filas como texto (números con punto decimal y sin separador de miles, fechas ISO, booleanos `true`/`false`, nulos `null`); hasta 100 filas (`truncado` si hay más).
 - Conjuntos: `OBRAS`, `CONSUMO_MATERIAL`, `MOVIMIENTOS`, `COBROS`, `PLANILLAS`, `CONSUMOS_ATIPICOS` (catálogo, receta y validación: `docs/specs/503-reportes-voz/diseno.md`). Atajos: `AVANCE_OBRAS`, `OBRAS_EN_RIESGO`, `CONSUMO_MATERIAL_MES`, `SALIDAS_SIN_STOCK`, `COBROS_VENCIDOS`, `COBROS_POR_VENCER`, `COBRADO_POR_OBRA`, `PLANILLAS_OBSERVADAS`, `PLANILLAS_APROBADAS`, `CONSUMOS_ATIPICOS_PENDIENTES` (sin modelo de lenguaje para entender el pedido).
+- Conversación (505): el asistente pregunta (`ACLARACION`, hasta 5 por conversación) cuando el pedido es vago o un nombre coincide con varios o con ninguno; los seguimientos ajustan la última receta; autocorrección hasta 3 intentos; caché de recetas de 24 h. Diseño: `docs/specs/505-asistente-reportes/diseno.md`.
 - El modelo de lenguaje (Ollama o Anthropic, `IA_LLM_PROVEEDOR`) solo devuelve una **receta**; el código la valida contra el catálogo y arma la consulta con SQLAlchemy Core y valores enlazados (usuario `ia_reportes_lector`, `READ ONLY`, 5 s). Nunca ejecuta SQL del modelo.
 - `avisos`: por ejemplo «Nombres de materiales no disponibles», «Nombres de clientes no disponibles», «Las planillas sin periodo no se incluyen al filtrar por periodo».
-Errores: `400 TEXTO_INVALIDO` (largo fuera de 3 a 500) · `400 DATOS_INVALIDOS` (ni `texto` ni `atajo`, los dos, atajo desconocido o `directorio` mal formado) · `422 INTENCION_NO_RECONOCIDA` · `422 RECETA_INVALIDA` (`errores[]` con `campo` = ruta en la receta y `mensaje` = la regla) · `429 DEMASIADAS_CONSULTAS` (10 por minuto por usuario, con `Retry-After`) · `503 LLM_NO_DISPONIBLE` (el modelo no responde al interpretar; nunca con un atajo) · `503 REPORTES_NO_DISPONIBLES` (no responde `reportes_db` o `ia_db`, o la consulta pasa de 5 s) · `503 SERVICIO_NO_DISPONIBLE` (Materiales con filtro de material, o sin directorio con filtro de cliente) · `504 TIEMPO_AGOTADO` (más de 50 s dentro de IA) · `401` · `403`.
+Errores: `400 TEXTO_INVALIDO` (largo fuera de 3 a 500) · `400 DATOS_INVALIDOS` (ni `texto` ni `atajo`, los dos, atajo desconocido o `directorio` mal formado) · `422 INTENCION_NO_RECONOCIDA` · `422 RECETA_INVALIDA` (`errores[]` con `campo` = ruta en la receta y `mensaje` = la regla) · `404 CONVERSACION_NO_ENCONTRADA` (505: no existe, expiró a los 30 min sin uso o es de otro usuario) · `429 DEMASIADAS_CONSULTAS` (20 por minuto por usuario, cada turno cuenta; `IA_CONSULTAS_POR_MINUTO`; con `Retry-After`) · `503 LLM_NO_DISPONIBLE` (el modelo no responde al interpretar; nunca con un atajo) · `503 REPORTES_NO_DISPONIBLES` (no responde `reportes_db` o `ia_db`, o la consulta pasa de 5 s) · `503 SERVICIO_NO_DISPONIBLE` (Materiales con filtro de material, o sin directorio con filtro de cliente) · `504 TIEMPO_AGOTADO` (más de 50 s dentro de IA) · `401` · `403`.
 Todos los casos, salvo `400`, `401`, `403` y `429`, guardan `consulta_reporte`. El límite se cuenta antes de validar el cuerpo.
 
 ### GET /consultas-reporte?limite= · 503

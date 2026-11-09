@@ -72,4 +72,4 @@ Avance y plazo de las obras en ejecución · Obras con riesgo de retraso alto o 
 
 ## Fuera del alcance
 
-Conjuntos o tablas fuera del catálogo, gráficos, editar la receta a mano, envío del archivo por correo, consultas en el portal o en la app, respuesta hablada (texto a voz), conversación de varias preguntas encadenadas, la comparación «usado frente a previsto» (la base de reportes no guarda lo previsto; está en la pestaña «Material» de la obra, 006) y el nombre de las partidas (la base de reportes solo guarda su id).
+Conjuntos o tablas fuera del catálogo, gráficos, editar la receta a mano, envío del archivo por correo, consultas en el portal o en la app, respuesta hablada (texto a voz), conversación de varias preguntas encadenadas (la hace la 505, 09/11/2026), la comparación «usado frente a previsto» (la base de reportes no guarda lo previsto; está en la pestaña «Material» de la obra, 006) y el nombre de las partidas (la base de reportes solo guarda su id).

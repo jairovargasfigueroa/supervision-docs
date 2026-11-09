@@ -4,18 +4,18 @@
 
 1. **Lo mismo que el ensayo local.** La 601 ya corre la plataforma en tres grupos de Docker Compose con HTTPS y RabbitMQ por TLS (53 de 53 comprobaciones). Cada grupo pasa a una máquina virtual de su nube con los mismos *compose*: solo cambian las direcciones, los certificados y lo que en local reemplazaba a un servicio de AWS (DynamoDB Local y MinIO).
 2. **Costo bajo:** una máquina por nube, **apagada** salvo para probar y para la presentación. Con la máquina apagada se paga solo su disco y su IP fija. Sin servicios administrados, que cobran aunque no se usen.
-3. **Una región por nube:** Azure `brazilsouth` y Google `southamerica-east1`, en São Paulo (decisión de Jairo); AWS en `us-east-2` (Ohio), porque la organización a la que pertenece la cuenta solo permite esa región (su política de control de servicios bloquea las demás; comprobado el 08/11/2026).
+3. **Una región por nube, todas cerca de Ohio** (requisitos, decisión 8): AWS `us-east-2` (Ohio; la organización de la cuenta solo permite esa), Azure `northcentralus` (Chicago; la suscripción de prueba no permite máquinas pequeñas en `brazilsouth` ni en `eastus`) y Google `us-east5` (Columbus).
 4. **Todo con *scripts* desde la PC de Jairo** (`infra/nube/`), repetibles y versionados. Nada se crea a mano en las consolas, salvo los registros DNS de Namecheap, el Gmail de la plataforma, Firebase y la clave de Anthropic.
 
 ## Mapa del despliegue
 
 | Nube | Máquina | Tamaño | Disco | Puertos públicos | Qué corre |
 |---|---|---|---|---|---|
-| Azure (`rg-supervision`, `brazilsouth`) | `vm-plataforma`, Ubuntu 24.04 LTS | B2s: 2 vCPU, 4 GiB (+ 2 GiB de *swap*) | Standard SSD 32 GiB | 80, 443, 5671 (22 solo desde la IP de Jairo) | `compose.azure.yml`: Caddy (y los 5 frontends), Keycloak, gateway, Obras, `finanzas-api`, `finanzas-trabajos`, RabbitMQ, n8n, Mailpit y PostgreSQL (`obras_db`, `finanzas_db` y `keycloak_db`) |
-| AWS (`us-east-2`) | `vm-sincronizacion`, Ubuntu 24.04 LTS | t3.micro: 2 vCPU, 1 GiB (+ 1 GiB de *swap*) | gp3 16 GiB | 80, 443 (22 solo desde la IP de Jairo) | `compose.aws.yml`: Caddy y Sincronización. Además, DynamoDB (tablas `operacion_procesada` y `estado_dispositivo`, bajo demanda) y el bucket S3 `supervision-obras-<sufijo>` |
-| Google (proyecto `supervision-obras`, `southamerica-east1`) | `vm-ia`, Ubuntu 24.04 LTS | e2-medium: 2 vCPU, 4 GB (con Anthropic); e2-standard-4 de 16 GB si se elige Ollama | Balanceado 30 GB | 80, 443 (22 solo desde la IP de Jairo) | `compose.google.yml`: Caddy, Materiales, `ia-api`, `ia-worker`, MongoDB (`materiales_db` e `ia_db`) y PostgreSQL de reportes |
+| Azure (`rg-supervision`, `northcentralus`) | `vm-plataforma`, Ubuntu 24.04 LTS | D4as_v5: 4 vCPU, 16 GiB (+ 2 GiB de *swap*) | Standard SSD 32 GiB | 80, 443, 5671 (22 solo desde la IP de Jairo) | `compose.azure.yml`: Caddy (y los 5 frontends), Keycloak, gateway, Obras, `finanzas-api`, `finanzas-trabajos`, RabbitMQ, n8n, Mailpit y PostgreSQL (`obras_db`, `finanzas_db` y `keycloak_db`) |
+| AWS (`us-east-2`) | `vm-sincronizacion`, Ubuntu 24.04 LTS | m7i-flex.large: 2 vCPU, 8 GiB (+ 2 GiB de *swap*) | gp3 16 GiB | 80, 443 (22 solo desde la IP de Jairo) | `compose.aws.yml`: Caddy y Sincronización. Además, DynamoDB (tablas `operacion_procesada` y `estado_dispositivo`, bajo demanda) y el bucket S3 `supervision-obras-<sufijo>` |
+| Google (proyecto `supervision-obras`, `us-east5`) | `vm-ia`, Ubuntu 24.04 LTS | e2-standard-4: 4 vCPU, 16 GB (alcanza también para Ollama con `qwen3:8b`) | Balanceado 30 GB | 80, 443 (22 solo desde la IP de Jairo) | `compose.google.yml`: Caddy, Materiales, `ia-api`, `ia-worker`, MongoDB (`materiales_db` e `ia_db`) y PostgreSQL de reportes |
 
-- **Memoria medida en la 601:** el grupo de Azure usa ~2,7 GB y el de Google ~1,0 GB sin Ollama. Si la B2s se queda corta, se cambia a B2ms (8 GiB) en unos minutos: desasignar, cambiar el tamaño y encender.
+- **Tamaños (cambiados el 09/11/2026):** se crearon con lo mínimo (B2als_v2 de 4 GiB, t3.micro de 1 GiB y e2-medium) y se agrandaron con margen, porque las máquinas solo se encienden para probar y para la presentación y lo que importa es que respondan bien. Azure D4as_v5: el máximo de la cuota de la suscripción de prueba (4 vCPU por región), sin créditos de CPU que la frenen. AWS m7i-flex.large: el más grande que permite el plan gratuito de la cuenta (que solo deja ciertos tamaños; `t3.medium` fue rechazado), sin créditos de CPU. Google e2-standard-4: 4 vCPU fijos (la cuota E2 de la región es 8). Memoria medida en la 601: Azure ~2,7 GB y Google ~1,0 GB sin Ollama. El tamaño se cambia con la máquina apagada (`az vm resize`, `gcloud compute instances set-machine-type`, `aws ec2 modify-instance-attribute`).
 - Cada máquina tiene una **IP pública fija**: Azure, IP estática Standard; AWS, Elastic IP; Google, dirección externa estática. Así los registros DNS se ponen una sola vez.
 
 ## Nombres
@@ -83,7 +83,7 @@ Los *compose* de la nube viven en `infra/nube/` y se copian de los de `infra/pro
 **En los tres grupos**
 
 - Direcciones: las de «Nombres», en el puerto 443, desde el `.env` de la nube. Los Caddyfile usan las variables de entorno de Caddy (`{$KEYCLOAK_HOST}`…) en lugar de nombres fijos.
-- Caddy escucha en 80 y 443 y saca un certificado de **Let's Encrypt** por nombre (desafío HTTP), con el correo de `ACME_CORREO`. Se quitan `local_certs`, la CA local (`pki`) y `disable_redirects`: HTTP redirige a HTTPS.
+- Caddy escucha en 80 y 443 y saca un certificado de **Let's Encrypt** por nombre (desafío HTTP), sin correo (Let's Encrypt no lo exige). Se quitan `local_certs`, la CA local (`pki`) y `disable_redirects`: HTTP redirige a HTTPS.
 - Sin CA local: se quitan los montajes de `./certificados` en los servicios, `JAVA_TOOL_OPTIONS`, `NODE_EXTRA_CA_CERTS`, `IA_CA_EXTRA` y `finanzas/ca-local.ini`. `CA_LOCAL` queda vacío.
 - Imágenes de GHCR con la etiqueta del release (`IMAGEN_ETIQUETA`, por defecto `main`), sin `build:`. Cada servicio acepta su propia etiqueta (`OBRAS_ETIQUETA`…) para volver atrás solo ese servicio con un `sha-<7>` anterior.
 - Registros de Docker con rotación (10 MB × 3 por contenedor, en `daemon.json`) para no llenar el disco.
@@ -106,7 +106,7 @@ Los *compose* de la nube viven en `infra/nube/` y se copian de los de `infra/pro
 **Google**
 
 - MongoDB: `MONGO_IMAGEN=mongo:8.0` si el *kernel* de la máquina es menor que 6.19. Si no, `mongo:7.0`, como el CI de IA (pendiente de la 601, SERVER-125742). Se comprueba con `uname -r` al crearla.
-- `IA_LLM_PROVEEDOR=anthropic` con `IA_ANTHROPIC_API_KEY`, o el perfil `ollama` si se elige Ollama. `IA_MCP_HOSTS_PERMITIDOS` lleva `ia.supervision.workflow-tramites.site`.
+- `IA_LLM_PROVEEDOR=anthropic` con `IA_ANTHROPIC_API_KEY` e `IA_LLM_MODELO=claude-haiku-5-5` (requisitos, decisión 3), o el perfil `ollama` si se elige Ollama. `IA_MCP_HOSTS_PERMITIDOS` lleva `ia.supervision.workflow-tramites.site`.
 
 ## Carpeta `infra/nube/` y el comando `nube.mjs`
 
@@ -144,9 +144,9 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 
 **Azure** (`crear azure`)
 
-- Registra los proveedores `Microsoft.Compute`, `Microsoft.Network` y `Microsoft.Storage`: la suscripción es nueva y no los tiene. Revisa la cuota de vCPU de la familia B en `brazilsouth`.
+- Registra los proveedores `Microsoft.Compute`, `Microsoft.Network` y `Microsoft.Storage`: la suscripción es nueva y no los tiene. Revisa la cuota de vCPU en la región.
 - Grupo de recursos `rg-supervision`; NSG `nsg-plataforma` (80, 443 y 5671 desde internet; 22 desde la IP de Jairo); IP estática `ip-plataforma`; red `vnet-plataforma`.
-- VM `vm-plataforma` (`Canonical:ubuntu-24_04-lts:server:latest`, B2s, disco Standard SSD de 32 GiB), con el usuario `supervision`, la clave SSH y `cloud-init.yaml`.
+- VM `vm-plataforma` (`Canonical:ubuntu-24_04-lts:server:latest`, D4as_v5, disco Standard SSD de 32 GiB), con el usuario `supervision`, la clave SSH y `cloud-init.yaml`.
 - Presupuesto mensual de $50 con avisos al 50, 80 y 100 % a `NUBE_ALERTAS_CORREO`. Si la CLI no lo permite en la cuenta de prueba, el README da los pasos en el portal. La suscripción de prueba tiene además el límite de gasto activado: al acabarse el crédito, Azure apaga los recursos en lugar de cobrar.
 
 **AWS** (`crear aws --datos`, después `crear aws`)
@@ -156,11 +156,14 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 - Usuario IAM `obras-s3` con `s3:PutObject` y `s3:GetObject` en `<bucket>/fotos/*`. Su clave de acceso se escribe directo en `nube/.env`.
 - Rol `sincronizacion-ec2` (con su perfil de instancia) con `dynamodb:GetItem`, `PutItem`, `UpdateItem` y `DeleteItem` en las dos tablas.
 - Presupuesto mensual de $20 con avisos al 50, 80 y 100 % a `NUBE_ALERTAS_CORREO`.
-- Máquina: grupo de seguridad `sg-sincronizacion` (80 y 443; 22 desde la IP de Jairo), par de claves `supervision-nube` (la clave pública de la PC), EC2 t3.micro con la AMI de Ubuntu 24.04 del parámetro público de Canonical en SSM (`/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id`), gp3 de 16 GiB, IMDSv2 obligatorio con límite de saltos 2, el perfil de instancia, `cloud-init.yaml` como *user data* y una Elastic IP asociada.
+- Máquina: grupo de seguridad `supervision-sincronizacion` (80 y 443; 22 desde la IP de Jairo), par de claves `supervision-nube` (la clave pública de la PC), EC2 m7i-flex.large con la AMI de Ubuntu 24.04 del parámetro público de Canonical en SSM (`/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id`), gp3 de 16 GiB, IMDSv2 obligatorio con límite de saltos 2, el perfil de instancia, `cloud-init.yaml` como *user data* y una Elastic IP asociada.
 
 **Google** (`crear google`, cuando esté la cuenta)
 
-- Proyecto `supervision-obras` con la API de Compute Engine; reglas de *firewall* (80 y 443; 22 desde la IP de Jairo); dirección estática; VM `vm-ia` (familia `ubuntu-2404-lts-amd64` de `ubuntu-os-cloud`, disco balanceado de 30 GB), con la clave SSH y `cloud-init.yaml` en los metadatos; presupuesto.
+- Proyecto `supervision-obras` (el ID es único en todo Google: si otra cuenta ya lo usa, con un sufijo que se guarda en `GOOGLE_PROYECTO`), unido a la cuenta de facturación de los créditos y con la API de Compute Engine. La cuenta es la de la prueba gratuita de un compañero del grupo (08/11/2026); Jairo entra con `gcloud auth login`.
+- Red propia `vpc-supervision` con una subred en la región: la red `default` de un proyecto nuevo deja el 22 y el 3389 abiertos a internet. Reglas de *firewall* `supervision-web` (80 y 443) y `supervision-ssh` (22 desde la IP de Jairo); dirección estática `ip-ia`.
+- VM `vm-ia` (familia `ubuntu-2404-lts-amd64` de `ubuntu-os-cloud`, disco balanceado de 30 GB), con el usuario `supervision`, la clave SSH y `cloud-init.yaml` como `user-data`, sin cuenta de servicio (Materiales e IA no llaman a APIs de Google). Al terminar, `MONGO_IMAGEN` según `uname -r`.
+- Presupuesto: en la consola, si se quiere (la CLI lo crearía en la cuenta de facturación del compañero, y sus avisos van a los administradores de esa cuenta). La prueba gratuita no cobra a la tarjeta mientras no se active la cuenta completa: al acabarse los créditos, Google detiene los recursos.
 
 ## Secretos
 
@@ -195,7 +198,7 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 
 - La semilla en modo demostración (601, `SEMILLA_DEMO=si`) corre desde la PC. Para cada servicio usa `docker compose run` con su imagen **dentro de su máquina**, por medio de un contexto de Docker por SSH. Variables nuevas: `SEMILLA_CONTEXTO_OBRAS`, `SEMILLA_CONTEXTO_FINANZAS` y `SEMILLA_CONTEXTO_MATERIALES`; vacías, usa el Docker local, como en la 601. Los servicios de la nube no montan archivos locales, así que el mismo *compose* sirve por SSH.
 - Las fotos se suben con `s3-cli` en la PC, contra S3 real, con las claves de `obras-s3` y `AWS_ENDPOINT_URL` vacío.
-- Después corre `ia-carga-inicial` en la máquina de Google, también por su contexto.
+- Después corre `ia-carga-inicial` en la máquina de Google, por SSH (`docker compose run` en `/opt/supervision`): por el contexto, Compose usaría las rutas de la PC para el volumen de inicio de PostgreSQL y no arranca.
 - Los usuarios de Keycloak salen de la importación del realm, con la contraseña nueva.
 
 ## Encender, apagar y costo
@@ -205,14 +208,14 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 
 | Recurso | Precio | Se paga |
 |---|---|---|
-| Azure B2s en `brazilsouth` | $0,0672/h (precio de lista consultado el 08/11/2026) | encendida |
-| AWS t3.micro en `us-east-2` | $0,0104/h (consultado el 08/11/2026) | encendida |
-| Google e2-medium en `southamerica-east1` | se confirma al crear | encendida |
+| Azure D4as_v5 en `northcentralus` | ~$0,17/h (lista de Azure, consultada el 09/11/2026) | encendida |
+| AWS m7i-flex.large en `us-east-2` | ~$0,10/h (aproximado; lo cubren los créditos del plan gratuito) | encendida |
+| Google e2-standard-4 en `us-east5` | ~$0,13/h (aproximado; lo cubren los $300 de la prueba) | encendida |
 | IP pública fija (una por nube) | $0,005/h cada una (~$3,60 al mes) | siempre |
 | Discos | unos pocos dólares al mes en total; se confirma al crear | siempre |
 | DynamoDB bajo demanda y S3 | centavos con el uso de la demostración | por uso |
 
-Ejemplo: 40 horas encendidas en el mes cuestan unos $3,10 de máquinas (Azure y AWS), más las IP y los discos. Lo cubren el crédito de Azure ($200 hasta el 04/12/2026) y los créditos del plan gratuito de AWS.
+Ejemplo: 40 horas encendidas en el mes cuestan unos $2,30 de máquinas (Azure y AWS), más las IP y los discos. Lo cubren el crédito de Azure ($200 hasta el 04/12/2026) y los créditos del plan gratuito de AWS.
 
 ## Orden
 
@@ -252,7 +255,7 @@ Al terminar cada sesión de trabajo: `apagar todas`.
 
 ### `docs/arquitectura.md` («Despliegue»)
 
-Reemplazar la tabla «Despliegue (propuesta, capa 6)» por el «Mapa del despliegue» y la tabla «Comunicación» de este diseño. Agregar: una máquina por nube con Docker Compose y Caddy (Let's Encrypt), Azure y Google en São Paulo y AWS en Ohio, nombres bajo `supervision.workflow-tramites.site`, y las máquinas apagadas fuera de las pruebas.
+Reemplazar la tabla «Despliegue (propuesta, capa 6)» por el «Mapa del despliegue» y la tabla «Comunicación» de este diseño. Agregar: una máquina por nube con Docker Compose y Caddy (Let's Encrypt), AWS en Ohio, Azure en Chicago y Google en Columbus, nombres bajo `supervision.workflow-tramites.site`, y las máquinas apagadas fuera de las pruebas.
 
 ### `docs/convenciones.md`
 
@@ -263,7 +266,7 @@ Reemplazar la tabla «Despliegue (propuesta, capa 6)» por el «Mapa del desplie
 
 ### `docs/entorno-local.md`
 
-Variables nuevas (`SMTP_*`, `CLIENTE1_CORREO`, `SEMILLA_CONTEXTO_*`, `MAILPIT_USUARIO` y `MAILPIT_CLAVE_HASH`, `MONGO_IMAGEN` y `ACME_CORREO`) y una sección «Nube» que remite a `infra/nube/README.md`.
+Variables nuevas (`SMTP_*`, `CLIENTE1_CORREO`, `SEMILLA_CONTEXTO_*`, `MAILPIT_USUARIO` y `MAILPIT_CLAVE_HASH`, y `MONGO_IMAGEN`) y una sección «Nube» que remite a `infra/nube/README.md`.
 
 ### `docs/datos-prueba.md`
 
@@ -271,7 +274,7 @@ En la nube, los usuarios de prueba usan `USUARIOS_PRUEBA_CLAVE` y el correo de `
 
 ### `docs/puntos.md` (fila «Despliegue en 3 nubes»)
 
-«Cómo»: Azure (máquina con gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n y las apps web), Google Cloud (máquina con Materiales e IA, y sus bases) y AWS (máquina con Sincronización, más DynamoDB y S3), cada una con Docker Compose y HTTPS de Let's Encrypt; Azure y Google en São Paulo y AWS en Ohio. Quitar «Reparto propuesto».
+«Cómo»: Azure (máquina con gateway, Obras, Finanzas, Keycloak, RabbitMQ, n8n y las apps web), Google Cloud (máquina con Materiales e IA, y sus bases) y AWS (máquina con Sincronización, más DynamoDB y S3), cada una con Docker Compose y HTTPS de Let's Encrypt; AWS en Ohio, Azure en Chicago y Google en Columbus. Quitar «Reparto propuesto».
 
 ### `docs/stack.md`
 
