@@ -101,9 +101,9 @@ Una máquina virtual por nube con Docker Compose (los mismos *compose* del ensay
 
 | Nube | Máquina | Qué aloja | Por qué |
 |---|---|---|---|
-| Azure (`northcentralus`) | `vm-plataforma`, B2als_v2 (4 GiB) | Gateway, Obras, Finanzas, Keycloak, RabbitMQ (AMQPS 5671), n8n, Mailpit, apps web y PostgreSQL de Obras, Finanzas y Keycloak | Obras y Finanzas comparten la saga; Keycloak y RabbitMQ son el centro |
-| Google Cloud (`us-east5`) | `vm-ia`, e2-medium (4 GB; 16 GB si se usa Ollama) | IA (`ia-api` e `ia-worker`), Materiales, MongoDB y PostgreSQL de reportes | Materiales e IA comparten MongoDB; el modelo de lenguaje local necesitaría memoria |
-| AWS (`us-east-2`) | `vm-sincronizacion`, t3.micro (1 GiB) | Sincronización; además DynamoDB y S3 (fotos) | DynamoDB es de AWS |
+| Azure (`northcentralus`) | `vm-plataforma`, D4as_v5 (4 vCPU, 16 GiB) | Gateway, Obras, Finanzas, Keycloak, RabbitMQ (AMQPS 5671), n8n, Mailpit, apps web y PostgreSQL de Obras, Finanzas y Keycloak | Obras y Finanzas comparten la saga; Keycloak y RabbitMQ son el centro |
+| Google Cloud (`us-east5`) | `vm-ia`, e2-standard-4 (4 vCPU, 16 GB; alcanza para Ollama) | IA (`ia-api` e `ia-worker`), Materiales, MongoDB y PostgreSQL de reportes | Materiales e IA comparten MongoDB; el modelo de lenguaje local necesitaría memoria |
+| AWS (`us-east-2`) | `vm-sincronizacion`, m7i-flex.large (2 vCPU, 8 GiB) | Sincronización; además DynamoDB y S3 (fotos) | DynamoDB es de AWS |
 
 Entre nubes: HTTPS con los nombres públicos y el token de Keycloak, y RabbitMQ por AMQPS. Dentro de una máquina, los nombres de sus propias piezas apuntan a su Caddy. Detalle (comunicación, secretos, costos y orden): `docs/specs/602-despliegue-tres-nubes/diseno.md`.
 
