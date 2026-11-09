@@ -100,11 +100,11 @@ class ModeloLenguaje(Protocol):
 ### Adaptador Anthropic
 
 - SDK oficial `anthropic` (2.3.0, verificado en PyPI el 31/10/2026; pide Python ≥ 3.10), `AsyncAnthropic(api_key=IA_ANTHROPIC_API_KEY)`, Messages API.
-- Modelo por defecto `claude-sonnet-5-5` (verificado en la página de modelos de Anthropic el 31/10/2026).
+- Modelo por defecto `claude-sonnet-5-5` (verificado en la página de modelos de Anthropic el 31/10/2026). También acepta `claude-haiku-5-5` y `claude-opus-5-5` con `IA_LLM_MODELO` (09/11/2026; en la nube se usa Haiku 5.5, decisión 3 de la 602).
 - Herramientas: `tools=[{name, description, input_schema, strict: true}]`; los resultados vuelven como bloques `tool_result` con el `tool_use_id`.
 - Salida estructurada: `output_config.format = {type: "json_schema", schema}` (estable, sin encabezado beta; verificado el 31/10/2026).
-- Razonamiento: `thinking: {type: "between_tools"}` (en Sonnet 5.5 no se acepta `disabled`; `between_tools` funciona con esfuerzo `low`, `medium` y `high`) y `output_config.effort`: `low` para interpretar y resumir, `medium` para los agentes. No se envía `temperature`.
-- `adaptar_esquema`: los esquemas estrictos de Anthropic exigen `additionalProperties: false` y **no aceptan** `minLength`, `maxLength`, `minimum`, `maximum` ni `minItems` mayor que 1 (verificado el 31/10/2026). El adaptador quita esas restricciones del esquema que envía; las sigue aplicando Pydantic al validar.
+- Razonamiento: con Sonnet 5.5, `thinking: {type: "between_tools"}` (en Sonnet 5.5 no se acepta `disabled`; `between_tools` funciona con esfuerzo `low`, `medium` y `high`); con Haiku 5.5 y Opus 5.5 no se envía `thinking` (solo Sonnet 5.5 acepta `between_tools`; razonan en modo adaptativo). Siempre `output_config.effort`: `low` para interpretar y resumir, `medium` para los agentes. No se envía `temperature`.
+- `adaptar_esquema`: los esquemas estrictos de Anthropic exigen `additionalProperties: false` y **no aceptan** `minLength`, `maxLength`, `minimum`, `maximum` ni `minItems` mayor que 1 (verificado el 31/10/2026), ni `maxItems` ni `uniqueItems` (la API respondió 400 el 09/11/2026, en la nube, con el esquema de la receta y con la herramienta `planillas_estado`). El adaptador quita esas restricciones del esquema que envía; las sigue aplicando Pydantic al validar.
 - Con este proveedor, el texto del usuario y los datos delimitados salen a la API de Anthropic. Es una opción de configuración de Jairo; en desarrollo se usa con los datos de prueba.
 
 ### Pruebas del puerto

@@ -106,7 +106,7 @@ Los *compose* de la nube viven en `infra/nube/` y se copian de los de `infra/pro
 **Google**
 
 - MongoDB: `MONGO_IMAGEN=mongo:8.0` si el *kernel* de la máquina es menor que 6.19. Si no, `mongo:7.0`, como el CI de IA (pendiente de la 601, SERVER-125742). Se comprueba con `uname -r` al crearla.
-- `IA_LLM_PROVEEDOR=anthropic` con `IA_ANTHROPIC_API_KEY`, o el perfil `ollama` si se elige Ollama. `IA_MCP_HOSTS_PERMITIDOS` lleva `ia.supervision.workflow-tramites.site`.
+- `IA_LLM_PROVEEDOR=anthropic` con `IA_ANTHROPIC_API_KEY` e `IA_LLM_MODELO=claude-haiku-5-5` (requisitos, decisión 3), o el perfil `ollama` si se elige Ollama. `IA_MCP_HOSTS_PERMITIDOS` lleva `ia.supervision.workflow-tramites.site`.
 
 ## Carpeta `infra/nube/` y el comando `nube.mjs`
 
