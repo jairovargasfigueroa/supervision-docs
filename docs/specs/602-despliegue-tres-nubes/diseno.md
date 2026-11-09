@@ -160,7 +160,10 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 
 **Google** (`crear google`, cuando esté la cuenta)
 
-- Proyecto `supervision-obras` con la API de Compute Engine; reglas de *firewall* (80 y 443; 22 desde la IP de Jairo); dirección estática; VM `vm-ia` (familia `ubuntu-2404-lts-amd64` de `ubuntu-os-cloud`, disco balanceado de 30 GB), con la clave SSH y `cloud-init.yaml` en los metadatos; presupuesto.
+- Proyecto `supervision-obras` (el ID es único en todo Google: si otra cuenta ya lo usa, con un sufijo que se guarda en `GOOGLE_PROYECTO`), unido a la cuenta de facturación de los créditos y con la API de Compute Engine. La cuenta es la de la prueba gratuita de un compañero del grupo (08/11/2026); Jairo entra con `gcloud auth login`.
+- Red propia `vpc-supervision` con una subred en la región: la red `default` de un proyecto nuevo deja el 22 y el 3389 abiertos a internet. Reglas de *firewall* `supervision-web` (80 y 443) y `supervision-ssh` (22 desde la IP de Jairo); dirección estática `ip-ia`.
+- VM `vm-ia` (familia `ubuntu-2404-lts-amd64` de `ubuntu-os-cloud`, disco balanceado de 30 GB), con el usuario `supervision`, la clave SSH y `cloud-init.yaml` como `user-data`, sin cuenta de servicio (Materiales e IA no llaman a APIs de Google). Al terminar, `MONGO_IMAGEN` según `uname -r`.
+- Presupuesto: en la consola, si se quiere (la CLI lo crearía en la cuenta de facturación del compañero, y sus avisos van a los administradores de esa cuenta). La prueba gratuita no cobra a la tarjeta mientras no se active la cuenta completa: al acabarse los créditos, Google detiene los recursos.
 
 ## Secretos
 
