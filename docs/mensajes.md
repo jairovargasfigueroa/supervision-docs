@@ -172,8 +172,8 @@ No son respuestas HTTP: son el `error.codigo` de una ejecución `FALLIDA` o el `
 | Código | Dónde | Cuándo ocurre | Mensaje para el usuario | Acción sugerida | Origen |
 |---|---|---|---|---|---|
 | `SIN_HERRAMIENTAS` | Ejecución | Ningún servidor MCP respondió | «Sin herramientas disponibles» | Volver a ejecutar más tarde | 502 (criterio 7) · texto de la spec |
-| `REPORTE_INVALIDO` | Ejecución | El modelo no armó un reporte válido en dos intentos | «El agente no logró armar un reporte válido.» | Volver a ejecutar | 502 · catálogo |
-| `EJECUCION_TIEMPO_AGOTADO` | Ejecución | La ejecución pasó los 3 minutos | «El agente superó el tiempo máximo de 3 minutos.» | Volver a ejecutar | 502 · catálogo |
+| `REPORTE_INVALIDO` | Ejecución | El modelo no armó un reporte válido en tres intentos (505, criterio 22) | «El agente no logró armar un reporte válido.» | Volver a ejecutar | 502 · catálogo |
+| `EJECUCION_TIEMPO_AGOTADO` | Ejecución | La ejecución pasó los 4 minutos (505, criterio 20) | «El agente superó el tiempo máximo de 4 minutos.» | Volver a ejecutar | 502 · catálogo |
 | `INTERRUMPIDA` | Ejecución | El servicio se reinició con la ejecución en curso | «La ejecución se interrumpió porque el servicio se reinició.» | Volver a ejecutar | 502 · catálogo |
 | `HERRAMIENTA_NO_PERMITIDA` | Paso | El modelo pidió una herramienta que no es de ese agente | «El agente pidió una herramienta que no le corresponde; se ignoró.» | Ninguna | 502, 504 · catálogo |
 | `ARGUMENTO_INVALIDO` | Paso (y error de herramienta MCP) | El modelo pidió datos con parámetros no válidos (también una receta inválida o un conjunto que no es del agente en `consultar_reporte`) | «El agente pidió datos con parámetros no válidos; se ignoró.» | Ninguna | 501, 502 · catálogo |
@@ -403,7 +403,10 @@ Correos que envía n8n (con copia oculta a cobranzas; `{EMPRESA_NOMBRE}` = «Con
 | «Nombres de clientes no disponibles» | ERP · Supervisión (avisos) | El gateway no pudo armar el directorio de clientes y no se filtró por cliente | 503 (criterio 8) · texto de la spec |
 | «Las planillas sin periodo no se incluyen al filtrar por periodo» | ERP · Supervisión (avisos) | Conjunto Planillas con filtro de periodo y estado que incluye observadas | 503 (diseño) · catálogo |
 | «Se encontraron {N} filas para «{título}» con los filtros: {filtros}.» | ERP · Supervisión | El resumen con el modelo falla o tarda | 503 (criterio 10) · texto de la spec |
-| «Reportes comunes» (botones de los atajos) · «Exportar a Excel» · «Exportar a CSV» | ERP · Supervisión | Siempre | 503 (criterios 4, 12 y 13) · texto de la spec |
+| «Reportes comunes» (botones de los atajos) · «Exportar a Excel» · «Exportar a CSV» · «Exportar a PDF» · «Exportar a Word» (505) | ERP · Supervisión | Siempre | 503 (criterios 4, 12 y 13) y 505 (criterio 18) · texto de la spec |
+| «Nueva consulta» (borra la conversación de la pantalla) · la pregunta del asistente con sus opciones en botones (los nombres que ofrece, «Todos» o «Ninguno») · para lectores de pantalla: «Conversación», «Pedido», «Pregunta del asistente», «Opciones de respuesta» | ERP · Supervisión (reportes) | Con una conversación abierta · cuando el asistente pregunta | 505 (criterios 1, 2 y 7) · texto de la spec |
+| «El pedido debe tener entre 1 y 500 caracteres.» | ERP · Supervisión (reportes) | Respuesta vacía o muy larga con una conversación abierta (sin conversación sigue «entre 3 y 500») | 505 (criterio 5) · catálogo |
+| PDF y Word: título del conjunto; «Fecha», «Pedido», «Lo que se aplicó», «Resumen» y «Avisos» (si hay); la tabla; archivo `reporte-{conjunto}-{AAAA-MM-DD-HHmm}.pdf` (o `.docx`) | Archivo descargado desde ERP · Supervisión | Al exportar | 505 (criterio 18; diseño) · texto de la spec |
 | «Reportes» (menú interno, solo `admin` y `gerente`, y título) · «Por ejemplo: ¿Cuánto cemento se usó en Las Palmas este trimestre?» (campo del pedido) · contador «{n} / 500» · «Consultar» | ERP · Supervisión (`/supervision/reportes`) | Siempre | 503 (criterios 1 a 3) · catálogo |
 | «Puedes consultar» (conjuntos con «{título} · {descripción}» y sus ejemplos) · «Elige un ejemplo para cambiar tu pedido o usa uno de los reportes comunes.» | ERP · Supervisión (reportes) | Con «No encontré un reporte para tu pedido» (`INTENCION_NO_RECONOCIDA` o `RECETA_INVALIDA`) | 503 (criterios 6 y 7) · catálogo |
 | «Mientras tanto puedes usar los reportes comunes, que no necesitan interpretar el pedido.» | ERP · Supervisión (reportes) | Con `LLM_NO_DISPONIBLE` | 503 (diseño) · catálogo |
