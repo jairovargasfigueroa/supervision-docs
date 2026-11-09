@@ -534,3 +534,20 @@ Esta funcionalidad carga las tablas del **sistema base** (001 a 009). Cuando una
 | 401 Base de reportes | Columna `zona` de las obras (sección 6). Las tablas `rpt_*` **no tienen semilla propia**: después de la semilla de los servicios y con ellos levantados, se corre la carga inicial de la 401 (`ia-carga-inicial`), que las llena por REST con lo que cargó este documento. `recargar` vacía también `reportes_db` y pide volver a correr la carga inicial. |
 | 402 y 403 | Predicciones: no se siembran; las calcula el modelo al terminar la carga inicial (motivo `CARGA_INICIAL`). Consumos atípicos de prueba coherentes con el `FIE-12` excedido de la obra 1 (la carga inicial no evalúa salidas pasadas). |
 | 502 Agentes | Revisa que estén sus casos: obra atrasada (obra 2), material bajo (`CEM-IP30` obra 2), salida que supera el stock (20018), cobro vencido (`COB-…-0001`), planilla presentada (obra 1 N.º 3), y agrega lo que falte. |
+
+## 14. Historia de demostración (603)
+
+Con `SEMILLA_HISTORIA=si` (en la nube y en la «producción local»), la carga suma a todo lo anterior tres obras con varios meses de uso, para que los reportes, los agentes, los modelos y el tablero tengan algo real que mostrar. No se escribe a mano: la genera `infra/semilla/historia/generar.mjs` con las reglas del negocio (requisitos y diseño en `docs/specs/603-historia-demostracion/`). Valores con D = 2026-11-09:
+
+| Obra | Escenario | Inicio · plazo | Avance aprobado · plazo transcurrido | Planillas | Cobros | Riesgo del modelo |
+|---|---|---|---|---|---|---|
+| 4 · Edificio de Oficinas Casco Viejo (CENTRO) · cliente1 · residente1 | adelantada | D − 185 · 420 días | 47,74 % · 44,05 % | 6 aprobadas | 5 pagados, 1 pendiente | `BAJO` (0,8 %) |
+| 5 · Mercado Municipal Villa 1ro de Mayo (ESTE) · demo1 · residente2 | muy atrasada: faltas de material y de personal, losa con consumo 25 % sobre lo previsto | D − 215 · 300 días | 26,32 % · 71,67 % | 6 aprobadas y la de M-1 observada | 4 pagados (uno tarde), 1 vencido sin pagar, 1 que vence en dos días | `ALTO` (96 %) |
+| 6 · Condominio Jardines del Urubó (OESTE) · cliente1 · demo1 | atraso moderado | D − 158 · 360 días | 24,63 % · 43,89 % | 5 aprobadas | 4 pagados, 1 pendiente | `MEDIO` (59 %) |
+
+- **Material:** 1.462 movimientos (compras «NR-…» y salidas casi diarias por partida, de lunes a sábado). Stock final: en la obra 5, cemento (173 de 180) y ladrillo (1.200 de 2.000) en `BAJO`; en la 6, fierro de 3/8" en `JUSTO`. Salidas raras para la 403: en la obra 5, una de noche, una en domingo y una de 324 bolsas que supera el stock (queda en −35, compra de urgencia al día siguiente); en la 6, una de arena gruesa cinco veces la habitual.
+- **Cobranza:** 17 cobros (13 pagados con comprobante y su constancia), sus reservas consumidas, los cierres de periodo y 36 envíos (notas de cobro, constancias y recordatorios). Los números `COB-AAAA-NNNN` se calculan sobre todo el conjunto, así que con la historia los de la sección 8 cambian de número.
+- **Fotos:** 35 de avance (dos o tres por planilla), copias de las de la sección 10.
+- **Diario:** `infra/semilla/agentes.mjs` registra el diario de lunes a sábado de las seis obras desde su inicio (unas 700 entradas; clima por estación y texto según el escenario).
+- **IA:** después de la carga inicial, `infra/semilla/eventos-ia.mjs --todas` pasa todas las salidas por el modelo de consumos atípicos, en orden.
+- Pensada para cargarse entre el día 5 y el 25 del mes; los días de la semana siguen el calendario de noviembre de 2026.
