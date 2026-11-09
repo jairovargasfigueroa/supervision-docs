@@ -198,7 +198,7 @@ Los *scripts* son de Node y no de PowerShell y Bash duplicados (excepción a la 
 
 - La semilla en modo demostración (601, `SEMILLA_DEMO=si`) corre desde la PC. Para cada servicio usa `docker compose run` con su imagen **dentro de su máquina**, por medio de un contexto de Docker por SSH. Variables nuevas: `SEMILLA_CONTEXTO_OBRAS`, `SEMILLA_CONTEXTO_FINANZAS` y `SEMILLA_CONTEXTO_MATERIALES`; vacías, usa el Docker local, como en la 601. Los servicios de la nube no montan archivos locales, así que el mismo *compose* sirve por SSH.
 - Las fotos se suben con `s3-cli` en la PC, contra S3 real, con las claves de `obras-s3` y `AWS_ENDPOINT_URL` vacío.
-- Después corre `ia-carga-inicial` en la máquina de Google, también por su contexto.
+- Después corre `ia-carga-inicial` en la máquina de Google, por SSH (`docker compose run` en `/opt/supervision`): por el contexto, Compose usaría las rutas de la PC para el volumen de inicio de PostgreSQL y no arranca.
 - Los usuarios de Keycloak salen de la importación del realm, con la contraseña nueva.
 
 ## Encender, apagar y costo
