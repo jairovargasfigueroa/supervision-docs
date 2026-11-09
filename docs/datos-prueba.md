@@ -519,7 +519,8 @@ La semilla y el vaciado se niegan a correr (mensaje claro y código de salida di
 **Excepción: datos de demostración (601).** Con `SEMILLA_DEMO=si` (en el `.env` de la «producción local» o de la nube; nunca en `infra/.env`):
 
 - la **carga** corre igual aunque el servicio esté en modo producción, la base no sea local, falte `SEMILLA_PERMITIDA=si` o el bucket no empiece con `supervision-dev-` (la guarda del prefijo queda «`supervision-dev-` o `SEMILLA_DEMO=si`»). Carga los mismos datos, sin duplicar ni pisar nada, igual que en desarrollo;
-- el **vaciado** sigue prohibido fuera de desarrollo, sin excepción: `recargar` se niega con `SEMILLA_DEMO=si` y los comandos de vaciar de cada servicio (`--semilla.modo=recargar` en Obras, `datos-prueba:vaciar` en Finanzas, `npm run semilla:vaciar` en Materiales) se niegan en modo producción o con una base que no es local, con o sin `SEMILLA_DEMO`. Para empezar de cero en la «producción local», `bajar -Datos`.
+- el **vaciado** sigue prohibido fuera de desarrollo, sin excepción: `recargar` se niega con `SEMILLA_DEMO=si` y los comandos de vaciar de cada servicio (`--semilla.modo=recargar` en Obras, `datos-prueba:vaciar` en Finanzas, `npm run semilla:vaciar` en Materiales) se niegan en modo producción o con una base que no es local, con o sin `SEMILLA_DEMO`. Para empezar de cero en la «producción local», `bajar -Datos`; en la nube, el vaciado a mano de `infra/nube/README.md` («Volver a dejar los datos de demostración limpios», 602), que hace lo mismo que esos comandos.
+- `semilla/eventos-ia.mjs` y `semilla/agentes.mjs` (consumos atípicos de prueba y diario de obra, sección 13) corren también con `--entorno <archivo>` y `SEMILLA_DEMO=si` (602): solo agregan, con ids fijos.
 
 ## 13. Ampliaciones por capa
 
